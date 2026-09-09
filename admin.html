@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 40px; }
+    .header { display: flex; justify-content: space-between; align-items: center; background: #f0f0f0; padding: 15px 20px; border-radius: 5px; }
+    button { padding: 8px 16px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Saya Art - Admin Dashboard</h1>
+    <button id="logout-btn">Logout</button>
+  </div>
+
+  <h2>Welcome Admin!</h2>
+  <p>Aapka login safal ho gaya hai.</p>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+
+    // Aapki exact Firebase Keys
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6CxokC0KwAtP9EMilEQHMJQKWCgLWYJc",
+      authDomain: "sayaart.firebaseapp.com",
+      projectId: "sayaart",
+      storageBucket: "sayaart.firebasestorage.app",
+      messagingSenderId: "805892692460",
+      appId: "1:805892692460:web:417ef9926bbc01d9f288c9",
+      measurementId: "G-S3CKT4LP6T"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Security Check: Login na hone par wapas login.html par bhej do
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+      }
+    });
+
+    // Logout Button
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      signOut(auth).then(() => {
+        window.location.href = "login.html";
+      });
+    });
+  </script>
+</body>
+</html>
