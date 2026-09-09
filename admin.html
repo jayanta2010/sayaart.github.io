@@ -13,7 +13,7 @@
     .card h2 { margin-top: 0; border-bottom: 2px solid #ddd; padding-bottom: 10px; color: #333; }
     .form-group { margin-bottom: 15px; }
     .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-    .form-group input, .form-group select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+    .form-group input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
     .btn-primary { background: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     table, th, td { border: 1px solid #ddd; }
@@ -30,13 +30,13 @@
   </div>
 
   <div class="container">
-    <!-- 1. Add / Update Product (Image & Price) -->
+    <!-- Image Upload & Price Change -->
     <div class="card">
       <h2>Add Product & Update Price</h2>
       <form id="product-form">
         <div class="form-group">
           <label>Item Name</label>
-          <input type="text" id="prod-name" placeholder="e.g. Custom Canvas Print" required>
+          <input type="text" id="prod-name" placeholder="e.g. Custom Art" required>
         </div>
         <div class="form-group">
           <label>Price (₹)</label>
@@ -46,15 +46,15 @@
           <label>Product Image</label>
           <input type="file" id="prod-img" accept="image/*" required>
         </div>
-        <button type="submit" class="btn-primary" id="upload-btn">Upload / Add Product</button>
+        <button type="submit" class="btn-primary">Upload / Add Product</button>
       </form>
       <p id="upload-status" style="margin-top:10px; font-weight:bold;"></p>
     </div>
 
-    <!-- 2. Customer Orders List -->
+    <!-- Customer Orders -->
     <div class="card">
       <h2>Customer Orders</h2>
-      <table id="orders-table">
+      <table>
         <thead>
           <tr>
             <th>Customer</th>
@@ -91,18 +91,15 @@
     const db = getFirestore(app);
     const storage = getStorage(app);
 
-    // Guard Check
     onAuthStateChanged(auth, (user) => {
       if (!user) window.location.href = "login.html";
       else loadOrders();
     });
 
-    // Logout
     document.getElementById('logout-btn').addEventListener('click', () => {
       signOut(auth).then(() => window.location.href = "login.html");
     });
 
-    // Upload Image & Add Product with Price
     const form = document.getElementById('product-form');
     const status = document.getElementById('upload-status');
 
@@ -116,12 +113,10 @@
       const file = document.getElementById('prod-img').files[0];
 
       try {
-        // Upload Image to Firebase Storage
         const storageRef = ref(storage, 'products/' + Date.now() + '_' + file.name);
         await uploadBytes(storageRef, file);
         const imageUrl = await getDownloadURL(storageRef);
 
-        // Save Details to Firestore
         await addDoc(collection(db, "products"), {
           name: name,
           price: Number(price),
@@ -130,7 +125,7 @@
         });
 
         status.style.color = "green";
-        status.innerText = "Product & Price Added Successfully!";
+        status.innerText = "Product Uploaded Successfully!";
         form.reset();
       } catch (err) {
         status.style.color = "red";
@@ -138,7 +133,6 @@
       }
     });
 
-    // Fetch and Display Orders
     async function loadOrders() {
       const ordersList = document.getElementById('orders-list');
       try {
@@ -160,7 +154,7 @@
           `;
         });
       } catch (err) {
-        ordersList.innerHTML = "<tr><td colspan='4'>Firestore set up required to view orders.</td></tr>";
+        ordersList.innerHTML = "<tr><td colspan='4'>No orders found.</td></tr>";
       }
     }
   </script>
