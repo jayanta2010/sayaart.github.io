@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC6CxokC0KwAtP9EMilEQHMJQKWCgLWYJc",
@@ -14,23 +14,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Default Static Products (Fallback)
-let defaultProducts = [
-  { id: 1, name: 'Classic visiting cards', cat: 'Business', price: 299, mark: 'YOUR BRAND', color: '#d308d0', tag: 'BESTSELLER' },
-  { id: 2, name: 'Rounded stickers', cat: 'Labels', price: 249, mark: 'PEEL & GO', color: '#f5cf87', tag: 'NEW' },
-  { id: 3, name: 'Premium flyers', cat: 'Marketing', price: 499, mark: 'SAY HELLO', color: '#f1a880', tag: '' },
-  { id: 4, name: 'Everyday photo mug', cat: 'Gifts', price: 349, mark: 'GOOD MORNING', color: '#b9cfed', tag: '' },
-  { id: 5, name: 'A5 notebooks', cat: 'Stationery', price: 299, mark: 'BIG IDEAS', color: '#d8db0b', tag: 'POPULAR' }
+// Global products array
+window.products = [
+  {id:1, name:'Classic visiting cards', cat:'Business', price:299, mark:'YOUR BRAND', color:'#d308d0', tag:'BESTSELLER'},
+  {id:2, name:'Rounded stickers', cat:'Labels', price:249, mark:'PEEL & GO', color:'#f5cf87', tag:'NEW'},
+  {id:3, name:'Premium flyers', cat:'Marketing', price:499, mark:'SAY HELLO', color:'#f1a880', tag:''},
+  {id:4, name:'Everyday photo mug', cat:'Gifts', price:349, mark:'GOOD MORNING', color:'#b9cfed', tag:''},
+  {id:5, name:'A5 notebooks', cat:'Stationery', price:299, mark:'BIG IDEAS', color:'#d8db0b', tag:'POPULAR'}
 ];
 
-window.products = [...defaultProducts];
-
-// 1. Fetch Products from Firestore Real-time
-async function fetchFirebaseProducts() {
+// Firebase Products Fetching & Dynamic Rendering
+async function loadProductsFromFirebase() {
   try {
     const querySnapshot = await getDocs(collection(db, "products"));
     if (!querySnapshot.empty) {
-      let firebaseItems = [];
+      const firebaseItems = [];
       querySnapshot.forEach((doc) => {
         const item = doc.data();
         firebaseItems.push({
@@ -44,33 +42,18 @@ async function fetchFirebaseProducts() {
           imageUrl: item.imageUrl
         });
       });
-      // Combine Firebase products with default products
-      window.products = [...firebaseItems, ...defaultProducts];
-      
-      // Trigger site UI update
-      if (typeof renderProducts === 'function') {
-        renderProducts();
-      }
+      // Merge products
+      window.products = [...firebaseItems, ...window.products];
     }
-  } catch (error) {
-    console.error("Error fetching products from Firebase:", error);
+  } catch (err) {
+    console.error("Firestore Load Error:", err);
+  } finally {
+    // Render website products UI
+    if (typeof renderProducts === 'function') {
+      renderProducts();
+    }
   }
 }
 
-// 2. Customer Order Handler
-window.placeOrderToFirebase = async function(customerDetails, cartItems, totalAmount) {
-  try {
-    await addDoc(collection(db, "orders"), {
-      customerName: customerDetails.name || "Guest Customer",
-      itemName: cartItems.map(i => i.name).join(", "),
-      amount: totalAmount,
-      status: "Pending",
-      createdAt: new Date()
-    });
-    alert("Order Placed Successfully!");
-  } catch (err) {
-    alert("Order Error: " + err.message);
-  }
-};
-
-document.addEventListener('DOMContentLoaded', fetchFirebaseProducts);
+// Window load hote hi run hoga
+window.addEventListener('DOMContentLoaded', loadProductsFromFirebase);
