@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC6CxokC0KwAtP9EMilEQHMJQKWCgLWYJc",
@@ -7,86 +8,95 @@ const firebaseConfig = {
   projectId: "sayaart",
   storageBucket: "sayaart.firebasestorage.app",
   messagingSenderId: "805892692460",
-  appId: "1:805892692460:web:417ef9926bbc01d9f288c9",
-  measurementId: "G-S3CKT4LP6T"
+  appId: "1:805892692460:web:417ef9926bbc01d9f288c9"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
-// Default Static Products
-let products = [
-  { id: 1, name: 'Classic visiting cards', cat: 'Business', price: 299, mark: 'YOUR BRAND', color: '#d308d0', tag: 'BESTSELLER' },
-  { id: 2, name: 'Rounded stickers', cat: 'Labels', price: 249, mark: 'PEEL & GO', color: '#f5cf87', tag: 'NEW' },
-  { id: 3, name: 'Premium flyers', cat: 'Marketing', price: 499, mark: 'SAY HELLO', color: '#f1a880', tag: '' },
-  { id: 4, name: 'Everyday photo mug', cat: 'Gifts', price: 349, mark: 'GOOD MORNING', color: '#b9cfed', tag: '' },
-  { id: 5, name: 'A5 notebooks', cat: 'Stationery', price: 299, mark: 'BIG IDEAS', color: '#d8db0b', tag: 'POPULAR' }
-];
-
-// Website Products Render Function
-function renderProducts() {
-  const productsContainer = document.getElementById('products') || document.querySelector('.products-section');
-  if (!productsContainer) return;
-
-  const html = products.map(p => `
-    <div class="product-card" style="border:1px solid #ddd; padding:15px; margin:10px; border-radius:8px; display:inline-block; width:220px; vertical-align:top;">
-      <img src="${p.imageUrl || 'saya-art-advertising-logo.jpg'}" alt="${p.name}" style="width:100%; height:150px; object-fit:cover; border-radius:4px;">
-      <h3 style="font-size:16px; margin:10px 0 5px 0;">${p.name}</h3>
-      <p style="font-weight:bold; color:#27ae60; margin:0 0 10px 0;">₹${p.price}</p>
-      <button onclick="placeOrderFromSite('${p.name}', ${p.price})" style="background:#27ae60; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; width:100%;">Order Now</button>
-    </div>
-  `).join('');
-
-  productsContainer.innerHTML = html;
-}
-
-// Fetch Firebase Products & Merge
-async function loadFirebaseData() {
-  try {
-    const querySnapshot = await getDocs(collection(db, "products"));
-    if (!querySnapshot.empty) {
-      let fbProducts = [];
-      querySnapshot.forEach((doc) => {
-        const item = doc.data();
-        fbProducts.push({
-          id: doc.id,
-          name: item.name,
-          price: Number(item.price),
-          imageUrl: item.imageUrl,
-          cat: 'Uploaded',
-          mark: 'SAYA ART',
-          color: '#27ae60',
-          tag: 'NEW'
-        });
-      });
-      // New products ko list ke top par add karein
-      products = [...fbProducts, ...products];
-    }
-  } catch (err) {
-    console.error("Firestore Error:", err);
-  } finally {
-    renderProducts();
-  }
-}
-
-// Global Function to Handle Customer Checkout -> Save Order to Firebase
-window.placeOrderFromSite = async function(itemName, price) {
-  const customerName = prompt("Enter your Name for Order:");
-  if (!customerName) return;
-
-  try {
-    await addDoc(collection(db, "orders"), {
-      customerName: customerName,
-      itemName: itemName,
-      amount: price,
-      status: "Pending",
-      createdAt: new Date()
+// Recaptcha Initialize
+function initRecaptcha() {
+  if (!window.recaptchaVerifier) {
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      'size': 'invisible'
     });
-    alert("Order Placed Successfully! Admin panel par order update ho gaya hai.");
-  } catch (err) {
-    alert("Order Error: " + err.message);
   }
+}
+
+// 1. Send OTP Function
+window.sendCustomerOTP = function() {
+  const phone = document.getElementById('custPhone').value;
+  if (!phone.startsWith('+91') || phone.length < 13) {
+    alert("Please enter valid mobile number with +91");
+    return;
+  }
+
+  initRecaptcha();
+  const appVerifier = window.recaptchaVerifier;
+
+  signInWithPhoneNumber(auth, phone, appVerifier)
+    .then((confirmationResult) => {
+      window.confirmationResult = confirmationResult;
+      document.getElementById('phone-step').style.display = 'none';
+      document.getElementById('otp-step').style.display = 'block';
+      alert("OTP sent to " + phone);
+    })
+    .catch((error) => {
+      alert("OTP Error: " + error.message);
+    });
 };
 
-// Start Loading Process
-document.addEventListener('DOMContentLoaded', loadFirebaseData);
+// 2. Verify OTP & Open Razorpay
+window.verifyOTPAndPay = function() {
+  const otp = document.getElementById('otpInput').value;
+  if (!otp || otp.length !== 6) {
+    alert("Enter 6-digit OTP");
+    return;
+  }
+
+  window.confirmationResult.confirm(otp)
+    .then((result) => {
+      // Login Success - Trigger Razorpay Payment
+      openRazorpayPayment(result.user);
+    })
+    .catch((error) => {
+      alert("Invalid OTP! Try again.");
+    });
+};
+
+// 3. Razorpay Checkout
+function openRazorpayPayment(user) {
+  const name = document.getElementById('custName').value;
+  const address = document.getElementById('custAddress').value;
+  const phone = document.getElementById('custPhone').value;
+
+  const options = {
+    "key": "rzp_test_YOUR_KEY_HERE", // Razorpay Key ID
+    "amount": window.selectedPrice * 100,
+    "currency": "INR",
+    "name": "Saya Art & Advertising",
+    "description": window.selectedItemName,
+    "handler": async function (response) {
+      await addDoc(collection(db, "orders"), {
+        orderId: "ORD-" + Math.floor(100000 + Math.random() * 900000),
+        paymentId: response.razorpay_payment_id,
+        customerName: name,
+        customerPhone: phone,
+        deliveryAddress: address,
+        itemName: window.selectedItemName,
+        amount: window.selectedPrice,
+        paymentStatus: "PAID",
+        uid: user.uid,
+        createdAt: new Date()
+      });
+      alert("Order Placed Successfully!");
+      location.reload();
+    },
+    "prefill": { "name": name, "contact": phone },
+    "theme": { "color": "#27ae60" }
+  };
+
+  const rzp = new Razorpay(options);
+  rzp.open();
+}
