@@ -1,4 +1,3 @@
-// Firebase ES Module Imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
@@ -15,59 +14,63 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Default Local Products Fallback
-let products = [
-  {id:1, name:'Classic visiting cards', cat:'Business', price:299, mark:'YOUR BRAND', color:'#d3o8do', tag:'BESTSELLER'},
-  {id:2, name:'Rounded stickers', cat:'Labels', price:249, mark:'PEEL & GO', color:'#f5cf87', tag:'NEW'},
-  {id:3, name:'Premium flyers', cat:'Marketing', price:499, mark:'SAY HELLO', color:'#f1a880', tag:''},
-  {id:4, name:'Everyday photo mug', cat:'Gifts', price:349, mark:'GOOD MORNING', color:'#b9cfed', tag:''},
-  {id:5, name:'A5 notebooks', cat:'Stationery', price:299, mark:'BIG IDEAS', color:'#d8db0b', tag:'POPULAR'}
+// Default Static Products (Fallback)
+let defaultProducts = [
+  { id: 1, name: 'Classic visiting cards', cat: 'Business', price: 299, mark: 'YOUR BRAND', color: '#d308d0', tag: 'BESTSELLER' },
+  { id: 2, name: 'Rounded stickers', cat: 'Labels', price: 249, mark: 'PEEL & GO', color: '#f5cf87', tag: 'NEW' },
+  { id: 3, name: 'Premium flyers', cat: 'Marketing', price: 499, mark: 'SAY HELLO', color: '#f1a880', tag: '' },
+  { id: 4, name: 'Everyday photo mug', cat: 'Gifts', price: 349, mark: 'GOOD MORNING', color: '#b9cfed', tag: '' },
+  { id: 5, name: 'A5 notebooks', cat: 'Stationery', price: 299, mark: 'BIG IDEAS', color: '#d8db0b', tag: 'POPULAR' }
 ];
 
-// Firebase Firestore se Products load karne ka function
-async function loadFirebaseProducts() {
+window.products = [...defaultProducts];
+
+// 1. Fetch Products from Firestore Real-time
+async function fetchFirebaseProducts() {
   try {
     const querySnapshot = await getDocs(collection(db, "products"));
-    if(!querySnapshot.empty) {
-      let fbProducts = [];
+    if (!querySnapshot.empty) {
+      let firebaseItems = [];
       querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        fbProducts.push({
+        const item = doc.data();
+        firebaseItems.push({
           id: doc.id,
-          name: data.name,
-          price: data.price,
-          cat: 'Uploaded',
-          imageUrl: data.imageUrl,
+          name: item.name,
+          price: Number(item.price),
+          cat: 'Custom Art',
           mark: 'SAYA ART',
-          color: '#e74c3c'
+          color: '#27ae60',
+          tag: 'NEW',
+          imageUrl: item.imageUrl
         });
       });
-      // Purane list ke sath new Firebase products merge karein
-      products = [...fbProducts, ...products];
+      // Combine Firebase products with default products
+      window.products = [...firebaseItems, ...defaultProducts];
+      
+      // Trigger site UI update
       if (typeof renderProducts === 'function') {
         renderProducts();
       }
     }
-  } catch (err) {
-    console.error("Firestore product load error:", err);
+  } catch (error) {
+    console.error("Error fetching products from Firebase:", error);
   }
 }
 
-// Checkout karte waqt Firestore mein Order bhejney ka function
-window.saveOrderToFirebase = async function(customerDetails, cartItems, totalAmount) {
+// 2. Customer Order Handler
+window.placeOrderToFirebase = async function(customerDetails, cartItems, totalAmount) {
   try {
     await addDoc(collection(db, "orders"), {
       customerName: customerDetails.name || "Guest Customer",
-      itemName: cartItems.map(item => item.name).join(", "),
+      itemName: cartItems.map(i => i.name).join(", "),
       amount: totalAmount,
       status: "Pending",
       createdAt: new Date()
     });
-    console.log("Order saved to Firebase successfully!");
-  } catch(err) {
-    console.error("Order save error:", err);
+    alert("Order Placed Successfully!");
+  } catch (err) {
+    alert("Order Error: " + err.message);
   }
 };
 
-// Site load hote hi Firebase products load hongi
-document.addEventListener('DOMContentLoaded', loadFirebaseProducts);
+document.addEventListener('DOMContentLoaded', fetchFirebaseProducts);
