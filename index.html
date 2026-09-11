@@ -3,114 +3,100 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Saya Art & Advertising — Custom Printing</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <title>Ink &amp; Craft — Custom printing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <style>
-    /* Profile Sidebar Custom Styles */
-    .profile-drawer {
-      position: fixed; top: 0; left: -360px; width: 340px; height: 100%;
-      background: #fff; box-shadow: 4px 0 20px rgba(0,0,0,0.15);
-      transition: left 0.3s ease; z-index: 99999; padding: 25px; box-sizing: border-box;
-      overflow-y: auto;
+    /* Left Profile Drawer Extensions */
+    .drawer.profile-drawer {
+      left: 0;
+      right: auto;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
     }
-    .profile-drawer.active { left: 0; }
-    .drawer-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5); display: none; z-index: 99998;
+    .drawer.profile-drawer.active {
+      transform: translateX(0);
     }
-    .drawer-overlay.active { display: block; }
-    .btn-close-drawer { float: right; font-size: 24px; border: none; background: none; cursor: pointer; }
-    .user-box { text-align: center; margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; }
-    .user-avatar { width: 60px; height: 60px; background: #27ae60; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 10px; }
-    .order-history-card { border: 1px solid #eee; padding: 10px; margin-top: 8px; border-radius: 6px; font-size: 13px; background: #fff; }
   </style>
 </head>
 <body>
-
-  <!-- Left Profile Sidebar Overlay & Drawer -->
-  <div class="drawer-overlay" id="profileOverlay"></div>
-  <aside class="profile-drawer" id="profileSidebar">
-    <button class="btn-close-drawer" id="closeProfileBtn">&times;</button>
-    <h2 style="margin-top:0;">My Profile</h2>
-
-    <!-- Unauthenticated State (Login via OTP) -->
-    <div id="loggedOutState">
-      <p style="font-size: 14px; color: #666;">Enter mobile number to login & track orders.</p>
-      
-      <div id="sidePhoneStep">
-        <label style="font-size: 12px; font-weight: bold;">Mobile Number (+91)</label>
-        <input id="sidePhoneInput" value="+91" placeholder="+919876543210" style="width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
-        <div id="side-recaptcha-container"></div>
-        <button id="sendSideOtpBtn" style="width: 100%; padding: 10px; background: #333; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px;">Send OTP</button>
-      </div>
-
-      <div id="sideOtpStep" style="display: none;">
-        <label style="font-size: 12px; font-weight: bold;">Enter 6-Digit OTP</label>
-        <input id="sideOtpInput" type="number" placeholder="123456" style="width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
-        <button id="verifySideOtpBtn" style="width: 100%; padding: 10px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px;">Verify & Login</button>
-      </div>
+  <div class="announcement">Free local pickup · Pan-India delivery · <b>Save 10% on ₹5,000+</b></div>
+  <header>
+    <a class="brand" href="#home"><img class="brand-logo" src="saya-art-advertising-logo.jpg" alt="Saya Art & Advertising" /><span><b data-shop-name>Saya Art &amp; Advertising</b><small>PRINT STUDIO</small></span></a>
+    <nav><a href="#products">Products</a><a href="#how">How it works</a><a href="#business">For business</a></nav>
+    <div class="header-actions">
+      <button class="text-button" id="openProfile">👤 Profile</button>
+      <button class="icon-button" id="searchButton" aria-label="Search">⌕</button>
+      <button class="text-button" id="openAdmin">Admin</button>
+      <button class="cart-button" id="openCart">Bag <span id="cartCount">0</span></button>
     </div>
-
-    <!-- Authenticated State (User Details + Previous Orders) -->
-    <div id="loggedInState" style="display: none;">
-      <div class="user-box">
-        <div class="user-avatar">✓</div>
-        <h4 id="userPhoneDisplay" style="margin: 5px 0;">+91...</h4>
-        <small style="color: #27ae60; font-weight: bold;">Verified Customer</small>
+  </header>
+  
+  <main id="home">
+    <section class="hero"><div class="hero-copy"><p class="eyebrow">PRINTED FOR THE MOMENT</p><h1>Make it feel<br><em>like yours.</em></h1><p class="hero-text">Thoughtful print, sharp finishing, and a simple way to bring your ideas into the world.</p><div class="hero-buttons"><a class="primary-button" href="#products">Start creating <span>→</span></a><button class="link-button" id="browseDeals">Browse bestsellers</button></div><div class="proof"><span><b>24 hr</b> artwork check</span><span><b>4.9/5</b> customer love</span><span><b>100%</b> local support</span></div></div><div class="hero-art" aria-label="A collection of custom printed products"><div class="sun"></div><div class="card card-back"></div><div class="card card-front"><i>YOUR<br>BRAND<br>HERE</i><span>HELLO, GOOD IDEAS.</span></div><div class="sticker">MADE<br>WITH<br>CARE</div><div class="tape"></div></div></section>
+    <section class="category-section"><div class="section-top"><div><p class="eyebrow">SHOP BY PROJECT</p><h2>What are you making?</h2></div><button class="link-button" id="viewAll">See all products →</button></div><div class="categories" id="categories"></div></section>
+    <section class="feature-strip" id="how"><div><b>01</b><h3>Choose a product</h3><p>Find the format, stock, and finish that fits.</p></div><div><b>02</b><h3>Make it yours</h3><p>Upload artwork or add your details in minutes.</p></div><div><b>03</b><h3>We make it right</h3><p>Every file receives a practical pre-print check.</p></div></section>
+    <section class="products-section" id="products"><div class="section-top"><div><p class="eyebrow">THE GOOD STUFF</p><h2>Popular right now</h2></div><div class="filters" id="filters"></div></div><div class="product-grid" id="productGrid"></div></section>
+    <section class="business-banner" id="business"><div><p class="eyebrow">FOR TEAMS &amp; BUSINESSES</p><h2>Print that puts your<br>business on the map.</h2><p>Volume pricing, repeat orders, dedicated support, and consistent colour across every touchpoint.</p><button class="light-button" id="quoteButton">Request a quote →</button></div><div class="banner-graphic"><span>GO<br>MAKE<br>IT.</span></div></section>
+  </main>
+  
+  <footer><div class="brand"><img class="brand-logo" src="saya-art-advertising-logo.jpg" alt="Saya Art & Advertising" /><span><b data-shop-name>Saya Art &amp; Advertising</b><small>PRINT STUDIO</small></span></div><p><span data-address>Banderdewa, Dist. Lakhimpur, Assam - 784163</span><br><span data-shop-phone>+91 7086718618</span></p><p>© <span id="year"></span> <span data-shop-name>Saya Art &amp; Advertising</span>. Made for good ideas.</p></footer>
+  
+  <!-- Left Profile Drawer (OTP Login & Saved Orders) -->
+  <aside class="drawer profile-drawer" id="profileDrawer" aria-hidden="true">
+    <div class="drawer-head">
+      <h2>My Account</h2>
+      <button class="close" data-close="profileDrawer">×</button>
+    </div>
+    <div style="padding: 20px;">
+      <div id="loggedOutState">
+        <p style="font-size:13px; color:#666; margin-bottom:15px;">Enter mobile number to login and access your saved orders.</p>
+        <div id="sidePhoneStep">
+          <label style="font-size:12px; font-weight:bold;">Mobile Number (+91)</label>
+          <input id="sidePhoneInput" value="+91" placeholder="+919876543210" style="width:100%; padding:10px; margin:8px 0 12px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+          <div id="side-recaptcha-container"></div>
+          <button class="primary-button full" id="sendSideOtpBtn">Send OTP</button>
+        </div>
+        <div id="sideOtpStep" style="display:none;">
+          <label style="font-size:12px; font-weight:bold;">Enter 6-Digit OTP</label>
+          <input id="sideOtpInput" type="number" placeholder="123456" style="width:100%; padding:10px; margin:8px 0 12px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+          <button class="primary-button full" id="verifySideOtpBtn" style="background:#27ae60; border-color:#27ae60;">Verify & Login</button>
+        </div>
       </div>
 
-      <h3>My Previous Orders</h3>
-      <div id="userOrdersList" style="max-height: 250px; overflow-y: auto;">
-        <p style="font-size: 13px; color: #777;">Loading previous orders...</p>
+      <div id="loggedInState" style="display:none;">
+        <div style="text-align:center; background:#f8f9fa; padding:15px; border-radius:8px; margin-bottom:20px;">
+          <div style="width:50px; height:50px; background:#27ae60; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; margin:0 auto 10px;">✓</div>
+          <h4 id="userPhoneDisplay" style="margin:5px 0;">+91...</h4>
+          <small style="color:#27ae60; font-weight:bold;">Verified Account</small>
+        </div>
+        <h3 style="font-size:15px; margin-bottom:10px;">Previous Orders</h3>
+        <div id="userOrdersList" style="max-height:260px; overflow-y:auto; border:1px solid #eee; border-radius:6px; padding:10px;">
+          <p style="font-size:12px; color:#777;">Loading orders...</p>
+        </div>
+        <button class="text-button" id="logoutUserBtn" style="width:100%; color:#e74c3c; margin-top:20px; border:1px solid #e74c3c; padding:8px; border-radius:4px; cursor:pointer;">Logout</button>
       </div>
-
-      <button id="logoutUserBtn" style="width: 100%; padding: 10px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 20px; font-weight: bold;">Logout Account</button>
     </div>
   </aside>
 
-  <!-- Main Website Header -->
-  <div class="announcement">Free local pickup · Pan-India delivery · <b>Save 10% on ₹5,000+</b></div>
-  <header>
-    <div style="display: flex; align-items: center; gap: 15px;">
-      <button id="openProfileBtn" style="background: #27ae60; color: white; border: none; padding: 8px 14px; border-radius: 4px; cursor: pointer; font-weight: bold;">👤 Profile / Orders</button>
-      <a class="brand" href="#home"><img class="brand-logo" src="saya-art-advertising-logo.jpg" alt="Saya Art & Advertising" /><span><b data-shop-name>Saya Art &amp; Advertising</b><small>PRINT STUDIO</small></span></a>
-    </div>
-    <nav>
-      <a href="#products">Products</a>
-      <a href="#how">How it works</a>
-      <a href="#business">For business</a>
-    </nav>
-  </header>
-
-  <main id="home">
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">PRINTED FOR THE MOMENT</p>
-        <h1>Make it feel<br><em>like yours.</em></h1>
-        <p class="hero-text">Thoughtful print, sharp finishing, and a simple way to bring your ideas into the world.</p>
-      </div>
-    </section>
-
-    <!-- Catalog Products -->
-    <section class="products-section" id="products">
-      <div class="section-top">
-        <div>
-          <p class="eyebrow">THE GOOD STUFF</p>
-          <h2>Popular right now</h2>
-        </div>
-      </div>
-      <div class="product-grid" id="productGrid" style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px;"></div>
-    </section>
-  </main>
-
-  <footer>
-    <p>© Saya Art &amp; Advertising. Made for good ideas.</p>
-  </footer>
-
+  <!-- Right Bag Drawer -->
+  <aside class="drawer" id="cartDrawer" aria-hidden="true"><div class="drawer-head"><h2>Your bag</h2><button class="close" data-close="cartDrawer">×</button></div><div id="cartItems" class="cart-items"></div><div class="cart-footer"><div class="total"><span>Subtotal</span><b id="cartTotal">₹0</b></div><button class="primary-button full" id="checkoutButton">Continue to checkout →</button></div></aside>
+  
+  <!-- Product Customizer Modal -->
+  <div class="modal" id="productModal" aria-hidden="true"><div class="modal-card customizer"><button class="close modal-close" data-close="productModal">×</button><div class="custom-preview" id="customPreview"></div><div class="custom-form"><p class="eyebrow">MAKE IT YOURS</p><h2 id="customTitle">Product</h2><p id="customPrice"></p><label>Quantity<select id="quantity"><option>100</option><option>250</option><option>500</option><option>1000</option></select></label><label>Your text<input id="customText" maxlength="36" placeholder="Your business or message" /></label><label>Upload artwork <input id="artwork" type="file" accept="image/*,.pdf" /></label><small id="uploadStatus">Optional — we will check your file before printing.</small><button class="primary-button full" id="addCustomProduct">Add to bag →</button></div></div></div>
+  
+  <!-- Checkout Modal -->
+  <div class="modal" id="checkoutModal" aria-hidden="true"><div class="modal-card checkout"><button class="close modal-close" data-close="checkoutModal">×</button><p class="eyebrow">SECURE CHECKOUT</p><h2>Almost there.</h2><form id="checkoutForm"><div class="two-col"><label>Name<input id="custName" required placeholder="Your name"></label><label>Mobile<input id="custPhone" required pattern="[0-9+ -]{8,}" placeholder="Mobile number"></label></div><label>Email<input id="custEmail" type="email" required placeholder="you@example.com"></label><label>Delivery address<textarea id="custAddress" required placeholder="Flat / building, street, locality, city, PIN"></textarea></label><div class="payment-choice"><b>Payment</b><label><input checked type="radio" name="pay"> Online payment / Razorpay</label></div><button class="primary-button full" type="submit">Place order & Pay →</button></form></div></div>
+  
+  <!-- Admin Modal -->
+  <div class="modal" id="adminModal" aria-hidden="true"><div class="modal-card admin"><button class="close modal-close" data-close="adminModal">×</button><p class="eyebrow">OWNER AREA</p><h2>Studio controls</h2><div class="admin-tabs"><button class="active" data-tab="profile">Shop profile</button><button data-tab="catalog">Catalog</button><button data-tab="payments">Payments</button><button data-tab="orders">Orders</button></div><div class="admin-panel active" id="profilePanel"><form id="profileForm"><label>Shop name<input id="shopName" required></label><label>Address<textarea id="shopAddress"></textarea></label><div class="two-col"><label>Phone<input id="shopPhone"></label><label>Support email<input id="shopEmail" type="email"></label></div><label>GSTIN / tax number<input id="shopTax"></label><button class="primary-button">Save shop details</button></form></div><div class="admin-panel" id="catalogPanel"><p>Add or update products in the live catalog.</p><div id="adminProducts"></div></div><div class="admin-panel" id="paymentsPanel"><p>Choose a provider before launch. Keys are saved only in this browser demo; use server-side environment variables in production.</p><form id="paymentForm"><label>Gateway<select id="gateway"><option value="Razorpay">Razorpay</option></select></label><label>Publishable / Key ID<input id="paymentKey" placeholder="rzp_live_…"></label><label>Webhook secret <input id="webhookSecret" type="password" placeholder="Store server-side in production"></label><button class="primary-button">Save payment settings</button></form></div><div class="admin-panel" id="ordersPanel"><div id="ordersList"></div></div></div></div>
+  
+  <!-- Search Modal -->
+  <div class="modal" id="searchModal" aria-hidden="true"><div class="modal-card search"><button class="close modal-close" data-close="searchModal">×</button><input id="searchInput" autofocus placeholder="Search cards, banners, stickers…"><div id="searchResults"></div></div></div>
+  
+  <div class="toast" id="toast"></div>
   <script type="module" src="app.js"></script>
 </body>
 </html>
