@@ -8,22 +8,22 @@
   <link rel="stylesheet" href="styles.css" />
   <style>
     body { font-family: 'Manrope', sans-serif; background: #f8fafc; padding: 20px; }
-    .admin-container { max-width: 900px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .admin-container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
     .admin-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 25px; }
     .form-group { margin-bottom: 15px; }
     .form-group label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 14px; }
-    .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
     .checkbox-group { display: flex; gap: 20px; margin: 15px 0; background: #fff; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
-    .checkbox-group label { font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px; }
     .btn { background: #16a34a; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 15px; }
     .btn-danger { background: #ef4444; padding: 6px 12px; font-size: 12px; }
-    .product-list-item, .order-list-item { border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .product-list-item, .order-list-item { border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px; background: #ffffff; }
     .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
     .tab-btn { padding: 10px 20px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
     .tab-btn.active { background: #0f172a; color: white; }
     .panel { display: none; }
     .panel.active { display: block; }
     .help-text { font-size: 12px; color: #64748b; margin-top: 3px; }
+    .design-preview-box { max-width: 150px; border: 1px solid #cbd5e1; border-radius: 4px; margin-top: 8px; display: block; }
   </style>
 </head>
 <body>
@@ -35,66 +35,87 @@
 
     <div class="tabs">
       <button class="tab-btn active" onclick="showTab('productsTab')">Manage Products</button>
-      <button class="tab-btn" onclick="showTab('ordersTab')">View Orders</button>
+      <button class="tab-btn" onclick="showTab('ordersTab')">View Orders & High-Res Artworks</button>
     </div>
 
-    <!-- Add & Manage Products -->
+    <!-- Products Panel -->
     <div id="productsTab" class="panel active">
-      <h3>Add New Customizable Product</h3>
+      <h3>Add New Printable Product</h3>
       <form id="adminAddProductForm" style="margin-bottom: 30px; background: #f1f5f9; padding: 20px; border-radius: 8px;">
         
         <div class="form-group">
-          <label>Product Name</label>
-          <input type="text" id="pName" required placeholder="e.g. Custom T-Shirt / Photo Frame">
+          <label><b>Product Type</b></label>
+          <select id="pType" required style="font-weight: bold; background: #fff;">
+            <option value="customizable">Customizable Product (T-Shirt, Mug, Frame, etc.)</option>
+            <option value="stock">Stock Item (Ready-made Product)</option>
+          </select>
         </div>
 
+        <div class="form-group">
+          <label>Product Name</label>
+          <input type="text" id="pName" required placeholder="e.g. Round Neck T-Shirt / Glossy Mug">
+        </div>
         <div class="form-group">
           <label>Base Price (₹)</label>
-          <input type="number" id="pPrice" required placeholder="399">
+          <input type="number" id="pPrice" required placeholder="299">
         </div>
-
         <div class="form-group">
           <label>Description</label>
-          <textarea id="pDesc" rows="2" placeholder="High-quality cotton / Wooden frame finish"></textarea>
+          <textarea id="pDesc" rows="2" placeholder="Product details..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Main Store Display Image URL</label>
+          <input type="text" id="pImg" required placeholder="https://example.com/main-cover.jpg">
+        </div>
+
+        <!-- Custom Product Specific Options -->
+        <div id="customOnlyFields" style="border: 1px dashed #2563eb; padding: 15px; border-radius: 6px; margin-bottom: 15px; background: #eff6ff;">
+          <h4 style="margin: 0 0 10px 0; color: #1e40af;">Customizer Canvas & Outlines Settings</h4>
+          
+          <div class="form-group">
+            <label>Front Outline Image URL <span style="color:red;">*(Compulsory)</span></label>
+            <input type="text" id="pFrontOutline" placeholder="https://example.com/tshirt-front-outline.png">
+          </div>
+
+          <div class="form-group">
+            <label>Back Outline Image URL <span style="color:#64748b;">(Optional)</span></label>
+            <input type="text" id="pBackOutline" placeholder="https://example.com/tshirt-back-outline.png">
+          </div>
+
+          <div class="form-group">
+            <label>Finished Product Mockup Link/Image URL <span style="color:red;">*(Compulsory)</span></label>
+            <input type="text" id="pFinishedLink" placeholder="https://example.com/finished-product-sample.jpg">
+          </div>
+
+          <label><b>Enable Canvas Features:</b></label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="chkPhoto" checked> Photo/Logo Upload</label>
+            <label><input type="checkbox" id="chkText" checked> Text & Font Controls</label>
+          </div>
         </div>
 
         <div class="form-group">
-          <label>Image URL</label>
-          <input type="text" id="pImg" placeholder="https://example.com/image.jpg">
+          <label>Available Sizes & Extra Price</label>
+          <input type="text" id="pSizes" placeholder="e.g. S:0, M:0, L:50, XL:100">
+          <div class="help-text">Format: <code>Size:ExtraPrice</code> separated by commas</div>
         </div>
 
-        <!-- Customization Controls -->
-        <label><b>Enable Customer Input Options:</b></label>
-        <div class="checkbox-group">
-          <label><input type="checkbox" id="chkPhoto"> Photo/Logo Upload</label>
-          <label><input type="checkbox" id="chkText"> Custom Text</label>
-          <label><input type="checkbox" id="chkNameNum"> Name & Jersey Number (T-Shirt)</label>
-        </div>
-
-        <!-- Sizes & Prices Input -->
         <div class="form-group">
-          <label>Available Sizes & Extra Price (Optional)</label>
-          <input type="text" id="pSizes" placeholder="Format: S:0, M:0, L:50, XL:100 or A5:0, A4:100, A3:200">
-          <div class="help-text">Format: <code>SizeName:ExtraPrice</code> separated by commas. Leave blank if no sizes.</div>
-        </div>
-
-        <!-- Quality Options Input -->
-        <div class="form-group">
-          <label>Quality / Material Options & Extra Price (Optional)</label>
-          <input type="text" id="pQualities" placeholder="Format: Standard Cotton:0, Heavy Cotton:150 or Glossy:0, Matte:50">
-          <div class="help-text">Format: <code>QualityName:ExtraPrice</code> separated by commas. Leave blank if no quality choices.</div>
+          <label>Quality Choices & Extra Price</label>
+          <input type="text" id="pQualities" placeholder="e.g. Standard:0, Premium Glossy:100">
+          <div class="help-text">Format: <code>Quality:ExtraPrice</code> separated by commas</div>
         </div>
 
         <button type="submit" class="btn">Add Product to Store</button>
       </form>
 
       <h3>Live Products</h3>
-      <div id="adminProductList">Loading products...</div>
+      <div id="adminProductList">Loading...</div>
     </div>
 
-    <!-- View Orders -->
+    <!-- Orders Panel -->
     <div id="ordersTab" class="panel">
-      <h3>Customer Orders</h3>
+      <h3>Customer Orders & Exact Artwork Files</h3>
       <div id="adminOrdersList">Loading orders...</div>
     </div>
   </div>
