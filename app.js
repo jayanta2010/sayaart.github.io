@@ -15,39 +15,43 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// Default Products List
+// Global Cart State
+let cart = [];
+let selectedProduct = null;
+
+// Default Catalog Products
 const defaultProducts = [
   {
     id: "p1",
     name: "Classic Visiting Cards",
-    description: "Premium 350 GSM matte & glossy finished business cards for a lasting impression.",
+    description: "Premium 350 GSM matte & glossy finished business cards.",
     price: 299,
     imageUrl: "saya-art-advertising-logo.jpg"
   },
   {
     id: "p2",
     name: "Custom Vinyl Stickers",
-    description: "Waterproof, durable die-cut vinyl stickers for product packaging and personal branding.",
+    description: "Waterproof, durable die-cut vinyl stickers for product packaging.",
     price: 249,
     imageUrl: "saya-art-advertising-logo.jpg"
   },
   {
     id: "p3",
     name: "Promotional Flyers & Pamphlets",
-    description: "Vibrant high-resolution paper flyers to promote your events, business, and special offers.",
+    description: "Vibrant high-resolution paper flyers for promotions.",
     price: 499,
     imageUrl: "saya-art-advertising-logo.jpg"
   },
   {
     id: "p4",
     name: "Personalized Ceramic Mug",
-    description: "Custom printed 325ml coffee mug with your custom logo, photos, or personalized text.",
+    description: "Custom printed 325ml coffee mug with custom logo.",
     price: 349,
     imageUrl: "saya-art-advertising-logo.jpg"
   }
 ];
 
-// Load and Render Products
+// 1. Load Products Catalog
 async function loadProducts() {
   const container = document.getElementById('productGrid');
   if (!container) return;
@@ -69,10 +73,9 @@ async function loadProducts() {
       });
     }
   } catch (err) {
-    console.error("Firestore Error:", err);
+    console.error("Firestore Catalog Load Error:", err);
   }
 
-  // Combine Firestore products with default catalog
   allProducts = [...allProducts, ...defaultProducts];
 
   container.style.display = "grid";
@@ -94,7 +97,9 @@ async function loadProducts() {
   `).join('');
 }
 
+// 2. Open Customizer Modal
 window.openProductCustomizer = function(name, price) {
+  selectedProduct = { name, price };
   const modal = document.getElementById('productModal');
   if (modal) {
     document.getElementById('customTitle').innerText = name;
@@ -104,25 +109,193 @@ window.openProductCustomizer = function(name, price) {
   }
 };
 
-// Profile Drawer Logic
-const profileDrawer = document.getElementById('profileDrawer');
-const openProfileBtn = document.getElementById('openProfile');
-if (openProfileBtn && profileDrawer) {
-  openProfileBtn.onclick = () => profileDrawer.classList.add('active');
+// Add to Bag Button Event Listener
+const addCustomBtn = document.getElementById('addCustomProduct');
+if (addCustomBtn) {
+  addCustomBtn.onclick = () => {
+    if (!selectedProduct) return;
+    
+    const qty = Number(document.getElementById('quantity')?.value || 100);
+    const text = document.getElementById('customText')?.value || '';
+    
+    const cartItem = {
+      name: selectedProduct.name,
+      price: selectedProduct.price,
+      quantity: qty,
+      customText: text,
+      totalPrice: selectedProduct.price
+    };
+
+    cart.push(cartItem);
+    updateCartUI();
+
+    // Close Customizer Modal and Open Cart Drawer
+    closeModal('productModal');
+    openDrawer('cartDrawer');
+  };
 }
+
+// Cart Drawer Management
+function updateCartUI() {
+  const cartCount = document.getElementById('cartCount');
+  const cartItemsContainer = document.getElementById('cartItems');
+  const cartTotal = document.getElementById('cartTotal');
+
+  if (cartCount) cartCount.innerText = cart.length;
+
+  if (cartItemsContainer) {
+    if (cart.length === 0) {
+      cartItemsContainer.innerHTML = "<p style='padding:15px; color:#777;'>Your bag is empty.</p>";
+      if (cartTotal) cartTotal.innerText = "₹0";
+      return;
+    }
+
+    let subtotal = 0;
+    cartItemsContainer.innerHTML = cart.map((item, index) => {
+      subtotal += item.totalPrice;
+      return `
+        <div style="border-bottom:1px solid #eee; padding:10px 0; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <b>${item.name}</b> (${item.quantity} pcs)<br>
+            <small style="color:#666;">${item.customText ? 'Text: ' + item.customText : ''}</small>
+            <div style="color:#27ae60; font-weight:bold; margin-top:4px;">₹${item.totalPrice}</div>
+          </div>
+          <button onclick="removeFromCart(${index})" style="background:none; border:none; color:red; cursor:pointer; font-size:18px;">×</button>
+        </div>
+      `;
+    }).join('');
+
+    if (cartTotal) cartTotal.innerText = "₹" + subtotal;
+  }
+}
+
+window.removeFromCart = function(index) {
+  cart.splice(index, 1);
+  updateCartUI();
+};
+
+// 3. Checkout Button & Modal Flow
+const checkoutBtn = document.getElementById('checkoutButton');
+if (checkoutBtn) {
+  checkoutBtn.onclick = () => {
+    if (cart.length === 0) {
+      alert("Your bag is empty. Please add a product first!");
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Please login via Mobile OTP in Profile section before placing order!");
+      closeDrawer('cartDrawer');
+      openDrawer('profileDrawer');
+      return;
+    }
+
+    // Prefill user details if logged in
+    const phoneInput = document.getElementById('custPhone');
+    if (phoneInput && user.phoneNumber) phoneInput.value = user.phoneNumber;
+
+    closeDrawer('cartDrawer');
+    openModal('checkoutModal');
+  };
+}
+
+// 4. Submit Order Form & Process Payment
+const checkoutForm = document.getElementById('checkoutForm');
+if (checkoutForm) {
+  checkoutForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const user = auth.currentUser;
+
+    const name = document.getElementById('custName').value;
+    const phone = document.getElementById('custPhone').value;
+    const email = document.getElementById('custEmail').value;
+    const address = document.getElementById('custAddress').value;
+
+    const totalAmount = cart.reduce((sum, item) => sum + item.totalPrice, 0);
+    const itemNames = cart.map(i => i.name).join(', ');
+
+    // Trigger Razorpay Payment Gateway
+    const options = {
+      "key": "rzp_test_YOUR_KEY_HERE",
+      "amount": totalAmount * 100,
+      "currency": "INR",
+      "name": "Saya Art & Advertising",
+      "description": itemNames,
+      "handler": async function (response) {
+        try {
+          await addDoc(collection(db, "orders"), {
+            orderId: "ORD-" + Math.floor(100000 + Math.random() * 900000),
+            paymentId: response.razorpay_payment_id,
+            customerName: name,
+            customerPhone: phone || user?.phoneNumber,
+            customerEmail: email,
+            deliveryAddress: address,
+            itemName: itemNames,
+            amount: totalAmount,
+            paymentStatus: "PAID",
+            createdAt: new Date().toLocaleString()
+          });
+
+          alert("Order Placed Successfully!");
+          cart = [];
+          updateCartUI();
+          closeModal('checkoutModal');
+
+          if (user?.phoneNumber) {
+            loadCustomerOrders(user.phoneNumber);
+          }
+        } catch (err) {
+          alert("Error saving order: " + err.message);
+        }
+      },
+      "prefill": {
+        "name": name,
+        "email": email,
+        "contact": phone
+      },
+      "theme": { "color": "#27ae60" }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+  };
+}
+
+// Helper Modal & Drawer Functions
+function openModal(id) {
+  const m = document.getElementById(id);
+  if (m) { m.classList.add('active'); m.setAttribute('aria-hidden', 'false'); }
+}
+function closeModal(id) {
+  const m = document.getElementById(id);
+  if (m) { m.classList.remove('active'); m.setAttribute('aria-hidden', 'true'); }
+}
+function openDrawer(id) {
+  const d = document.getElementById(id);
+  if (d) { d.classList.add('active'); d.setAttribute('aria-hidden', 'false'); }
+}
+function closeDrawer(id) {
+  const d = document.getElementById(id);
+  if (d) { d.classList.remove('active'); d.setAttribute('aria-hidden', 'true'); }
+}
+
+// Header Navigation Buttons
+const openProfileBtn = document.getElementById('openProfile');
+if (openProfileBtn) openProfileBtn.onclick = () => openDrawer('profileDrawer');
+
+const openCartBtn = document.getElementById('openCart');
+if (openCartBtn) openCartBtn.onclick = () => openDrawer('cartDrawer');
 
 document.querySelectorAll('[data-close]').forEach(btn => {
   btn.onclick = (e) => {
     const targetId = e.target.getAttribute('data-close');
-    const target = document.getElementById(targetId);
-    if (target) {
-      target.classList.remove('active');
-      target.setAttribute('aria-hidden', 'true');
-    }
+    closeModal(targetId);
+    closeDrawer(targetId);
   };
 });
 
-// Auth Listener & Previous Orders
+// 5. Auth State & Order History Tracking
 onAuthStateChanged(auth, (user) => {
   const loggedOutState = document.getElementById('loggedOutState');
   const loggedInState = document.getElementById('loggedInState');
@@ -208,7 +381,7 @@ async function loadCustomerOrders(phone) {
   }
 }
 
-// Immediate execution trigger
+// Initial Load Trigger
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', loadProducts);
 } else {
