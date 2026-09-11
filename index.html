@@ -3,27 +3,91 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ink &amp; Craft — Custom printing</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <title>Saya Art — Custom Printing</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    /* Left Profile Sidebar CSS */
+    .profile-sidebar {
+      position: fixed; top: 0; left: -320px; width: 300px; height: 100%;
+      background: #ffffff; box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+      transition: left 0.3s ease; z-index: 9999; padding: 20px; box-sizing: border-box;
+    }
+    .profile-sidebar.active { left: 0; }
+    .sidebar-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); display: none; z-index: 9998;
+    }
+    .sidebar-overlay.active { display: block; }
+    .close-sidebar { float: right; font-size: 24px; cursor: pointer; border: none; background: none; }
+    .profile-card { margin-top: 30px; text-align: center; }
+    .user-avatar { width: 70px; height: 70px; border-radius: 50%; background: #27ae60; color: white; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 10px; }
+  </style>
 </head>
 <body>
-  <div class="announcement">Free local pickup · Pan-India delivery · <b>Save 10% on ₹5,000+</b></div>
-  <header><a class="brand" href="#home"><img class="brand-logo" src="saya-art-advertising-logo.jpg" alt="Saya Art & Advertising" /><span><b data-shop-name>Saya Art &amp; Advertising</b><small>PRINT STUDIO</small></span></a><nav><a href="#products">Products</a><a href="#how">How it works</a><a href="#business">For business</a></nav><div class="header-actions"><button class="icon-button" id="searchButton" aria-label="Search">⌕</button><button class="text-button" id="openAdmin">Admin</button><button class="cart-button" id="openCart">Bag <span id="cartCount">0</span></button></div></header>
-  <main id="home">
-    <section class="hero"><div class="hero-copy"><p class="eyebrow">PRINTED FOR THE MOMENT</p><h1>Make it feel<br><em>like yours.</em></h1><p class="hero-text">Thoughtful print, sharp finishing, and a simple way to bring your ideas into the world.</p><div class="hero-buttons"><a class="primary-button" href="#products">Start creating <span>→</span></a><button class="link-button" id="browseDeals">Browse bestsellers</button></div><div class="proof"><span><b>24 hr</b> artwork check</span><span><b>4.9/5</b> customer love</span><span><b>100%</b> local support</span></div></div><div class="hero-art" aria-label="A collection of custom printed products"><div class="sun"></div><div class="card card-back"></div><div class="card card-front"><i>YOUR<br>BRAND<br>HERE</i><span>HELLO, GOOD IDEAS.</span></div><div class="sticker">MADE<br>WITH<br>CARE</div><div class="tape"></div></div></section>
-    <section class="category-section"><div class="section-top"><div><p class="eyebrow">SHOP BY PROJECT</p><h2>What are you making?</h2></div><button class="link-button" id="viewAll">See all products →</button></div><div class="categories" id="categories"></div></section>
-    <section class="feature-strip" id="how"><div><b>01</b><h3>Choose a product</h3><p>Find the format, stock, and finish that fits.</p></div><div><b>02</b><h3>Make it yours</h3><p>Upload artwork or add your details in minutes.</p></div><div><b>03</b><h3>We make it right</h3><p>Every file receives a practical pre-print check.</p></div></section>
-    <section class="products-section" id="products"><div class="section-top"><div><p class="eyebrow">THE GOOD STUFF</p><h2>Popular right now</h2></div><div class="filters" id="filters"></div></div><div class="product-grid" id="productGrid"></div></section>
-    <section class="business-banner" id="business"><div><p class="eyebrow">FOR TEAMS &amp; BUSINESSES</p><h2>Print that puts your<br>business on the map.</h2><p>Volume pricing, repeat orders, dedicated support, and consistent colour across every touchpoint.</p><button class="light-button" id="quoteButton">Request a quote →</button></div><div class="banner-graphic"><span>GO<br>MAKE<br>IT.</span></div></section>
+
+  <!-- Left Profile Sidebar -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <aside class="profile-sidebar" id="profileSidebar">
+    <button class="close-sidebar" id="closeProfileBtn">&times;</button>
+    <div class="profile-card">
+      <div class="user-avatar" id="avatarText">👤</div>
+      <h3 id="profileName">Guest User</h3>
+      <p id="profilePhone" style="color: #666; font-size: 14px;">Not Logged In</p>
+    </div>
+    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+    <div>
+      <h4>Account Options</h4>
+      <p style="font-size: 13px; color: #555;">Verified via Mobile OTP</p>
+      <button id="logoutUserBtn" style="display:none; background:#e74c3c; color:white; border:none; padding:8px 12px; border-radius:4px; width:100%; cursor:pointer; margin-top:20px;">Logout</button>
+    </div>
+  </aside>
+
+  <header>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <button id="openProfileBtn" style="background: none; border: 1px solid #ddd; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">☰ Profile</button>
+      <a class="brand" href="#home"><img class="brand-logo" src="saya-art-advertising-logo.jpg" alt="Saya Art" /><span><b data-shop-name>Saya Art & Advertising</b></span></a>
+    </div>
+  </header>
+  
+  <main id="home" style="padding: 20px;">
+    <section class="products-section" id="products">
+      <h2>Products Catalog</h2>
+      <div class="product-grid" id="productGrid" style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px;"></div>
+    </section>
   </main>
-  <footer><div class="brand"><img class="brand-logo" src="saya-art-advertising-logo.jpg" alt="Saya Art & Advertising" /><span><b data-shop-name>Saya Art &amp; Advertising</b><small>PRINT STUDIO</small></span></div><p><span data-address>Banderdewa, Dist. Lakhimpur, Assam - 784163</span><br><span data-shop-phone>+91 7086718618</span></p><p>© <span id="year"></span> <span data-shop-name>Saya Art &amp; Advertising</span>. Made for good ideas.</p></footer>
-  <aside class="drawer" id="cartDrawer" aria-hidden="true"><div class="drawer-head"><h2>Your bag</h2><button class="close" data-close="cartDrawer">×</button></div><div id="cartItems" class="cart-items"></div><div class="cart-footer"><div class="total"><span>Subtotal</span><b id="cartTotal">₹0</b></div><button class="primary-button full" id="checkoutButton">Continue to checkout →</button></div></aside>
-  <div class="modal" id="productModal" aria-hidden="true"><div class="modal-card customizer"><button class="close modal-close" data-close="productModal">×</button><div class="custom-preview" id="customPreview"></div><div class="custom-form"><p class="eyebrow">MAKE IT YOURS</p><h2 id="customTitle">Product</h2><p id="customPrice"></p><label>Quantity<select id="quantity"><option>100</option><option>250</option><option>500</option><option>1000</option></select></label><label>Your text<input id="customText" maxlength="36" placeholder="Your business or message" /></label><label>Upload artwork <input id="artwork" type="file" accept="image/*,.pdf" /></label><small id="uploadStatus">Optional — we will check your file before printing.</small><button class="primary-button full" id="addCustomProduct">Add to bag →</button></div></div></div>
-  <div class="modal" id="checkoutModal" aria-hidden="true"><div class="modal-card checkout"><button class="close modal-close" data-close="checkoutModal">×</button><p class="eyebrow">SECURE CHECKOUT</p><h2>Almost there.</h2><form id="checkoutForm"><div class="two-col"><label>Name<input required placeholder="Your name"></label><label>Mobile<input required pattern="[0-9+ -]{8,}" placeholder="Mobile number"></label></div><label>Email<input type="email" required placeholder="you@example.com"></label><label>Delivery address<textarea required placeholder="Flat / building, street, locality, city, PIN"></textarea></label><div class="payment-choice"><b>Payment</b><label><input checked type="radio" name="pay"> Online payment / UPI</label><label><input type="radio" name="pay"> Cash on delivery</label></div><button class="primary-button full">Place order →</button><small id="paymentNotice">Payment gateway is in test mode until you add your provider keys in Admin.</small></form></div></div>
-  <div class="modal" id="adminModal" aria-hidden="true"><div class="modal-card admin"><button class="close modal-close" data-close="adminModal">×</button><p class="eyebrow">OWNER AREA</p><h2>Studio controls</h2><div class="admin-tabs"><button class="active" data-tab="profile">Shop profile</button><button data-tab="catalog">Catalog</button><button data-tab="payments">Payments</button><button data-tab="orders">Orders</button></div><div class="admin-panel active" id="profilePanel"><form id="profileForm"><label>Shop name<input id="shopName" required></label><label>Address<textarea id="shopAddress"></textarea></label><div class="two-col"><label>Phone<input id="shopPhone"></label><label>Support email<input id="shopEmail" type="email"></label></div><label>GSTIN / tax number<input id="shopTax"></label><button class="primary-button">Save shop details</button></form></div><div class="admin-panel" id="catalogPanel"><p>Add or update products in the live catalog.</p><div id="adminProducts"></div></div><div class="admin-panel" id="paymentsPanel"><p>Choose a provider before launch. Keys are saved only in this browser demo; use server-side environment variables in production.</p><form id="paymentForm"><label>Gateway<select id="gateway"><option value="Razorpay">Razorpay</option><option value="Stripe">Stripe</option><option value="Cashfree">Cashfree</option></select></label><label>Publishable / Key ID<input id="paymentKey" placeholder="rzp_live_…"></label><label>Webhook secret <input id="webhookSecret" type="password" placeholder="Store server-side in production"></label><button class="primary-button">Save payment settings</button></form></div><div class="admin-panel" id="ordersPanel"><div id="ordersList"></div></div></div></div>
-  <div class="modal" id="searchModal" aria-hidden="true"><div class="modal-card search"><button class="close modal-close" data-close="searchModal">×</button><input id="searchInput" autofocus placeholder="Search cards, banners, stickers…"><div id="searchResults"></div></div></div>
-  <div class="toast" id="toast"></div><script type="module" src="app.js"></script>
-</body></html>
+
+  <!-- Checkout & OTP Modal -->
+  <div class="modal" id="checkoutModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:10000;">
+    <div style="background:white; padding:25px; border-radius:8px; width:90%; max-width:400px; position:relative;">
+      <button class="modal-close" style="position:absolute; top:10px; right:15px; border:none; background:none; font-size:20px; cursor:pointer;">×</button>
+      <h3>Customer Order Details</h3>
+      <form id="checkoutForm">
+        <div style="margin-bottom:10px;">
+          <label>Full Name</label>
+          <input id="custName" required placeholder="Enter full name" style="width:100%; padding:8px; box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:10px;">
+          <label>Full Delivery Address</label>
+          <textarea id="custAddress" required placeholder="Flat, Building, Street, City, PIN" style="width:100%; padding:8px; box-sizing:border-box; height:60px;"></textarea>
+        </div>
+        
+        <div id="phone-step" style="margin-bottom:10px;">
+          <label>Mobile Number (+91)</label>
+          <input id="custPhone" value="+91" required pattern="^\+91[0-9]{10}$" style="width:100%; padding:8px; box-sizing:border-box;">
+          <div id="recaptcha-container" style="margin-top:10px;"></div>
+          <button type="button" id="sendOtpBtn" style="width:100%; padding:10px; background:#333; color:white; border:none; margin-top:10px; cursor:pointer;">Send OTP</button>
+        </div>
+
+        <div id="otp-step" style="display:none; margin-bottom:10px;">
+          <label>Enter 6-Digit OTP</label>
+          <input id="otpInput" type="number" placeholder="123456" style="width:100%; padding:8px; box-sizing:border-box;">
+          <button type="button" id="verifyPayBtn" style="width:100%; padding:10px; background:#27ae60; color:white; border:none; margin-top:10px; cursor:pointer; font-weight:bold;">Verify OTP & Pay via Razorpay</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
