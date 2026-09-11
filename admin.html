@@ -1,414 +1,138 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Saya Art</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+    body { background: #f8fafc; padding: 20px; color: #1e293b; }
+    .container { max-width: 900px; margin: auto; }
+    .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    h2, h3 { margin-bottom: 15px; }
+    input, textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
+    button { background: #2563eb; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    .btn-delete { background: #ef4444; margin-left: 8px; }
+    .btn-delete:hover { background: #dc2626; }
+    .item-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; }
+  </style>
+</head>
+<body>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyC6CxokC0KwAtP9EMilEQHMJQKWCgLWYJc",
-  authDomain: "sayaart.firebaseapp.com",
-  projectId: "sayaart",
-  storageBucket: "sayaart.firebasestorage.app",
-  messagingSenderId: "805892692460",
-  appId: "1:805892692460:web:417ef9926bbc01d9f288c9"
-};
+  <div class="container">
+    <h2 style="display:flex; justify-content:space-between; align-items:center;">
+      <span>Saya Art Admin Panel</span>
+      <a href="index.html" style="font-size:14px; text-decoration:none; color:#2563eb;">← Go to Main Store</a>
+    </h2>
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-// Global States
-let cart = [];
-let allProductsList = [];
-let selectedProduct = null;
-
-// Default Catalog Products
-const defaultProducts = [
-  {
-    id: "p1",
-    name: "Classic Visiting Cards",
-    description: "Premium 350 GSM matte & glossy finished business cards.",
-    price: 299,
-    imageUrl: "saya-art-advertising-logo.jpg"
-  },
-  {
-    id: "p2",
-    name: "Custom Vinyl Stickers",
-    description: "Waterproof, durable die-cut vinyl stickers for product packaging.",
-    price: 249,
-    imageUrl: "saya-art-advertising-logo.jpg"
-  },
-  {
-    id: "p3",
-    name: "Promotional Flyers & Pamphlets",
-    description: "Vibrant high-resolution paper flyers for promotions.",
-    price: 499,
-    imageUrl: "saya-art-advertising-logo.jpg"
-  },
-  {
-    id: "p4",
-    name: "Personalized Ceramic Mug",
-    description: "Custom printed 325ml coffee mug with custom logo.",
-    price: 349,
-    imageUrl: "saya-art-advertising-logo.jpg"
-  }
-];
-
-// 1. Load & Store Products Catalog
-async function loadProducts() {
-  const container = document.getElementById('productGrid');
-  if (!container) return;
-
-  let dbProducts = [];
-
-  try {
-    const snap = await getDocs(collection(db, "products"));
-    if (!snap.empty) {
-      snap.forEach(doc => {
-        const item = doc.data();
-        dbProducts.push({
-          id: doc.id,
-          name: item.name || "Custom Product",
-          description: item.description || "High-quality print finish.",
-          price: Number(item.price) || 0,
-          imageUrl: item.imageUrl || "saya-art-advertising-logo.jpg"
-        });
-      });
-    }
-  } catch (err) {
-    console.error("Firestore Load Error:", err);
-  }
-
-  // Combine DB products with defaults
-  allProductsList = [...dbProducts, ...defaultProducts];
-  renderProducts(allProductsList);
-}
-
-// 2. Render Products Grid
-function renderProducts(products) {
-  const container = document.getElementById('productGrid');
-  if (!container) return;
-
-  if (products.length === 0) {
-    container.innerHTML = `<p style="grid-column: 1/-1; padding: 20px; text-align: center; color: #888;">No products found matching your search.</p>`;
-    return;
-  }
-
-  container.style.display = "grid";
-  container.style.gridTemplateColumns = "repeat(auto-fill, minmax(240px, 1fr))";
-  container.style.gap = "20px";
-
-  container.innerHTML = products.map(p => `
-    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; background: #ffffff; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
-      <div>
-        <img src="${p.imageUrl}" alt="${p.name}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 6px; margin-bottom: 12px;" onerror="this.src='saya-art-advertising-logo.jpg'">
-        <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 6px 0; color: #1e293b;">${p.name}</h3>
-        <p style="font-size: 13px; color: #64748b; margin: 0 0 14px 0; line-height: 1.4;">${p.description}</p>
-      </div>
-      <div>
-        <div style="font-size: 18px; font-weight: 800; color: #16a34a; margin-bottom: 10px;">₹${p.price}</div>
-        <button class="primary-button full" onclick="openProductCustomizer('${p.name.replace(/'/g, "\\'")}', ${p.price})">Customise & Buy →</button>
-      </div>
+    <!-- Add New Product -->
+    <div class="card">
+      <h3>Add New Store Product</h3>
+      <form id="addProductForm">
+        <input type="text" id="pName" placeholder="Product Name (e.g. Custom Visiting Card)" required>
+        <input type="number" id="pPrice" placeholder="Price (₹)" required>
+        <textarea id="pDesc" placeholder="Product Description..." rows="2" required></textarea>
+        <input type="text" id="pImg" placeholder="Image Filename (e.g. saya-art-advertising-logo.jpg)" value="saya-art-advertising-logo.jpg">
+        <button type="submit">Publish Product</button>
+      </form>
     </div>
-  `).join('');
-}
 
-// 3. Live Search Functionality
-const searchInput = document.getElementById('searchInput');
-if (searchInput) {
-  searchInput.addEventListener('input', (e) => {
-    const term = e.target.value.toLowerCase().trim();
-    const filtered = allProductsList.filter(p => 
-      p.name.toLowerCase().includes(term) || 
-      p.description.toLowerCase().includes(term)
-    );
-    renderProducts(filtered);
-  });
-}
+    <!-- Active Products List -->
+    <div class="card">
+      <h3>Active Products</h3>
+      <div id="adminProductList">Loading products...</div>
+    </div>
 
-// 4. Open Customizer Modal
-window.openProductCustomizer = function(name, price) {
-  selectedProduct = { name, price };
-  const modal = document.getElementById('productModal');
-  if (modal) {
-    const titleEl = document.getElementById('customTitle');
-    const priceEl = document.getElementById('customPrice');
-    if (titleEl) titleEl.innerText = name;
-    if (priceEl) priceEl.innerText = "₹" + price;
-    openModal('productModal');
-  }
-};
+    <!-- Customer Orders -->
+    <div class="card">
+      <h3>All Customer Orders</h3>
+      <div id="adminOrdersList">Loading orders...</div>
+    </div>
+  </div>
 
-// 5. Add to Bag Logic
-const addCustomBtn = document.getElementById('addCustomProduct');
-if (addCustomBtn) {
-  addCustomBtn.onclick = () => {
-    if (!selectedProduct) return;
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
-    const qtyInput = document.getElementById('quantity');
-    const textInput = document.getElementById('customText');
-
-    const qty = Number(qtyInput?.value || 1);
-    const text = textInput?.value || '';
-
-    const itemTotal = selectedProduct.price * (qty > 0 ? qty : 1);
-
-    const cartItem = {
-      name: selectedProduct.name,
-      unitPrice: selectedProduct.price,
-      quantity: qty,
-      customText: text,
-      totalPrice: itemTotal
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6CxokC0KwAtP9EMilEQHMJQKWCgLWYJc",
+      authDomain: "sayaart.firebaseapp.com",
+      projectId: "sayaart",
+      storageBucket: "sayaart.firebasestorage.app",
+      messagingSenderId: "805892692460",
+      appId: "1:805892692460:web:417ef9926bbc01d9f288c9"
     };
 
-    cart.push(cartItem);
-    updateCartUI();
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    closeModal('productModal');
-    openDrawer('cartDrawer');
-  };
-}
-
-// 6. Update Bag / Cart UI
-function updateCartUI() {
-  const cartCount = document.getElementById('cartCount');
-  const cartItemsContainer = document.getElementById('cartItems');
-  const cartTotal = document.getElementById('cartTotal');
-
-  // Update Cart Badge Count
-  if (cartCount) {
-    cartCount.innerText = cart.length;
-    cartCount.style.display = cart.length > 0 ? 'inline-block' : 'none';
-  }
-
-  if (cartItemsContainer) {
-    if (cart.length === 0) {
-      cartItemsContainer.innerHTML = "<p style='padding:20px; text-align:center; color:#777;'>Your bag is empty.</p>";
-      if (cartTotal) cartTotal.innerText = "₹0";
-      return;
-    }
-
-    let grandTotal = 0;
-    cartItemsContainer.innerHTML = cart.map((item, index) => {
-      grandTotal += item.totalPrice;
-      return `
-        <div style="border-bottom: 1px solid #eee; padding: 12px 0; display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <b style="font-size: 14px; color: #1e293b;">${item.name}</b><br>
-            <small style="color: #64748b;">Qty: ${item.quantity} ${item.customText ? '| Text: ' + item.customText : ''}</small>
-            <div style="color: #16a34a; font-weight: 700; margin-top: 4px;">₹${item.totalPrice}</div>
-          </div>
-          <button onclick="removeFromCart(${index})" style="background: #fee2e2; border: none; color: #ef4444; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">Delete</button>
-        </div>
-      `;
-    }).join('');
-
-    if (cartTotal) cartTotal.innerText = "₹" + grandTotal;
-  }
-}
-
-window.removeFromCart = function(index) {
-  cart.splice(index, 1);
-  updateCartUI();
-};
-
-// 7. Checkout Flow
-const checkoutBtn = document.getElementById('checkoutButton');
-if (checkoutBtn) {
-  checkoutBtn.onclick = () => {
-    if (cart.length === 0) {
-      alert("Your bag is empty. Add products first!");
-      return;
-    }
-
-    const user = auth.currentUser;
-    if (!user) {
-      alert("Please login with Mobile OTP in Profile section before placing order!");
-      closeDrawer('cartDrawer');
-      openDrawer('profileDrawer');
-      return;
-    }
-
-    const phoneInput = document.getElementById('custPhone');
-    if (phoneInput && user.phoneNumber) phoneInput.value = user.phoneNumber;
-
-    closeDrawer('cartDrawer');
-    openModal('checkoutModal');
-  };
-}
-
-// Order Submit Form
-const checkoutForm = document.getElementById('checkoutForm');
-if (checkoutForm) {
-  checkoutForm.onsubmit = async (e) => {
-    e.preventDefault();
-    const user = auth.currentUser;
-
-    const name = document.getElementById('custName')?.value || '';
-    const phone = document.getElementById('custPhone')?.value || user?.phoneNumber || '';
-    const email = document.getElementById('custEmail')?.value || '';
-    const address = document.getElementById('custAddress')?.value || '';
-
-    const totalAmount = cart.reduce((sum, item) => sum + item.totalPrice, 0);
-    const itemNames = cart.map(i => `${i.name} (x${i.quantity})`).join(', ');
-
-    try {
-      await addDoc(collection(db, "orders"), {
-        orderId: "ORD-" + Math.floor(100000 + Math.random() * 900000),
-        customerName: name,
-        customerPhone: phone,
-        customerEmail: email,
-        deliveryAddress: address,
-        itemName: itemNames,
-        amount: totalAmount,
-        paymentStatus: "PAID",
-        createdAt: new Date().toLocaleString()
-      });
-
-      alert("Order Placed Successfully!");
-      cart = [];
-      updateCartUI();
-      closeModal('checkoutModal');
-
-      if (user?.phoneNumber) {
-        loadCustomerOrders(user.phoneNumber);
+    // Load Admin Data
+    async function loadAdminData() {
+      // Fetch Products
+      const pContainer = document.getElementById('adminProductList');
+      const pSnap = await getDocs(collection(db, "products"));
+      if(pSnap.empty) {
+        pContainer.innerHTML = "<p style='color:#777;'>No products in database.</p>";
+      } else {
+        pContainer.innerHTML = "";
+        pSnap.forEach(d => {
+          const item = d.data();
+          pContainer.innerHTML += `
+            <div class="item-row">
+              <div>
+                <b>${item.name}</b> - ₹${item.price}<br>
+                <small style="color:#666;">${item.description}</small>
+              </div>
+              <button class="btn-delete" onclick="deleteProduct('${d.id}')">Delete</button>
+            </div>
+          `;
+        });
       }
-    } catch (err) {
-      alert("Error saving order: " + err.message);
+
+      // Fetch Orders
+      const oContainer = document.getElementById('adminOrdersList');
+      const oSnap = await getDocs(collection(db, "orders"));
+      if(oSnap.empty) {
+        oContainer.innerHTML = "<p style='color:#777;'>No orders placed yet.</p>";
+      } else {
+        oContainer.innerHTML = "";
+        oSnap.forEach(d => {
+          const o = d.data();
+          oContainer.innerHTML += `
+            <div class="item-row">
+              <div>
+                <b>Order ID: ${o.orderId || d.id}</b> | Customer: ${o.customerName} (${o.customerPhone})<br>
+                Items: ${o.itemName} | <b>Total: ₹${o.amount}</b><br>
+                <small style="color:#555;">Delivery Address: ${o.deliveryAddress}</small>
+              </div>
+            </div>
+          `;
+        });
+      }
     }
-  };
-}
 
-// Drawer & Modal Utility Functions
-function openModal(id) {
-  const m = document.getElementById(id);
-  if (m) { m.classList.add('active'); m.setAttribute('aria-hidden', 'false'); }
-}
-function closeModal(id) {
-  const m = document.getElementById(id);
-  if (m) { m.classList.remove('active'); m.setAttribute('aria-hidden', 'true'); }
-}
-function openDrawer(id) {
-  const d = document.getElementById(id);
-  if (d) { d.classList.add('active'); d.setAttribute('aria-hidden', 'false'); }
-}
-function closeDrawer(id) {
-  const d = document.getElementById(id);
-  if (d) { d.classList.remove('active'); d.setAttribute('aria-hidden', 'true'); }
-}
+    // Add Product Form Submit
+    document.getElementById('addProductForm').onsubmit = async (e) => {
+      e.preventDefault();
+      await addDoc(collection(db, "products"), {
+        name: document.getElementById('pName').value,
+        price: Number(document.getElementById('pPrice').value),
+        description: document.getElementById('pDesc').value,
+        imageUrl: document.getElementById('pImg').value || "saya-art-advertising-logo.jpg"
+      });
+      alert("Product added successfully!");
+      location.reload();
+    };
 
-// Navigation Buttons Bindings
-const openProfileBtn = document.getElementById('openProfile');
-if (openProfileBtn) openProfileBtn.onclick = () => openDrawer('profileDrawer');
+    window.deleteProduct = async function(id) {
+      if(confirm("Are you sure you want to delete this product?")) {
+        await deleteDoc(doc(db, "products", id));
+        loadAdminData();
+      }
+    };
 
-const openCartBtn = document.getElementById('openCart');
-if (openCartBtn) openCartBtn.onclick = () => openDrawer('cartDrawer');
-
-document.querySelectorAll('[data-close]').forEach(btn => {
-  btn.onclick = (e) => {
-    const targetId = e.target.getAttribute('data-close');
-    closeModal(targetId);
-    closeDrawer(targetId);
-  };
-});
-
-// 8. Open Search Modal on Header Button Click
-const searchBtn = document.getElementById('searchButton');
-if (searchBtn) {
-  searchBtn.onclick = () => {
-    openModal('searchModal');
-    const input = document.getElementById('searchInput');
-    if (input) input.focus();
-  };
-}
-
-// Auth Listener & Order History
-onAuthStateChanged(auth, (user) => {
-  const loggedOutState = document.getElementById('loggedOutState');
-  const loggedInState = document.getElementById('loggedInState');
-  const userPhoneDisplay = document.getElementById('userPhoneDisplay');
-
-  if (user) {
-    if (loggedOutState) loggedOutState.style.display = 'none';
-    if (loggedInState) loggedInState.style.display = 'block';
-    if (userPhoneDisplay) userPhoneDisplay.innerText = user.phoneNumber;
-    loadCustomerOrders(user.phoneNumber);
-  } else {
-    if (loggedOutState) loggedOutState.style.display = 'block';
-    if (loggedInState) loggedInState.style.display = 'none';
-  }
-});
-
-function initRecaptcha() {
-  if (!window.sideRecaptcha) {
-    window.sideRecaptcha = new RecaptchaVerifier(auth, 'side-recaptcha-container', { 'size': 'invisible' });
-  }
-}
-
-const sendOtpBtn = document.getElementById('sendSideOtpBtn');
-if (sendOtpBtn) {
-  sendOtpBtn.onclick = () => {
-    const phone = document.getElementById('sidePhoneInput').value;
-    if (!phone.startsWith('+91') || phone.length < 13) {
-      alert("Enter valid mobile number with +91");
-      return;
-    }
-    initRecaptcha();
-    signInWithPhoneNumber(auth, phone, window.sideRecaptcha)
-      .then((res) => {
-        window.confirmationResult = res;
-        document.getElementById('sidePhoneStep').style.display = 'none';
-        document.getElementById('sideOtpStep').style.display = 'block';
-        alert("OTP Sent!");
-      })
-      .catch((err) => alert("OTP Error: " + err.message));
-  };
-}
-
-const verifyOtpBtn = document.getElementById('verifySideOtpBtn');
-if (verifyOtpBtn) {
-  verifyOtpBtn.onclick = () => {
-    const otp = document.getElementById('sideOtpInput').value;
-    window.confirmationResult.confirm(otp)
-      .then(() => alert("Login Successful!"))
-      .catch(() => alert("Invalid OTP!"));
-  };
-}
-
-const logoutBtn = document.getElementById('logoutUserBtn');
-if (logoutBtn) {
-  logoutBtn.onclick = () => {
-    signOut(auth).then(() => location.reload());
-  };
-}
-
-async function loadCustomerOrders(phone) {
-  const container = document.getElementById('userOrdersList');
-  if (!container) return;
-  try {
-    const q = query(collection(db, "orders"), where("customerPhone", "==", phone));
-    const snap = await getDocs(q);
-    if (snap.empty) {
-      container.innerHTML = "<p style='font-size:12px; color:#666;'>No previous orders found.</p>";
-      return;
-    }
-    container.innerHTML = "";
-    snap.forEach((doc) => {
-      const o = doc.data();
-      container.innerHTML += `
-        <div style="border-bottom:1px solid #eee; padding:8px 0;">
-          <b>${o.itemName || 'Printed Item'}</b> - ₹${o.amount}<br>
-          <small style="color:#777;">Order ID: ${o.orderId || doc.id}</small><br>
-          <span style="color:${o.paymentStatus === 'PAID' ? 'green' : 'orange'}; font-weight:bold; font-size:11px;">${o.paymentStatus || 'PAID'}</span>
-        </div>
-      `;
-    });
-  } catch(e) {
-    container.innerHTML = "<p style='font-size:12px; color:red;'>Failed to load orders.</p>";
-  }
-}
-
-// Initial Load
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', loadProducts);
-} else {
-  loadProducts();
-}
+    loadAdminData();
+  </script>
+</body>
+</html>
