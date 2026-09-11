@@ -138,28 +138,61 @@
     </div>
   </aside>
 
-  <!-- Product Customizer Modal -->
+  <!-- Dynamic Product Customizer Modal -->
   <div class="modal" id="productModal" aria-hidden="true">
-    <div class="modal-card customizer">
+    <div class="modal-card customizer" style="max-height: 90vh; overflow-y: auto;">
       <button class="close modal-close" data-close="productModal">×</button>
-      <div class="custom-preview" id="customPreview"></div>
       <div class="custom-form">
-        <p class="eyebrow">MAKE IT YOURS</p>
+        <p class="eyebrow">CUSTOMIZE PRODUCT</p>
         <h2 id="customTitle">Product</h2>
-        <p id="customPrice"></p>
-        <label>Quantity
-          <select id="quantity">
-            <option value="1">1 pc</option>
-            <option value="100">100 pcs</option>
-            <option value="250">250 pcs</option>
-            <option value="500">500 pcs</option>
-            <option value="1000">1000 pcs</option>
-          </select>
-        </label>
-        <label>Your Text / Custom Note
-          <input id="customText" maxlength="50" placeholder="Your brand or message" />
-        </label>
-        <button class="primary-button full" id="addCustomProduct">Add to bag →</button>
+        <div id="customPriceDisplay" style="font-size: 22px; font-weight: 800; color: #16a34a; margin-bottom: 15px;">₹0</div>
+
+        <!-- Size Selection -->
+        <div id="sizeSection" style="display:none; margin-bottom: 12px;">
+          <label><b>Select Size</b>
+            <select id="sizeSelect" style="width:100%; padding:8px; margin-top:4px;"></select>
+          </label>
+        </div>
+
+        <!-- Quality / Material Selection -->
+        <div id="qualitySection" style="display:none; margin-bottom: 12px;">
+          <label><b>Select Quality / Finish</b>
+            <select id="qualitySelect" style="width:100%; padding:8px; margin-top:4px;"></select>
+          </label>
+        </div>
+
+        <!-- Name & Number (T-Shirt Jersey) -->
+        <div id="nameNumberSection" style="display:none; border: 1px dashed #cbd5e1; padding: 10px; border-radius:6px; margin-bottom: 12px;">
+          <label style="display:block; margin-bottom:6px;"><b>T-Shirt Custom Name</b>
+            <input id="customName" placeholder="e.g. RAHUL" style="width:100%; padding:8px;">
+          </label>
+          <label style="display:block;"><b>Jersey / Back Number</b>
+            <input id="customNumber" type="number" placeholder="e.g. 10" style="width:100%; padding:8px;">
+          </label>
+        </div>
+
+        <!-- Text Input Option -->
+        <div id="textSection" style="display:none; margin-bottom: 12px;">
+          <label><b>Custom Printed Text / Message</b>
+            <input id="customText" placeholder="Enter text to print" style="width:100%; padding:8px;">
+          </label>
+        </div>
+
+        <!-- Photo Upload Option -->
+        <div id="photoSection" style="display:none; margin-bottom: 12px;">
+          <label><b>Upload Photo / Logo File</b>
+            <input type="file" id="customPhoto" accept="image/*,.pdf" style="width:100%; margin-top:4px;">
+          </label>
+        </div>
+
+        <!-- Quantity -->
+        <div style="margin-bottom: 15px;">
+          <label><b>Quantity</b>
+            <input type="number" id="quantity" value="1" min="1" style="width:100%; padding:8px; margin-top:4px;">
+          </label>
+        </div>
+
+        <button class="primary-button full" id="addCustomProduct">Add to Bag →</button>
       </div>
     </div>
   </div>
@@ -180,13 +213,18 @@
           </label>
         </div>
         
-        <label>Pincode
-          <input required type="text" id="custPincode" maxlength="6" placeholder="Enter 6-digit Pincode">
-        </label>
+        <div class="two-col">
+          <label>Pincode
+            <input required type="text" id="custPincode" maxlength="6" placeholder="6-digit Pincode">
+          </label>
+          <label>Area / Locality / Landmark
+            <input required id="custArea" placeholder="e.g. Near Main Market / Sector 4">
+          </label>
+        </div>
         <div id="pinStatus" style="font-size: 12px; font-weight: bold; margin-top: -6px; margin-bottom: 12px;"></div>
 
-        <label>Street Address / House No.
-          <input required id="custAddress" placeholder="Flat / House No / Building / Street">
+        <label>Street Address / House No. / Building
+          <input required id="custAddress" placeholder="Flat No, Building Name, Street">
         </label>
 
         <div class="payment-choice">
@@ -204,7 +242,7 @@
   <div class="modal" id="searchModal" aria-hidden="true">
     <div class="modal-card search">
       <button class="close modal-close" data-close="searchModal">×</button>
-      <input id="searchInput" placeholder="Search printing products...">
+      <input id="searchInput" placeholder="Search products...">
       <div id="searchResults" style="margin-top:15px;"></div>
     </div>
   </div>
