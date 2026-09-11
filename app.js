@@ -15,7 +15,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// Default Products with Description
+// Default Products List
 const defaultProducts = [
   {
     id: "p1",
@@ -47,44 +47,42 @@ const defaultProducts = [
   }
 ];
 
-// 1. Fetch & Render Products + Descriptions
+// Load and Render Products
 async function loadProducts() {
   const container = document.getElementById('productGrid');
   if (!container) return;
-  container.innerHTML = "<p style='padding:20px; font-size:14px; color:#666;'>Loading products catalog...</p>";
 
-  let allProducts = [...defaultProducts];
+  let allProducts = [];
 
   try {
     const snap = await getDocs(collection(db, "products"));
     if (!snap.empty) {
-      let fbProducts = [];
       snap.forEach(doc => {
         const item = doc.data();
-        fbProducts.push({
+        allProducts.push({
           id: doc.id,
-          name: item.name || "Custom Printed Item",
-          description: item.description || "High quality print product tailored for your personal or business needs.",
+          name: item.name || "Custom Product",
+          description: item.description || "High-quality print finish.",
           price: Number(item.price) || 0,
           imageUrl: item.imageUrl || "saya-art-advertising-logo.jpg"
         });
       });
-      allProducts = [...fbProducts, ...defaultProducts];
     }
   } catch (err) {
-    console.error("Firestore Products Load Error:", err);
+    console.error("Firestore Error:", err);
   }
 
-  // Render Product Cards Grid
+  // Combine Firestore products with default catalog
+  allProducts = [...allProducts, ...defaultProducts];
+
   container.style.display = "grid";
   container.style.gridTemplateColumns = "repeat(auto-fill, minmax(240px, 1fr))";
   container.style.gap = "20px";
-  container.style.marginTop = "20px";
 
   container.innerHTML = allProducts.map(p => `
     <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; background: #ffffff; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
       <div>
-        <img src="${p.imageUrl}" alt="${p.name}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 6px; margin-bottom: 12px; background:#f8fafc;" onerror="this.src='saya-art-advertising-logo.jpg'">
+        <img src="${p.imageUrl}" alt="${p.name}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 6px; margin-bottom: 12px;" onerror="this.src='saya-art-advertising-logo.jpg'">
         <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 6px 0; color: #1e293b;">${p.name}</h3>
         <p style="font-size: 13px; color: #64748b; margin: 0 0 14px 0; line-height: 1.4;">${p.description}</p>
       </div>
@@ -106,10 +104,11 @@ window.openProductCustomizer = function(name, price) {
   }
 };
 
-// 2. Profile Drawer Toggle
+// Profile Drawer Logic
 const profileDrawer = document.getElementById('profileDrawer');
-if (document.getElementById('openProfile')) {
-  document.getElementById('openProfile').onclick = () => profileDrawer.classList.add('active');
+const openProfileBtn = document.getElementById('openProfile');
+if (openProfileBtn && profileDrawer) {
+  openProfileBtn.onclick = () => profileDrawer.classList.add('active');
 }
 
 document.querySelectorAll('[data-close]').forEach(btn => {
@@ -123,16 +122,20 @@ document.querySelectorAll('[data-close]').forEach(btn => {
   };
 });
 
-// 3. Auth Listener & Previous Orders
+// Auth Listener & Previous Orders
 onAuthStateChanged(auth, (user) => {
+  const loggedOutState = document.getElementById('loggedOutState');
+  const loggedInState = document.getElementById('loggedInState');
+  const userPhoneDisplay = document.getElementById('userPhoneDisplay');
+
   if (user) {
-    document.getElementById('loggedOutState').style.display = 'none';
-    document.getElementById('loggedInState').style.display = 'block';
-    document.getElementById('userPhoneDisplay').innerText = user.phoneNumber;
+    if (loggedOutState) loggedOutState.style.display = 'none';
+    if (loggedInState) loggedInState.style.display = 'block';
+    if (userPhoneDisplay) userPhoneDisplay.innerText = user.phoneNumber;
     loadCustomerOrders(user.phoneNumber);
   } else {
-    document.getElementById('loggedOutState').style.display = 'block';
-    document.getElementById('loggedInState').style.display = 'none';
+    if (loggedOutState) loggedOutState.style.display = 'block';
+    if (loggedInState) loggedInState.style.display = 'none';
   }
 });
 
@@ -142,36 +145,46 @@ function initRecaptcha() {
   }
 }
 
-document.getElementById('sendSideOtpBtn').onclick = () => {
-  const phone = document.getElementById('sidePhoneInput').value;
-  if (!phone.startsWith('+91') || phone.length < 13) {
-    alert("Enter valid number with +91");
-    return;
-  }
-  initRecaptcha();
-  signInWithPhoneNumber(auth, phone, window.sideRecaptcha)
-    .then((res) => {
-      window.confirmationResult = res;
-      document.getElementById('sidePhoneStep').style.display = 'none';
-      document.getElementById('sideOtpStep').style.display = 'block';
-      alert("OTP Sent!");
-    })
-    .catch((err) => alert("OTP Error: " + err.message));
-};
+const sendOtpBtn = document.getElementById('sendSideOtpBtn');
+if (sendOtpBtn) {
+  sendOtpBtn.onclick = () => {
+    const phone = document.getElementById('sidePhoneInput').value;
+    if (!phone.startsWith('+91') || phone.length < 13) {
+      alert("Enter valid mobile number with +91");
+      return;
+    }
+    initRecaptcha();
+    signInWithPhoneNumber(auth, phone, window.sideRecaptcha)
+      .then((res) => {
+        window.confirmationResult = res;
+        document.getElementById('sidePhoneStep').style.display = 'none';
+        document.getElementById('sideOtpStep').style.display = 'block';
+        alert("OTP Sent!");
+      })
+      .catch((err) => alert("OTP Error: " + err.message));
+  };
+}
 
-document.getElementById('verifySideOtpBtn').onclick = () => {
-  const otp = document.getElementById('sideOtpInput').value;
-  window.confirmationResult.confirm(otp)
-    .then(() => alert("Login Successful!"))
-    .catch(() => alert("Invalid OTP!"));
-};
+const verifyOtpBtn = document.getElementById('verifySideOtpBtn');
+if (verifyOtpBtn) {
+  verifyOtpBtn.onclick = () => {
+    const otp = document.getElementById('sideOtpInput').value;
+    window.confirmationResult.confirm(otp)
+      .then(() => alert("Login Successful!"))
+      .catch(() => alert("Invalid OTP!"));
+  };
+}
 
-document.getElementById('logoutUserBtn').onclick = () => {
-  signOut(auth).then(() => location.reload());
-};
+const logoutBtn = document.getElementById('logoutUserBtn');
+if (logoutBtn) {
+  logoutBtn.onclick = () => {
+    signOut(auth).then(() => location.reload());
+  };
+}
 
 async function loadCustomerOrders(phone) {
   const container = document.getElementById('userOrdersList');
+  if (!container) return;
   try {
     const q = query(collection(db, "orders"), where("customerPhone", "==", phone));
     const snap = await getDocs(q);
@@ -195,4 +208,9 @@ async function loadCustomerOrders(phone) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', loadProducts);
+// Immediate execution trigger
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadProducts);
+} else {
+  loadProducts();
+}
