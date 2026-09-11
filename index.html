@@ -94,7 +94,15 @@
   <div class="modal" id="adminModal" aria-hidden="true"><div class="modal-card admin"><button class="close modal-close" data-close="adminModal">×</button><p class="eyebrow">OWNER AREA</p><h2>Studio controls</h2><div class="admin-tabs"><button class="active" data-tab="profile">Shop profile</button><button data-tab="catalog">Catalog</button><button data-tab="payments">Payments</button><button data-tab="orders">Orders</button></div><div class="admin-panel active" id="profilePanel"><form id="profileForm"><label>Shop name<input id="shopName" required></label><label>Address<textarea id="shopAddress"></textarea></label><div class="two-col"><label>Phone<input id="shopPhone"></label><label>Support email<input id="shopEmail" type="email"></label></div><label>GSTIN / tax number<input id="shopTax"></label><button class="primary-button">Save shop details</button></form></div><div class="admin-panel" id="catalogPanel"><p>Add or update products in the live catalog.</p><div id="adminProducts"></div></div><div class="admin-panel" id="paymentsPanel"><p>Choose a provider before launch. Keys are saved only in this browser demo; use server-side environment variables in production.</p><form id="paymentForm"><label>Gateway<select id="gateway"><option value="Razorpay">Razorpay</option></select></label><label>Publishable / Key ID<input id="paymentKey" placeholder="rzp_live_…"></label><label>Webhook secret <input id="webhookSecret" type="password" placeholder="Store server-side in production"></label><button class="primary-button">Save payment settings</button></form></div><div class="admin-panel" id="ordersPanel"><div id="ordersList"></div></div></div></div>
   
   <!-- Search Modal -->
-  <div class="modal" id="searchModal" aria-hidden="true"><div class="modal-card search"><button class="close modal-close" data-close="searchModal">×</button><input id="searchInput" autofocus placeholder="Search cards, banners, stickers…"><div id="searchResults"></div></div></div>
+<div class="modal" id="searchModal" aria-hidden="true">
+  <div class="modal-card search">
+    <button class="close modal-close" data-close="searchModal">×</button>
+    
+    <input type="text" id="searchInput" autofocus placeholder="Search products (e.g. Cards, Stickers)...">
+    
+    <div id="searchResults"></div>
+  </div>
+</div>
   
   <div class="toast" id="toast"></div>
   <script type="module" src="app.js"></script>
