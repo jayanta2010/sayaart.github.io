@@ -387,3 +387,13 @@ if (document.readyState === 'loading') {
 } else {
   loadProducts();
 }
+
+// Open Search Modal on Header Button Click
+const searchBtn = document.getElementById('searchButton');
+if (searchBtn) {
+  searchBtn.onclick = () => {
+    openModal('searchModal');
+    const input = document.getElementById('searchInput');
+    if (input) input.focus();
+  };
+}
