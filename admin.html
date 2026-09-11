@@ -11,15 +11,13 @@
     .container { margin-top: 20px; }
     .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
     .card h2 { margin-top: 0; border-bottom: 2px solid #ddd; padding-bottom: 10px; color: #333; }
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-    .form-group input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-    .btn-primary { background: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 16px; }
+    .btn-primary { background: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 15px; }
     .btn-delete { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
     table, th, td { border: 1px solid #ddd; }
     th, td { padding: 10px; text-align: left; vertical-align: top; }
     th { background: #f2f2f2; }
+    input, textarea { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
   </style>
 </head>
 <body>
@@ -30,34 +28,43 @@
   </div>
 
   <div class="container">
-    <!-- Add Product -->
+    <!-- Add Product Section -->
     <div class="card">
-      <h2>Add Product & Manage Catalog</h2>
-      <form id="product-form" style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <input type="text" id="prod-name" placeholder="Item Name" required style="padding: 8px; flex: 1;">
-        <input type="number" id="prod-price" placeholder="Price (₹)" required style="padding: 8px; width: 100px;">
-        <input type="url" id="prod-img-url" placeholder="Image Link (URL)" required style="padding: 8px; flex: 1;">
-        <button type="submit" class="btn-primary">Add Product</button>
+      <h2>Add Product with Description</h2>
+      <form id="product-form" style="max-width: 500px;">
+        <label><b>Product Name</b></label>
+        <input type="text" id="prod-name" placeholder="e.g. Classic Visiting Cards" required>
+        
+        <label><b>Product Description</b></label>
+        <textarea id="prod-desc" placeholder="e.g. Premium 350 GSM matte finish..." required style="height: 60px;"></textarea>
+        
+        <label><b>Price (₹)</b></label>
+        <input type="number" id="prod-price" placeholder="299" required>
+        
+        <label><b>Image URL</b></label>
+        <input type="url" id="prod-img-url" placeholder="https://example.com/image.jpg" required>
+        
+        <button type="submit" class="btn-primary">Add Product to Live Catalog</button>
       </form>
       
-      <h3 style="margin-top: 20px;">Current Live Products</h3>
+      <h3 style="margin-top: 25px;">Current Live Products</h3>
       <table>
         <thead>
-          <tr><th>Product Name</th><th>Price</th><th>Action</th></tr>
+          <tr><th>Name & Description</th><th>Price</th><th>Action</th></tr>
         </thead>
         <tbody id="admin-product-list"></tbody>
       </table>
     </div>
 
-    <!-- Customer Orders with Complete Info -->
+    <!-- Customer Orders -->
     <div class="card">
-      <h2>All Customer Orders (Full Details)</h2>
+      <h2>All Customer Orders</h2>
       <table>
         <thead>
           <tr>
-            <th>Order & Payment ID</th>
-            <th>Customer Details</th>
-            <th>Delivery Address</th>
+            <th>Order ID</th>
+            <th>Customer Info</th>
+            <th>Address</th>
             <th>Item & Amount</th>
             <th>Status</th>
           </tr>
@@ -88,8 +95,7 @@
     const db = getFirestore(app);
 
     onAuthStateChanged(auth, (user) => {
-      if (!user) window.location.href = "login.html";
-      else {
+      if (user) {
         loadAdminProducts();
         loadOrders();
       }
@@ -99,16 +105,23 @@
       signOut(auth).then(() => window.location.href = "login.html");
     };
 
+    // Save product with Description
     document.getElementById('product-form').onsubmit = async (e) => {
       e.preventDefault();
-      await addDoc(collection(db, "products"), {
-        name: document.getElementById('prod-name').value,
-        price: Number(document.getElementById('prod-price').value),
-        imageUrl: document.getElementById('prod-img-url').value,
-        createdAt: new Date()
-      });
-      document.getElementById('product-form').reset();
-      loadAdminProducts();
+      try {
+        await addDoc(collection(db, "products"), {
+          name: document.getElementById('prod-name').value,
+          description: document.getElementById('prod-desc').value,
+          price: Number(document.getElementById('prod-price').value),
+          imageUrl: document.getElementById('prod-img-url').value,
+          createdAt: new Date()
+        });
+        alert("Product Added Successfully!");
+        document.getElementById('product-form').reset();
+        loadAdminProducts();
+      } catch (err) {
+        alert("Error adding product: " + err.message);
+      }
     };
 
     async function loadAdminProducts() {
@@ -117,12 +130,18 @@
       list.innerHTML = "";
       snap.forEach((d) => {
         const item = d.data();
-        list.innerHTML += `<tr><td>${item.name}</td><td>₹${item.price}</td><td><button class="btn-delete" onclick="deleteProduct('${d.id}')">Delete</button></td></tr>`;
+        list.innerHTML += `
+          <tr>
+            <td><b>${item.name}</b><br><small style="color:#666;">${item.description || 'No description'}</small></td>
+            <td>₹${item.price}</td>
+            <td><button class="btn-delete" onclick="deleteProduct('${d.id}')">Delete</button></td>
+          </tr>
+        `;
       });
     }
 
     window.deleteProduct = async function(id) {
-      if (confirm("Delete product?")) {
+      if (confirm("Delete this product?")) {
         await deleteDoc(doc(db, "products", id));
         loadAdminProducts();
       }
@@ -140,11 +159,11 @@
         const item = d.data();
         list.innerHTML += `
           <tr>
-            <td><b>${item.orderId || d.id}</b><br><small>Pay ID: ${item.paymentId || 'N/A'}</small><br><small style="color:#888;">${item.createdAt || ''}</small></td>
+            <td><b>${item.orderId || d.id}</b></td>
             <td><b>${item.customerName || 'N/A'}</b><br>📞 ${item.customerPhone || 'N/A'}</td>
             <td>${item.deliveryAddress || 'N/A'}</td>
             <td>${item.itemName}<br><b>₹${item.amount}</b></td>
-            <td><span style="color:${item.paymentStatus === 'PAID' ? 'green' : 'orange'}; font-weight:bold;">${item.paymentStatus || 'PENDING'}</span></td>
+            <td><span style="color:${item.paymentStatus === 'PAID' ? 'green' : 'orange'}; font-weight:bold;">${item.paymentStatus || 'PAID'}</span></td>
           </tr>
         `;
       });
