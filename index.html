@@ -6,8 +6,10 @@
   <title>Saya Art &amp; Advertising — Print Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&family=Impact&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
+  <!-- Fabric.js CDN for Vistaprint-like Live Canvas Editor -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 </head>
 <body>
   <div class="announcement">Free local pickup · Pan-India delivery · <b>Save 10% on ₹5,000+</b></div>
@@ -106,7 +108,7 @@
     </div>
   </aside>
 
-  <!-- User Profile & Login Drawer -->
+  <!-- Profile Drawer -->
   <aside class="drawer" id="profileDrawer" aria-hidden="true">
     <div class="drawer-head">
       <h2>Account &amp; Orders</h2>
@@ -138,61 +140,76 @@
     </div>
   </aside>
 
-  <!-- Dynamic Product Customizer Modal -->
+  <!-- Interactive Vistaprint-Style Design Studio Modal -->
   <div class="modal" id="productModal" aria-hidden="true">
-    <div class="modal-card customizer" style="max-height: 90vh; overflow-y: auto;">
+    <div class="modal-card customizer" style="max-width: 900px; width: 95%; max-height: 95vh; overflow-y: auto;">
       <button class="close modal-close" data-close="productModal">×</button>
-      <div class="custom-form">
-        <p class="eyebrow">CUSTOMIZE PRODUCT</p>
-        <h2 id="customTitle">Product</h2>
-        <div id="customPriceDisplay" style="font-size: 22px; font-weight: 800; color: #16a34a; margin-bottom: 15px;">₹0</div>
-
-        <!-- Size Selection -->
-        <div id="sizeSection" style="display:none; margin-bottom: 12px;">
-          <label><b>Select Size</b>
-            <select id="sizeSelect" style="width:100%; padding:8px; margin-top:4px;"></select>
-          </label>
+      <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px;">
+        
+        <!-- Left: Interactive Canvas Viewport -->
+        <div style="flex: 1; min-width: 300px; text-align: center; background: #f1f5f9; padding: 15px; border-radius: 8px;">
+          <p class="eyebrow">LIVE PRINT PREVIEW</p>
+          <div style="display: inline-block; border: 2px dashed #94a3b8; background: #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden;">
+            <canvas id="designCanvas" width="350" height="380"></canvas>
+          </div>
+          <p style="font-size: 11px; color: #64748b; margin-top: 8px;">Drag, resize, rotate objects directly on canvas</p>
         </div>
 
-        <!-- Quality / Material Selection -->
-        <div id="qualitySection" style="display:none; margin-bottom: 12px;">
-          <label><b>Select Quality / Finish</b>
-            <select id="qualitySelect" style="width:100%; padding:8px; margin-top:4px;"></select>
-          </label>
+        <!-- Right: Tool Controls & Options -->
+        <div style="flex: 1; min-width: 300px;">
+          <h2 id="customTitle" style="margin: 0 0 5px 0;">Product Designer</h2>
+          <div id="customPriceDisplay" style="font-size: 22px; font-weight: 800; color: #16a34a; margin-bottom: 12px;">₹0</div>
+
+          <!-- Options: Size & Quality -->
+          <div id="sizeSection" style="display:none; margin-bottom: 10px;">
+            <label><b>Select Size</b>
+              <select id="sizeSelect" style="width:100%; padding:8px; margin-top:3px;"></select>
+            </label>
+          </div>
+
+          <div id="qualitySection" style="display:none; margin-bottom: 10px;">
+            <label><b>Select Quality</b>
+              <select id="qualitySelect" style="width:100%; padding:8px; margin-top:3px;"></select>
+            </label>
+          </div>
+
+          <!-- Photo Upload (PNG/JPG) -->
+          <div id="photoSection" style="display:none; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; margin-bottom: 10px; background: #fafafa;">
+            <label style="font-size: 13px; font-weight: 700;">Upload Photo/Logo (PNG, JPG)</label>
+            <input type="file" id="customPhotoInput" accept="image/png, image/jpeg, image/jpg" style="width:100%; margin-top: 5px; font-size: 12px;">
+          </div>
+
+          <!-- Custom Text & Font Controls -->
+          <div id="textSection" style="display:none; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; margin-bottom: 10px; background: #fafafa;">
+            <label style="font-size: 13px; font-weight: 700;">Add Custom Text</label>
+            <input id="customTextInput" placeholder="Type text here..." style="width:100%; padding:6px; margin-top:4px; margin-bottom:8px;">
+            <div style="display:flex; gap: 8px;">
+              <select id="fontSelect" style="flex:1; padding:6px; font-size:12px;">
+                <option value="Manrope">Font: Manrope</option>
+                <option value="Arial">Font: Arial</option>
+                <option value="Playfair Display">Font: Playfair</option>
+                <option value="Impact">Font: Impact</option>
+                <option value="Courier New">Font: Courier</option>
+              </select>
+              <button id="addTextBtn" style="padding:6px 12px; background:#0f172a; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">+ Add</button>
+            </div>
+          </div>
+
+          <!-- Canvas Controls -->
+          <div style="margin-bottom: 12px;">
+            <button id="deleteSelectedBtn" style="padding: 5px 10px; background: #fee2e2; border: 1px solid #ef4444; color: #ef4444; border-radius: 4px; font-weight: bold; font-size: 12px; cursor: pointer;">🗑 Delete Selected Item</button>
+          </div>
+
+          <!-- Quantity -->
+          <div style="margin-bottom: 15px;">
+            <label><b>Quantity</b>
+              <input type="number" id="quantity" value="1" min="1" style="width:100%; padding:8px; margin-top:3px;">
+            </label>
+          </div>
+
+          <button class="primary-button full" id="addCustomProduct">Add Designed Item to Bag →</button>
         </div>
 
-        <!-- Name & Number (T-Shirt Jersey) -->
-        <div id="nameNumberSection" style="display:none; border: 1px dashed #cbd5e1; padding: 10px; border-radius:6px; margin-bottom: 12px;">
-          <label style="display:block; margin-bottom:6px;"><b>T-Shirt Custom Name</b>
-            <input id="customName" placeholder="e.g. RAHUL" style="width:100%; padding:8px;">
-          </label>
-          <label style="display:block;"><b>Jersey / Back Number</b>
-            <input id="customNumber" type="number" placeholder="e.g. 10" style="width:100%; padding:8px;">
-          </label>
-        </div>
-
-        <!-- Text Input Option -->
-        <div id="textSection" style="display:none; margin-bottom: 12px;">
-          <label><b>Custom Printed Text / Message</b>
-            <input id="customText" placeholder="Enter text to print" style="width:100%; padding:8px;">
-          </label>
-        </div>
-
-        <!-- Photo Upload Option -->
-        <div id="photoSection" style="display:none; margin-bottom: 12px;">
-          <label><b>Upload Photo / Logo File</b>
-            <input type="file" id="customPhoto" accept="image/*,.pdf" style="width:100%; margin-top:4px;">
-          </label>
-        </div>
-
-        <!-- Quantity -->
-        <div style="margin-bottom: 15px;">
-          <label><b>Quantity</b>
-            <input type="number" id="quantity" value="1" min="1" style="width:100%; padding:8px; margin-top:4px;">
-          </label>
-        </div>
-
-        <button class="primary-button full" id="addCustomProduct">Add to Bag →</button>
       </div>
     </div>
   </div>
