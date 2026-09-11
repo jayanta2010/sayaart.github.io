@@ -3,164 +3,254 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Saya Art &amp; Advertising — Print Studio Pro</title>
+  <title>Saya Art &amp; Advertising — Print Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&family=Impact&family=Pacifico&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 </head>
 <body>
   <div class="announcement">Free local pickup · Pan-India delivery · <b>Save 10% on ₹5,000+</b></div>
   
   <header>
     <a class="brand" href="#home">
-      <img class="brand-logo" src="saya-art-advertising-logo.jpg" alt="Saya Art Logo" />
-      <span><b data-shop-name>Saya Art &amp; Advertising</b><small>PRINT STUDIO PRO</small></span>
+      <img class="brand-logo" src="saya-art-advertising-logo.jpg" alt="Saya Art & Advertising" />
+      <span><b data-shop-name>Saya Art &amp; Advertising</b><small>PRINT STUDIO</small></span>
     </a>
     <nav>
       <a href="#products">Products</a>
-      <a href="admin.html">Admin Panel</a>
+      <a href="#how">How it works</a>
+      <a href="#business">For business</a>
     </nav>
     <div class="header-actions">
+      <button class="icon-button" id="searchButton" aria-label="Search">⌕</button>
+      <button class="text-button" id="openAdmin">Admin</button>
       <button class="cart-button" id="openCart">Bag <span id="cartCount">0</span></button>
     </div>
   </header>
 
   <main id="home">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">PRINTED FOR THE MOMENT</p>
+        <h1>Make it feel<br><em>like yours.</em></h1>
+        <p class="hero-text">Thoughtful print, sharp finishing, and a simple way to bring your ideas into the world.</p>
+        <div class="hero-buttons">
+          <a class="primary-button" href="#products">Start creating <span>→</span></a>
+          <button class="link-button" id="browseDeals">Browse bestsellers</button>
+        </div>
+        <div class="proof">
+          <span><b>24 hr</b> artwork check</span>
+          <span><b>4.9/5</b> customer love</span>
+          <span><b>100%</b> local support</span>
+        </div>
+      </div>
+      <div class="hero-art" aria-label="A collection of custom printed products">
+        <div class="sun"></div>
+        <div class="card card-back"></div>
+        <div class="card card-front">
+          <i>YOUR<br>BRAND<br>HERE</i>
+          <span>HELLO, GOOD IDEAS.</span>
+        </div>
+        <div class="sticker">MADE<br>WITH<br>CARE</div>
+        <div class="tape"></div>
+      </div>
+    </section>
+
+    <section class="category-section">
+      <div class="section-top">
+        <div>
+          <p class="eyebrow">SHOP BY PROJECT</p>
+          <h2>What are you making?</h2>
+        </div>
+        <button class="link-button" id="viewAll">See all products →</button>
+      </div>
+      <div class="categories" id="categories"></div>
+    </section>
+
+    <section class="feature-strip" id="how">
+      <div>
+        <b>01</b>
+        <h3>Choose a product</h3>
+        <p>Find the format, stock, and finish that fits.</p>
+      </div>
+      <div>
+        <b>02</b>
+        <h3>Make it yours</h3>
+        <p>Upload artwork or add your details in minutes.</p>
+      </div>
+      <div>
+        <b>03</b>
+        <h3>We make it right</h3>
+        <p>Every file receives a practical pre-print check.</p>
+      </div>
+    </section>
+
     <section class="products-section" id="products">
       <div class="section-top">
-        <h2>Custom Printable Products</h2>
+        <div>
+          <p class="eyebrow">THE GOOD STUFF</p>
+          <h2>Popular right now</h2>
+        </div>
+        <div class="filters" id="filters"></div>
       </div>
       <div class="product-grid" id="productGrid"></div>
     </section>
+
+    <section class="business-banner" id="business">
+      <div>
+        <p class="eyebrow">FOR TEAMS &amp; BUSINESSES</p>
+        <h2>Print that puts your<br>business on the map.</h2>
+        <p>Volume pricing, repeat orders, dedicated support, and consistent colour across every touchpoint.</p>
+        <button class="light-button" id="quoteButton">Request a quote →</button>
+      </div>
+      <div class="banner-graphic">
+        <span>GO<br>MAKE<br>IT.</span>
+      </div>
+    </section>
   </main>
 
-  <!-- Studio Customization Modal -->
-  <div class="modal" id="productModal" aria-hidden="true">
-    <div class="modal-card customizer">
-      <button class="close modal-close" data-close="productModal">×</button>
-      
-      <!-- Studio Header -->
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
-        <h2 id="customTitle" style="margin:0; font-size:20px;">Product Studio</h2>
-        
-        <!-- Side Switcher (Front / Back) -->
-        <div id="sideSwitcher" style="display:flex; gap:8px;">
-          <button id="btnViewFront" style="padding: 8px 16px; font-weight:700; border-radius:6px; border:1px solid #0f172a; background:#0f172a; color:#fff; cursor:pointer;">Front Side</button>
-          <button id="btnViewBack" style="padding: 8px 16px; font-weight:700; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; color:#0f172a; cursor:pointer;">Back Side</button>
-        </div>
-      </div>
-
-      <div style="display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start;">
-        
-        <!-- Canvas Viewport -->
-        <div style="flex: 1.1; min-width: 300px; text-align: center; background: #f8fafc; padding: 16px; border-radius: 10px; border: 1px solid #e2e8f0;">
-          <div style="display: inline-block; position:relative; border: 1px solid #cbd5e1; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border-radius: 6px; overflow: hidden;">
-            <canvas id="designCanvas" width="380" height="420"></canvas>
-          </div>
-          <p style="font-size: 11px; color: #64748b; margin-top: 8px;">
-            Red border = Safe Print Zone. Original photo quality is retained for Admin export.
-          </p>
-        </div>
-
-        <!-- Designer Controls Sidebar -->
-        <div style="flex: 1; min-width: 280px;">
-          <div id="customPriceDisplay" style="font-size: 24px; font-weight: 800; color: #16a34a; margin-bottom: 12px;">₹0</div>
-
-          <!-- Size Selection -->
-          <div id="sizeSection" style="margin-bottom: 12px; display:none;">
-            <label><b>Select Size</b>
-              <select id="sizeSelect"></select>
-            </label>
-          </div>
-
-          <!-- Quality Selection -->
-          <div id="qualitySection" style="margin-bottom: 12px; display:none;">
-            <label><b>Select Quality / Fabric</b>
-              <select id="qualitySelect"></select>
-            </label>
-          </div>
-
-          <!-- Photo Upload (High-Res) -->
-          <div id="photoSection" style="border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; margin-bottom: 12px; background: #fafafa;">
-            <label style="font-size: 13px; font-weight: 700;">Upload Photo/Logo (PNG, JPG)</label>
-            <input type="file" id="customPhotoInput" accept="image/png, image/jpeg, image/jpg" style="margin-top: 5px; font-size: 12px;">
-            <small style="color:#64748b; font-size:11px; display:block; margin-top:2px;">Original image file is saved without quality loss.</small>
-          </div>
-
-          <!-- Text Controls -->
-          <div id="textSection" style="border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; margin-bottom: 12px; background: #fafafa;">
-            <label style="font-size: 13px; font-weight: 700;">Add Custom Text</label>
-            <input id="customTextInput" placeholder="Type text here..." style="margin-top:4px; margin-bottom:8px;">
-            <div style="display:flex; gap: 8px;">
-              <select id="fontSelect" style="flex:1; padding:6px; font-size:12px;">
-                <option value="Manrope">Manrope</option>
-                <option value="Arial">Arial</option>
-                <option value="Playfair Display">Playfair</option>
-                <option value="Impact">Impact</option>
-                <option value="Pacifico">Pacifico</option>
-              </select>
-              <input type="color" id="textColorPicker" value="#000000" style="width:36px; height:36px; padding:0; border:none; cursor:pointer;" title="Text Color">
-              <button id="addTextBtn" style="padding:6px 12px; background:#0f172a; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">+ Add</button>
-            </div>
-          </div>
-
-          <!-- Layering Controls -->
-          <div style="display:flex; gap:8px; margin-bottom: 15px; flex-wrap:wrap;">
-            <button id="bringForwardBtn" style="padding:6px 10px; font-size:11px; font-weight:bold; background:#e2e8f0; border:none; border-radius:4px; cursor:pointer;">Bring Forward</button>
-            <button id="sendBackwardBtn" style="padding:6px 10px; font-size:11px; font-weight:bold; background:#e2e8f0; border:none; border-radius:4px; cursor:pointer;">Send Back</button>
-            <button id="deleteSelectedBtn" style="padding:6px 10px; font-size:11px; font-weight:bold; background:#fee2e2; border:1px solid #ef4444; color:#ef4444; border-radius:4px; cursor:pointer;">🗑 Delete Item</button>
-          </div>
-
-          <!-- Quantity -->
-          <div style="margin-bottom: 15px;">
-            <label><b>Quantity</b>
-              <input type="number" id="quantity" value="1" min="1" style="margin-top:3px;">
-            </label>
-          </div>
-
-          <button class="primary-button full" id="addCustomProduct">Add Designed Item to Bag →</button>
-        </div>
-
-      </div>
+  <footer>
+    <div class="brand">
+      <img class="brand-logo" src="saya-art-advertising-logo.jpg" alt="Saya Art & Advertising" />
+      <span><b data-shop-name>Saya Art &amp; Advertising</b><small>PRINT STUDIO</small></span>
     </div>
-  </div>
+    <p>
+      <span data-address>Banderdewa, Dist. Lakhimpur, Assam - 784163</span><br>
+      <span data-shop-phone>+91 7086718618</span>
+    </p>
+    <p>© <span id="year"></span> <span data-shop-name>Saya Art &amp; Advertising</span>. Made for good ideas.</p>
+  </footer>
 
   <!-- Shopping Cart Drawer -->
   <aside class="drawer" id="cartDrawer" aria-hidden="true">
     <div class="drawer-head">
-      <h2>Your Bag</h2>
+      <h2>Your bag</h2>
       <button class="close" data-close="cartDrawer">×</button>
     </div>
     <div id="cartItems" class="cart-items"></div>
     <div class="cart-footer">
       <div class="total"><span>Subtotal</span><b id="cartTotal">₹0</b></div>
-      <button class="primary-button full" id="checkoutButton">Continue to Checkout →</button>
+      <button class="primary-button full" id="checkoutButton">Continue to checkout →</button>
     </div>
   </aside>
+
+  <!-- Product Customizer Modal -->
+  <div class="modal" id="productModal" aria-hidden="true">
+    <div class="modal-card customizer">
+      <button class="close modal-close" data-close="productModal">×</button>
+      <div class="custom-preview" id="customPreview"></div>
+      <div class="custom-form">
+        <p class="eyebrow">MAKE IT YOURS</p>
+        <h2 id="customTitle">Product</h2>
+        <p id="customPrice"></p>
+        <label>Quantity
+          <select id="quantity">
+            <option>100</option>
+            <option>250</option>
+            <option>500</option>
+            <option>1000</option>
+          </select>
+        </label>
+        <label>Your text
+          <input id="customText" maxlength="36" placeholder="Your business or message" />
+        </label>
+        <label>Upload artwork 
+          <input id="artwork" type="file" accept="image/*,.pdf" />
+        </label>
+        <small id="uploadStatus">Optional — we will check your file before printing.</small>
+        <button class="primary-button full" id="addCustomProduct">Add to bag →</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Checkout Modal -->
   <div class="modal" id="checkoutModal" aria-hidden="true">
     <div class="modal-card checkout">
       <button class="close modal-close" data-close="checkoutModal">×</button>
-      <h2>Delivery Details</h2>
+      <p class="eyebrow">SECURE CHECKOUT</p>
+      <h2>Almost there.</h2>
       <form id="checkoutForm">
-        <label>Full Name <input required id="custName"></label>
-        <label>Mobile <input required type="tel" id="custPhone"></label>
-        <label>Pincode <input required id="custPincode" maxlength="6"></label>
-        <label>Full Delivery Address <input required id="custAddress"></label>
-        
-        <div class="payment-choice" style="margin-top:12px;">
-          <b>Payment Method</b>
-          <label><input checked type="radio" name="payMethod" value="Online"> Online Payment / UPI</label>
-          <label><input type="radio" name="payMethod" value="COD"> Cash on Delivery</label>
+        <div class="two-col">
+          <label>Name<input required placeholder="Your name"></label>
+          <label>Mobile<input required pattern="[0-9+ -]{8,}" placeholder="Mobile number"></label>
         </div>
-        <button class="primary-button full" type="submit" style="margin-top:15px;">Place Order →</button>
+        <label>Email<input type="email" required placeholder="you@example.com"></label>
+        <label>Delivery address<textarea required placeholder="Flat / building, street, locality, city, PIN"></textarea></label>
+        <div class="payment-choice">
+          <b>Payment Method</b>
+          <label><input checked type="radio" name="pay" value="Online"> Online payment / UPI</label>
+          <label><input type="radio" name="pay" value="COD"> Cash on delivery</label>
+        </div>
+        <button class="primary-button full">Place order →</button>
+        <small id="paymentNotice">Payment gateway is in test mode until you add your provider keys in Admin.</small>
       </form>
     </div>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <!-- Admin Controls Modal -->
+  <div class="modal" id="adminModal" aria-hidden="true">
+    <div class="modal-card admin">
+      <button class="close modal-close" data-close="adminModal">×</button>
+      <p class="eyebrow">OWNER AREA</p>
+      <h2>Studio controls</h2>
+      <div class="admin-tabs">
+        <button class="active" data-tab="profile">Shop profile</button>
+        <button data-tab="catalog">Catalog</button>
+        <button data-tab="payments">Payments</button>
+        <button data-tab="orders">Orders</button>
+      </div>
+      
+      <div class="admin-panel active" id="profilePanel">
+        <form id="profileForm">
+          <label>Shop name<input id="shopName" required></label>
+          <label>Address<textarea id="shopAddress"></textarea></label>
+          <div class="two-col">
+            <label>Phone<input id="shopPhone"></label>
+            <label>Support email<input id="shopEmail" type="email"></label>
+          </div>
+          <label>GSTIN / tax number<input id="shopTax"></label>
+          <button class="primary-button">Save shop details</button>
+        </form>
+      </div>
+
+      <div class="admin-panel" id="catalogPanel">
+        <p>Add or update products in the live catalog.</p>
+        <div id="adminProducts"></div>
+      </div>
+
+      <div class="admin-panel" id="paymentsPanel">
+        <p>Choose a provider before launch. Keys are saved only in this browser demo; use server-side environment variables in production.</p>
+        <form id="paymentForm">
+          <label>Gateway
+            <select id="gateway">
+              <option value="Razorpay">Razorpay</option>
+              <option value="Stripe">Stripe</option>
+              <option value="Cashfree">Cashfree</option>
+            </select>
+          </label>
+          <label>Publishable / Key ID<input id="paymentKey" placeholder="rzp_live_…"></label>
+          <label>Webhook secret <input id="webhookSecret" type="password" placeholder="Store server-side in production"></label>
+          <button class="primary-button">Save payment settings</button>
+        </form>
+      </div>
+
+      <div class="admin-panel" id="ordersPanel">
+        <div id="ordersList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Modal -->
+  <div class="modal" id="searchModal" aria-hidden="true">
+    <div class="modal-card search">
+      <button class="close modal-close" data-close="searchModal">×</button>
+      <input id="searchInput" autofocus placeholder="Search cards, banners, stickers…">
+      <div id="searchResults"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="app.js"></script>
 </body>
 </html>
