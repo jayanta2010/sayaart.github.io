@@ -165,20 +165,43 @@
     </div>
   </div>
 
-  <!-- Checkout Modal -->
+<!-- Checkout Modal -->
   <div class="modal" id="checkoutModal" aria-hidden="true">
     <div class="modal-card checkout">
       <button class="close modal-close" data-close="checkoutModal">×</button>
       <h2>Enter Delivery Details</h2>
+      
+      <!-- Checkout Form with SMS OTP -->
       <form id="checkoutForm">
-        <input required id="custName" placeholder="Your Name" style="width:100%; padding:10px; margin-bottom:10px;">
-        <input required type="tel" id="custPhone" placeholder="Mobile Number" style="width:100%; padding:10px; margin-bottom:10px;">
-        <input required id="custAddress" placeholder="Full Delivery Address" style="width:100%; padding:10px; margin-bottom:10px;">
-        <button class="primary-button full" type="submit">Place Order Now →</button>
+        <input required id="custName" placeholder="Your Name" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+        
+        <!-- Mobile Number & Send OTP Button -->
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+          <input required type="tel" id="custPhone" placeholder="Mobile Number (e.g. 9876543210)" style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+          <button type="button" id="sendOtpBtn" style="padding:10px 14px; background:#0f172a; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer; white-space:nowrap;">Send OTP</button>
+        </div>
+
+        <!-- Hidden Recaptcha Container for Firebase -->
+        <div id="recaptcha-container"></div>
+
+        <!-- OTP Input (Initially Hidden) -->
+        <div id="otpSection" style="display:none; margin-bottom:10px; background:#f8fafc; padding:10px; border:1px solid #e2e8f0; border-radius:6px;">
+          <label style="font-size:12px; font-weight:bold; color:#334155;">Enter SMS OTP</label>
+          <div style="display:flex; gap:8px; margin-top:4px;">
+            <input type="text" id="otpInput" placeholder="Enter 6-digit OTP" style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+            <button type="button" id="verifyOtpBtn" style="padding:10px 14px; background:#16a34a; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer; white-space:nowrap;">Verify OTP</button>
+          </div>
+        </div>
+
+        <!-- Delivery Address -->
+        <input required id="custAddress" placeholder="Full Delivery Address" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+        
+        <!-- Place Order Button (Disabled until OTP is verified) -->
+        <button class="primary-button full" type="submit" id="placeOrderBtn" disabled style="opacity:0.5; cursor:not-allowed;">Place Order Now →</button>
       </form>
+
     </div>
   </div>
-
   <div class="toast" id="toast"></div>
   <script type="module" src="app.js"></script>
 </body>
