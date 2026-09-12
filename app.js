@@ -597,7 +597,7 @@ async function initAdminPanel() {
 }
 
 // UI Helpers
-function updateCartUI() {
+window.updateCartUI = function() {
   const cartCount = document.getElementById('cartCount');
   const cartItemsContainer = document.getElementById('cartItems');
   const cartTotal = document.getElementById('cartTotal');
@@ -619,16 +619,41 @@ function updateCartUI() {
     }).join('');
     if (cartTotal) cartTotal.innerText = "₹" + grandTotal;
   }
-}
+};
 
 window.removeFromCart = (index) => { cart.splice(index, 1); saveCart(); };
-window.openModal = (id) => document.getElementById(id)?.classList.add('show');
-window.closeModal = (id) => document.getElementById(id)?.classList.remove('show');
-window.openDrawer = (id) => document.getElementById(id)?.classList.add('open');
-window.closeDrawer = (id) => document.getElementById(id)?.classList.remove('open');
 
+window.openModal = function(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.add('show');
+    el.style.display = 'flex';
+  }
+};
+
+window.closeModal = function(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.remove('show');
+    el.style.display = 'none';
+  }
+};
+
+window.openDrawer = function(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('open');
+};
+
+window.closeDrawer = function(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('open');
+};
+
+// Application Initialization
 document.addEventListener('DOMContentLoaded', () => {
   loadProducts();
-  updateCartUI();
-  initAdminPanel();
+  window.updateCartUI();
+  if (typeof initAdminPanel === 'function') {
+    initAdminPanel();
+  }
 });
