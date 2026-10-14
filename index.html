@@ -109,8 +109,8 @@
     </div>
     <div id="cartItems" class="cart-items"></div>
     <div class="cart-footer">
-      <div class="total"><span>Subtotal</span><b id="cartTotal">₹0</b></div>
-      <button class="primary-button full" id="checkoutButton">Continue to checkout →</button>
+      <div class="total"><span>Cart total</span><b id="cartTotal">₹0</b></div>
+      <button class="primary-button full" id="checkoutButton">Order Summary →</button>
     </div>
   </aside>
 
@@ -220,7 +220,11 @@
       <h2 style="margin:0 0 16px">Secure checkout</h2>
       <div class="checkout-steps" id="checkoutSteps"><div class="checkout-step active" data-step-label="1"><b>1</b><span>Order summary</span></div><i></i><div class="checkout-step" data-step-label="2"><b>2</b><span>Address</span></div><i></i><div class="checkout-step" data-step-label="3"><b>3</b><span>Payment</span></div></div>
       <form id="checkoutForm">
-        <section class="checkout-stage" data-stage="1"><h3>Review your order</h3><div id="checkoutItemsSummary" class="checkout-items-list"></div><div class="checkout-summary" id="orderReviewTotals">Product subtotal: ₹0<br>Coupon discount: ₹0<br><b>Order total: ₹0</b></div><div class="checkout-stage-actions"><button type="button" class="secondary-button" data-close="checkoutModal">Continue shopping</button><button type="button" id="reviewContinueBtn" class="primary-button">Continue to address →</button></div></section><section class="checkout-stage" data-stage="2">
+        <section class="checkout-stage" data-stage="1"><h3>Order Summary</h3><div id="checkoutItemsSummary" class="checkout-items-list"></div><div class="coupon-entry" style="border:1px solid #dbe4ed;border-radius:12px;padding:12px;margin:12px 0">
+            <label for="couponCodeInput" style="display:block;font-size:12px;font-weight:800;margin-bottom:7px">Coupon code</label>
+            <div style="display:flex;gap:8px"><input id="couponCodeInput" type="text" autocomplete="off" placeholder="Enter coupon code" style="min-width:0;flex:1;padding:11px;border:1px solid #cbd5e1;border-radius:8px;text-transform:uppercase"><button type="button" id="applyCouponBtn" class="secondary-button">Apply</button></div>
+            <p id="couponStatus" class="help-text" role="status">Enter an active coupon code for a percentage discount.</p>
+          </div><div class="checkout-summary" id="orderReviewTotals">Product subtotal: ₹0<br>Coupon discount: ₹0<br><b>Order total: ₹0</b></div><div class="checkout-stage-actions"><button type="button" class="secondary-button" data-close="checkoutModal">Continue shopping</button><button type="button" id="reviewContinueBtn" class="primary-button">Continue to address →</button></div></section><section class="checkout-stage" data-stage="2">
           <h3>Delivery address</h3>
           <label for="savedAddressSelect">Saved addresses</label>
           <div style="display:flex;gap:8px;align-items:center;margin:6px 0 14px"><select id="savedAddressSelect" style="flex:1;padding:11px;border:1px solid #cbd5e1;border-radius:8px"><option value="">Add a new address</option></select><button type="button" id="newAddressBtn" class="secondary-button">+ Add new</button></div>
@@ -242,11 +246,7 @@
         <section class="checkout-stage" data-stage="3" hidden>
           <h3>Choose payment method</h3><p class="help-text">Cash on Delivery (COD) is available with a ₹1,000 COD/delivery charge.</p>
           <label class="payment-choice"><input type="radio" name="paymentMethod" value="upi" checked><span><b>UPI</b><small>Pay using a UPI app</small></span></label>
-          <label class="payment-choice"><input type="radio" name="paymentMethod" value="card"><span><b>Credit / Debit Card</b><small>Secure card payment through the payment provider</small></span></label><label class="payment-choice"><input type="radio" name="paymentMethod" value="cod"><span><b>Cash on Delivery (COD)</b><small>Pay at delivery · ₹1,000 COD/delivery charge applies</small></span></label><div class="coupon-entry" style="border:1px solid #dbe4ed;border-radius:12px;padding:12px;margin:12px 0">
-            <label for="couponCodeInput" style="display:block;font-size:12px;font-weight:800;margin-bottom:7px">Coupon code</label>
-            <div style="display:flex;gap:8px"><input id="couponCodeInput" type="text" autocomplete="off" placeholder="Enter coupon code" style="min-width:0;flex:1;padding:11px;border:1px solid #cbd5e1;border-radius:8px;text-transform:uppercase"><button type="button" id="applyCouponBtn" class="secondary-button">Apply</button></div>
-            <p id="couponStatus" class="help-text" role="status">Enter an active coupon code for a percentage discount.</p>
-          </div>
+          <label class="payment-choice"><input type="radio" name="paymentMethod" value="card"><span><b>Credit / Debit Card</b><small>Secure card payment through the payment provider</small></span></label><label class="payment-choice"><input type="radio" name="paymentMethod" value="cod"><span><b>Cash on Delivery (COD)</b><small>Pay at delivery · ₹1,000 COD/delivery charge applies</small></span></label>
           <div class="checkout-summary" id="deliveryChargeSummary">Product subtotal: ₹0<br>Coupon discount: ₹0<br>COD/delivery charge: ₹0</div>
           <div class="checkout-summary"><div>Total payable</div><strong id="checkoutPayTotal">₹0</strong></div>
           <p id="paymentStatus" role="status" class="help-text"></p>
