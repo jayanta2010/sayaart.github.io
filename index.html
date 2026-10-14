@@ -16,10 +16,26 @@
 </head>
 <body>
   <div class="announcement"><span>🎉 Print more, spend less</span><b>Special offers on selected products</b><span>Delivery across India</span></div>
-  <aside class="store-sidebar" id="storeSidebar" aria-label="Store navigation"><a class="sidebar-brand" href="#home">SAYA <span>ART &amp; ADVERTISING</span></a><div class="sidebar-profile"><span class="sidebar-avatar">♙</span><div><b>My Account</b><a href="account.html">Profile &amp; Orders</a></div></div><nav class="sidebar-nav"><a href="#home">⌂ <span>Home</span></a><a href="#products">▦ <span>All Products</span></a><a href="#category-cards">◇ <span>Categories</span></a><a href="#business">✳ <span>Business Printing</span></a><a href="account.html">▣ <span>My Orders</span></a><a href="policies.html#terms">ⓘ <span>Terms &amp; Conditions</span></a><a href="policies.html#returns">↩ <span>Return Policy</span></a></nav><div class="sidebar-bottom"><small>PRINT · PERSONALISE · PROMOTE</small><a href="account.html">Sign in / Account →</a></div></aside>
+  <aside class="store-sidebar" id="storeSidebar" aria-label="Store navigation">
+    <button type="button" class="sidebar-expand-toggle" id="sidebarExpandToggle" aria-label="Expand sidebar" title="Expand menu">☰</button>
+    <a class="sidebar-brand" href="#home" title="Saya Art & Advertising">SAYA <span>ART &amp; ADVERTISING</span></a>
+    <nav class="sidebar-nav" aria-label="Main navigation">
+      <a href="#home" title="Home"><span class="sidebar-icon">⌂</span><span class="sidebar-label">Home</span></a>
+      <a href="#products" title="All Products"><span class="sidebar-icon">▦</span><span class="sidebar-label">All Products</span></a>
+      <a href="#category-cards" title="Categories"><span class="sidebar-icon">◇</span><span class="sidebar-label">Categories</span></a>
+      <a href="#business" title="Business Printing"><span class="sidebar-icon">✳</span><span class="sidebar-label">Business Printing</span></a>
+      <a href="account.html#profilePanel" title="Profile"><span class="sidebar-icon">♙</span><span class="sidebar-label">Profile</span></a>
+      <a href="account.html#ordersPanel" title="Orders"><span class="sidebar-icon">▣</span><span class="sidebar-label">Orders</span></a>
+      <a href="account.html#addressesPanel" title="Saved Address"><span class="sidebar-icon">⌖</span><span class="sidebar-label">Saved Address</span></a>
+      <a href="account.html#historyPanel" title="Order History"><span class="sidebar-icon">◷</span><span class="sidebar-label">Order History</span></a>
+      <a href="account.html#returnsPanel" title="Return / Replacement"><span class="sidebar-icon">↩</span><span class="sidebar-label">Return / Replacement</span></a>
+      <a href="customer-login.html" id="sidebarSignIn" title="Sign in"><span class="sidebar-icon">⇥</span><span class="sidebar-label">Sign in</span></a>
+      <a href="customer-login.html" id="sidebarSignOut" title="Sign out" style="display:none"><span class="sidebar-icon">↪</span><span class="sidebar-label">Sign out</span></a>
+    </nav>
+  </aside>
   <div id="sidebarScrim" class="sidebar-scrim"></div>
   <header class="site-header">
-    <button type="button" id="storeMenuToggle" class="store-menu-toggle" aria-controls="storeSidebar" aria-expanded="false" aria-label="Open store menu">☰ Menu</button>
+    <button type="button" id="storeMenuToggle" class="store-menu-toggle" aria-controls="storeSidebar" aria-expanded="false" aria-label="Open store menu">☰</button>
     <a class="brand" href="#home" aria-label="Saya Art & Advertising home">
       <img class="brand-logo" src="saya-art-advertising-logo.jpg" alt="Saya Art & Advertising" />
       <span><b data-shop-name>Saya Art &amp; Advertising</b><small>PRINT · PERSONALISE · PROMOTE</small></span>
@@ -30,7 +46,6 @@
     </form>
     <div class="header-actions">
       <div class="theme-picker"><label for="themeSelect">Theme</label><select id="themeSelect" aria-label="Choose theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
-      <a class="text-button account-link" id="openProfile" href="account.html">♙ <span>Sign in</span></a>
       <button class="cart-button" id="openCart">🛒 Cart <span id="cartCount">0</span></button>
     </div>
   </header>
@@ -248,7 +263,12 @@
         <section class="checkout-stage" data-stage="3" hidden>
           <h3>Choose payment method</h3><p class="help-text">Cash on Delivery (COD) is available with a ₹1,000 COD/delivery charge.</p>
           <label class="payment-choice"><input type="radio" name="paymentMethod" value="upi" checked><span><b>UPI</b><small>Pay using a UPI app</small></span></label>
-          <label class="payment-choice"><input type="radio" name="paymentMethod" value="card"><span><b>Credit / Debit Card</b><small>Secure card payment through the payment provider</small></span></label><label class="payment-choice"><input type="radio" name="paymentMethod" value="cod"><span><b>Cash on Delivery (COD)</b><small>Pay at delivery · ₹1,000 COD/delivery charge applies</small></span></label><div class="checkout-summary" id="deliveryChargeSummary">Product subtotal: ₹0<br>COD/delivery charge: ₹0</div>
+          <label class="payment-choice"><input type="radio" name="paymentMethod" value="card"><span><b>Credit / Debit Card</b><small>Secure card payment through the payment provider</small></span></label><label class="payment-choice"><input type="radio" name="paymentMethod" value="cod"><span><b>Cash on Delivery (COD)</b><small>Pay at delivery · ₹1,000 COD/delivery charge applies</small></span></label><div class="coupon-entry" style="border:1px solid #dbe4ed;border-radius:12px;padding:12px;margin:12px 0">
+            <label for="couponCodeInput" style="display:block;font-size:12px;font-weight:800;margin-bottom:7px">Coupon code</label>
+            <div style="display:flex;gap:8px"><input id="couponCodeInput" type="text" autocomplete="off" placeholder="Enter coupon code" style="min-width:0;flex:1;padding:11px;border:1px solid #cbd5e1;border-radius:8px;text-transform:uppercase"><button type="button" id="applyCouponBtn" class="secondary-button">Apply</button></div>
+            <p id="couponStatus" class="help-text" role="status">Enter an active coupon code for a percentage discount.</p>
+          </div>
+          <div class="checkout-summary" id="deliveryChargeSummary">Product subtotal: ₹0<br>Coupon discount: ₹0<br>COD/delivery charge: ₹0</div>
           <div class="checkout-summary"><div>Total payable</div><strong id="checkoutPayTotal">₹0</strong></div>
           <p id="paymentStatus" role="status" class="help-text"></p>
           <div class="checkout-stage-actions"><button type="button" class="secondary-button" data-back="2">← Back</button><button type="submit" id="placeOrderBtn" class="primary-button">Pay securely →</button></div>
