@@ -1144,6 +1144,21 @@ window.closeDrawer = function(id) {
 
 // Application Initialization
 document.addEventListener('DOMContentLoaded', () => {
+  // Bind the cart trigger explicitly so the header button always opens the drawer.
+  const cartTrigger = document.getElementById('openCart');
+  cartTrigger?.addEventListener('click', event => {
+    event.preventDefault();
+    window.updateCartUI();
+    window.openDrawer('cartDrawer');
+    document.getElementById('cartDrawer')?.setAttribute('aria-hidden', 'false');
+  });
+  const cartDrawer = document.getElementById('cartDrawer');
+  cartDrawer?.querySelectorAll('[data-close="cartDrawer"]').forEach(button => {
+    button.addEventListener('click', () => {
+      window.closeDrawer('cartDrawer');
+      cartDrawer.setAttribute('aria-hidden', 'true');
+    });
+  });
   loadProducts();
   window.updateCartUI();
   const storeSidebar=document.getElementById('storeSidebar'),expandSidebar=document.getElementById('sidebarExpandToggle');
