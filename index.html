@@ -11,50 +11,62 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 </head>
 <body>
-  <div class="announcement">Free local pickup · Pan-India delivery · <b>Save 10% on ₹5,000+</b></div>
-  
-  <header>
-    <a class="brand" href="#home">
+  <div class="announcement"><span>🎉 Print more, spend less</span><b>Special offers on selected products</b><span>Delivery across India</span></div>
+  <header class="site-header">
+    <a class="brand" href="#home" aria-label="Saya Art & Advertising home">
       <img class="brand-logo" src="saya-art-advertising-logo.jpg" alt="Saya Art & Advertising" />
-      <span><b data-shop-name>Saya Art &amp; Advertising</b><small>PRINT STUDIO</small></span>
+      <span><b data-shop-name>Saya Art &amp; Advertising</b><small>PRINT · PERSONALISE · PROMOTE</small></span>
     </a>
-    <nav>
-      <a href="#products">Products</a>
-      <a href="#how">How it works</a>
-      <a href="#business">For business</a>
-    </nav>
+    <form class="site-search" id="storeSearchForm" role="search">
+      <input id="storeSearchInput" type="search" placeholder="Search business cards, banners, mugs..." aria-label="Search products">
+      <button type="submit" aria-label="Search products">⌕</button>
+    </form>
     <div class="header-actions">
-      <button class="icon-button" id="searchButton" aria-label="Search">⌕</button>
-      <a class="text-button" id="openProfile" href="https://jayanta2010.github.io/sayaart.github.io/customer-login.html" target="_blank" rel="noopener" role="button" style="position:relative;z-index:99999;isolation:isolate;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;touch-action:manipulation;">Mobile OTP Login ↗</a>
-      <button class="cart-button" id="openCart">Bag <span id="cartCount">0</span></button>
+      <a class="text-button account-link" id="openProfile" href="https://jayanta2010.github.io/sayaart.github.io/customer-login.html" target="_blank" rel="noopener">♙ <span>Sign in</span></a>
+      <button class="cart-button" id="openCart">🛍 Bag <span id="cartCount">0</span></button>
     </div>
   </header>
+  <nav class="category-nav" aria-label="Shop categories">
+    <a href="#products">All products</a><a href="#category-cards">Business essentials</a><a href="#products">Visiting cards</a><a href="#products">Banners &amp; posters</a><a href="#products">T-shirts &amp; gifts</a><a href="#business">Business printing</a>
+  </nav>
 
   <main id="home">
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">PRINTED FOR THE MOMENT</p>
-        <h1>Make it feel<br><em>like yours.</em></h1>
-        <p class="hero-text">Thoughtful print, sharp finishing, and a simple way to bring your ideas into the world.</p>
+        <p class="eyebrow">YOUR IDEAS, BEAUTIFULLY PRINTED</p>
+        <h1>Big ideas start<br>with <em>great print.</em></h1>
+        <p class="hero-text">Business cards, banners, personalised gifts and more — create something that feels unmistakably yours.</p>
         <div class="hero-buttons">
-          <a class="primary-button" href="#products">Start creating <span>→</span></a>
-          <button class="link-button" id="browseDeals">Browse bestsellers</button>
+          <a class="primary-button" href="#products">Shop all products <span>→</span></a>
+          <a class="secondary-button" href="#category-cards">Explore categories</a>
         </div>
+        <div class="hero-trust"><span>✓ Easy customisation</span><span>✓ Quality printing</span><span>✓ Delivery across India</span></div>
       </div>
-      <div class="hero-art">
-        <div class="sun"></div>
-        <div class="card card-back"></div>
-        <div class="card card-front"><i>YOUR<br>BRAND<br>HERE</i><span>HELLO, GOOD IDEAS.</span></div>
-        <div class="sticker">MADE<br>WITH<br>CARE</div>
-        <div class="tape"></div>
+      <div class="hero-art hero-showcase" aria-label="Printed business cards and promotional products">
+        <div class="showcase-circle"></div>
+        <div class="mock-product mock-card"><small>SAYA ART</small><strong>Your brand.<br>Your story.</strong><span>BUSINESS CARDS</span></div>
+        <div class="mock-product mock-poster"><span>MAKE IT</span><strong>MEMORABLE.</strong><small>POSTERS · PRINT · PROMO</small></div>
+        <div class="mock-product mock-tag">MADE<br>FOR YOU</div>
+      </div>
+    </section>
+    <section class="category-section" id="category-cards">
+      <div class="section-top"><div><p class="eyebrow">SHOP BY CATEGORY</p><h2>Everything you need to get noticed</h2></div></div>
+      <div class="categories">
+        <a class="category" href="#products"><div class="category-visual cat-card">Aa</div><b>Business Cards</b><span>Make a lasting first impression →</span></a>
+        <a class="category" href="#products"><div class="category-visual cat-banner">PRINT<br>BIG</div><b>Banners &amp; Posters</b><span>Stand out from across the room →</span></a>
+        <a class="category" href="#products"><div class="category-visual cat-shirt">TEE</div><b>Custom T-shirts</b><span>Wear your ideas proudly →</span></a>
+        <a class="category" href="#products"><div class="category-visual cat-gift">GIFT</div><b>Personalised Gifts</b><span>Make every moment special →</span></a>
+        <a class="category" href="#products"><div class="category-visual cat-sticker">✳</div><b>Stickers &amp; Labels</b><span>Small details, big impact →</span></a>
+        <a class="category" href="#products"><div class="category-visual cat-stationery">NOTE</div><b>Stationery</b><span>Bring your brand to the desk →</span></a>
       </div>
     </section>
 
     <section class="products-section" id="products">
       <div class="section-top">
         <div>
-          <p class="eyebrow">THE GOOD STUFF</p>
-          <h2>Our Printing Products</h2>
+          <p class="eyebrow">POPULAR PICKS</p>
+          <h2>Find your next favourite</h2>
+          <p class="section-subtitle">Explore our catalogue and customise products to fit your idea.</p>
         </div>
       </div>
       <div class="product-grid" id="productGrid"></div>
