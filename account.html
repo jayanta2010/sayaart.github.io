@@ -42,7 +42,9 @@ import {getFirestore,collection,getDocs,addDoc,query,where} from "https://www.gs
 const cfg={apiKey:"AIzaSyC6CxokC0KwAtP9EMilEQHMJQKWCgLWYJc",authDomain:"sayaart.firebaseapp.com",projectId:"sayaart",storageBucket:"sayaart.firebasestorage.app",messagingSenderId:"805892692460",appId:"1:805892692460:web:417ef9926bbc01d9f288c9"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
 const $=id=>document.getElementById(id);let currentUser=null,myOrders=[],myReturns=[];
-document.querySelectorAll('[data-panel]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-panel]').forEach(b=>b.classList.toggle('active',b===btn));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===btn.dataset.panel));}));
+function showAccountPanel(panelId){const target=document.getElementById(panelId);if(!target||!target.classList.contains('panel'))return;document.querySelectorAll('[data-panel]').forEach(b=>b.classList.toggle('active',b.dataset.panel===panelId));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===panelId));}
+document.querySelectorAll('[data-panel]').forEach(btn=>btn.addEventListener('click',()=>showAccountPanel(btn.dataset.panel)));
+const initialPanel=decodeURIComponent(location.hash.slice(1));if(initialPanel)showAccountPanel(initialPanel);
 $('logoutBtn').addEventListener('click',async()=>{await signOut(auth);location.href='customer-login.html';});
 function phoneDigits(v){return String(v||'').replace(/\D/g,'').slice(-10);}
 function savedAddresses(){try{return JSON.parse(localStorage.getItem('saya_addresses_'+phoneDigits(currentUser?.phoneNumber))||'[]').slice(0,4)}catch{return []}}
