@@ -399,6 +399,8 @@ const checkoutButton = document.getElementById('checkoutButton');
 let verifiedCheckoutPhone = '';
 let pinLookupTimer = null;
 let currentSavedAddresses = [];
+let appliedCoupon = null;
+function couponDiscount(subtotal) { return appliedCoupon ? Math.min(subtotal, Math.floor(subtotal * Number(appliedCoupon.percent || 0) / 100)) : 0; }
 
 function getAddressBook(phone) {
   const key = String(phone || '').replace(/\D/g, '').slice(-10);
@@ -488,13 +490,18 @@ function updateCheckoutSummary() {
   const subtotal = cart.reduce((s,x)=>s+Number(x.totalPrice||0),0);
   const method = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'upi';
   const charge = method === 'cod' ? 1000 : 0;
-  document.getElementById('checkoutPayTotal').textContent = '₹' + (subtotal + charge);
+  const discount = couponDiscount(subtotal);
+  const total = Math.max(0, subtotal - discount) + charge;
+  document.getElementById('checkoutPayTotal').textContent = '₹' + total;
   const chargeSummary = document.getElementById('deliveryChargeSummary');
-  if (chargeSummary) chargeSummary.innerHTML = 'Product subtotal: ₹' + subtotal + '<br>COD/delivery charge: ₹' + charge + '<br><b>Total payable: ₹' + (subtotal + charge) + '</b>';
+  if (chargeSummary) chargeSummary.innerHTML = 'Product subtotal: ₹' + subtotal + '<br>Coupon discount' + (appliedCoupon ? ' ('+appliedCoupon.code+' · '+appliedCoupon.percent+'%)' : '') + ': −₹' + discount + '<br>COD/delivery charge: ₹' + charge + '<br><b>Total payable: ₹' + total + '</b>';
 }
 if (checkoutButton) checkoutButton.addEventListener('click', () => {
   if (!cart.length) { alert('Your bag is empty.'); return; }
   setCheckoutStage(1);
+  appliedCoupon=null;
+  const couponInput=document.getElementById('couponCodeInput');if(couponInput)couponInput.value='';
+  const couponStatus=document.getElementById('couponStatus');if(couponStatus){couponStatus.textContent='Enter an active coupon code for a percentage discount.';couponStatus.style.color='';}
   refreshSavedAddresses();
   closeDrawer('cartDrawer');
   openModal('checkoutModal');
@@ -548,6 +555,23 @@ document.getElementById('addressNextBtn')?.addEventListener('click', () => {
 });
 document.getElementById('confirmDetailsBtn')?.addEventListener('click', () => { updateCheckoutSummary();setCheckoutStage(3); });
 document.querySelectorAll('input[name="paymentMethod"]').forEach(input => input.addEventListener('change', updateCheckoutSummary));
+document.getElementById('applyCouponBtn')?.addEventListener('click', async () => {
+  const input=document.getElementById('couponCodeInput'),status=document.getElementById('couponStatus');
+  const code=String(input?.value||'').trim().toUpperCase();
+  if(!code){appliedCoupon=null;status.textContent='Enter a coupon code first.';status.style.color='#b42318';updateCheckoutSummary();return;}
+  const btn=document.getElementById('applyCouponBtn');btn.disabled=true;status.textContent='Checking coupon…';
+  try{
+    const snap=await getDocs(collection(db,'coupons'));
+    const match=snap.docs.find(d=>String(d.data().code||'').trim().toUpperCase()===code && d.data().active===true);
+    if(!match)throw new Error('This coupon is invalid or inactive.');
+    const percent=Number(match.data().percent);
+    if(!Number.isFinite(percent)||percent<=0||percent>100)throw new Error('This coupon has an invalid discount setting.');
+    appliedCoupon={code,percent,docId:match.id};
+    status.textContent='Coupon applied: '+percent+'% off eligible product subtotal.';status.style.color='#08776c';
+    updateCheckoutSummary();
+  }catch(err){appliedCoupon=null;status.textContent=err.message;status.style.color='#b42318';updateCheckoutSummary();}
+  finally{btn.disabled=false;}
+});
 document.querySelectorAll('[data-back]').forEach(btn => btn.addEventListener('click',()=>setCheckoutStage(Number(btn.dataset.back))));
 
 function initRecaptcha() {
@@ -610,10 +634,11 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
     const orderId = await makeUniqueOrderId();
     const subtotal = cart.reduce((sum,item)=>sum+Number(item.totalPrice||0),0);
     const deliveryCharge = paymentMethod === 'cod' ? 1000 : 0;
-    const orderAmount = subtotal + deliveryCharge;
+    const discount = couponDiscount(subtotal);
+    const orderAmount = Math.max(0, subtotal - discount) + deliveryCharge;
     const orderData = {
       orderId, customerName:a.name, customerPhone:'+91'+a.phone,
-      deliveryAddress:formatAddress(a), address:a, items:cart, subtotal, deliveryCharge, amount:orderAmount,
+      deliveryAddress:formatAddress(a), address:a, items:cart, subtotal, discount, couponCode:appliedCoupon?.code||'', couponPercent:appliedCoupon?.percent||0, deliveryCharge, amount:orderAmount,
       paymentMethod, paymentStatus:paymentMethod==='cod'?'cash on delivery':'pending',
       orderStatus:paymentMethod==='cod'?'COD order placed':'Payment pending',
       createdAt:new Date().toISOString()
@@ -630,7 +655,7 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
     const payload={
       orderId,
       amount:orderAmount,
-      currency:'INR',paymentMethod,
+      currency:'INR',paymentMethod,discount,couponCode:appliedCoupon?.code||'',
       customer:{name:a.name,phone:'+91'+a.phone},
       address:a,items:cart,deliveryCharge,
       returnUrl:window.location.origin+window.location.pathname+'?payment=return'
@@ -651,6 +676,8 @@ async function initAdminPanel() {
   const adminProductList = document.getElementById('adminProductList');
   const adminOrdersList = document.getElementById('adminOrdersList');
   const adminReturnsList = document.getElementById('adminReturnsList');
+  const adminCouponsList = document.getElementById('adminCouponsList');
+  const couponAdminForm = document.getElementById('couponAdminForm');
   const pTypeSelect = document.getElementById('pType');
   const customOnlyFields = document.getElementById('customOnlyFields');
 
@@ -948,6 +975,53 @@ async function initAdminPanel() {
     } catch(err) { adminReturnsList.textContent='Could not load return requests: '+err.message; }
   }
 
+  // Coupon management: create, edit, activate/deactivate, and delete.
+  if (couponAdminForm) {
+    let editingCouponId = null;
+    const codeField=document.getElementById('couponAdminCode');
+    const percentField=document.getElementById('couponAdminPercent');
+    const activeField=document.getElementById('couponAdminActive');
+    const resetCouponForm=()=>{editingCouponId=null;couponAdminForm.reset();activeField.checked=true;document.getElementById('saveCouponBtn').textContent='Save coupon';document.getElementById('cancelCouponEdit').style.display='none';};
+    document.getElementById('cancelCouponEdit')?.addEventListener('click',resetCouponForm);
+    couponAdminForm.addEventListener('submit',async e=>{
+      e.preventDefault();
+      const code=codeField.value.trim().toUpperCase().replace(/\s+/g,'');
+      const percent=Number(percentField.value);
+      if(!/^[A-Z0-9_-]{2,32}$/.test(code))return alert('Use 2–32 letters, numbers, hyphens or underscores for the coupon code.');
+      if(!Number.isFinite(percent)||percent<1||percent>100)return alert('Discount must be between 1% and 100%.');
+      const btn=document.getElementById('saveCouponBtn');btn.disabled=true;
+      try{
+        const snap=await getDocs(collection(db,'coupons'));
+        const duplicate=snap.docs.find(d=>String(d.data().code||'').toUpperCase()===code&&d.id!==editingCouponId);
+        if(duplicate)throw new Error('This coupon code already exists.');
+        const data={code,percent,active:activeField.checked,updatedAt:new Date().toISOString()};
+        if(editingCouponId)await updateDoc(doc(db,'coupons',editingCouponId),data);
+        else await addDoc(collection(db,'coupons'),{...data,createdAt:new Date().toISOString()});
+        resetCouponForm();await loadAdminCoupons();
+      }catch(err){alert('Could not save coupon: '+err.message);}
+      finally{btn.disabled=false;}
+    });
+    async function loadAdminCoupons(){
+      adminCouponsList.innerHTML='<p class="help-text">Loading coupons…</p>';
+      try{
+        const snap=await getDocs(collection(db,'coupons'));
+        if(snap.empty){adminCouponsList.innerHTML='<p class="help-text">No coupon codes created yet.</p>';return;}
+        adminCouponsList.innerHTML='';
+        snap.docs.sort((a,b)=>String(a.data().code||'').localeCompare(String(b.data().code||''))).forEach(couponDoc=>{
+          const c=couponDoc.data(),card=document.createElement('article');card.className='product-list-item';card.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap';
+          const info=document.createElement('div');const title=document.createElement('b');title.textContent=c.code+' · '+c.percent+'% off';
+          const state=document.createElement('p');state.className='help-text';state.textContent=c.active?'Active at checkout':'Inactive — not accepted at checkout';info.append(title,state);
+          const actions=document.createElement('div');actions.style.cssText='display:flex;gap:8px;flex-wrap:wrap';
+          const edit=document.createElement('button');edit.type='button';edit.className='btn';edit.textContent='Edit';edit.addEventListener('click',()=>{editingCouponId=couponDoc.id;codeField.value=c.code||'';percentField.value=c.percent||'';activeField.checked=c.active===true;document.getElementById('saveCouponBtn').textContent='Save changes';document.getElementById('cancelCouponEdit').style.display='inline-block';couponAdminForm.scrollIntoView({behavior:'smooth',block:'start'});});
+          const toggle=document.createElement('button');toggle.type='button';toggle.className='btn';toggle.textContent=c.active?'Deactivate':'Activate';toggle.addEventListener('click',async()=>{try{await updateDoc(doc(db,'coupons',couponDoc.id),{active:!c.active,updatedAt:new Date().toISOString()});await loadAdminCoupons();}catch(err){alert('Could not change coupon status: '+err.message);}});
+          const del=document.createElement('button');del.type='button';del.className='btn btn-danger';del.textContent='Delete';del.addEventListener('click',async()=>{if(!confirm('Delete coupon '+c.code+'?'))return;try{await deleteDoc(doc(db,'coupons',couponDoc.id));await loadAdminCoupons();}catch(err){alert('Could not delete coupon: '+err.message);}});
+          actions.append(edit,toggle,del);card.append(info,actions);adminCouponsList.appendChild(card);
+        });
+      }catch(err){adminCouponsList.textContent='Could not load coupons: '+err.message;}
+    }
+    loadAdminCoupons();
+  }
+
   loadAdminProducts();
   loadAdminOrders();
   loadAdminReturns();
@@ -1012,13 +1086,29 @@ window.closeDrawer = function(id) {
 document.addEventListener('DOMContentLoaded', () => {
   loadProducts();
   window.updateCartUI();
-  const menuToggle = document.getElementById('storeMenuToggle');
   const storeSidebar = document.getElementById('storeSidebar');
-  const sidebarScrim = document.getElementById('sidebarScrim');
-  const closeStoreSidebar = () => { storeSidebar?.classList.remove('mobile-open'); sidebarScrim?.classList.remove('show'); menuToggle?.setAttribute('aria-expanded','false'); };
-  menuToggle?.addEventListener('click', () => { const open = !storeSidebar?.classList.contains('mobile-open'); storeSidebar?.classList.toggle('mobile-open', open); sidebarScrim?.classList.toggle('show', open); menuToggle.setAttribute('aria-expanded', String(open)); });
-  sidebarScrim?.addEventListener('click', closeStoreSidebar);
-  storeSidebar?.querySelectorAll('a').forEach(link => link.addEventListener('click', closeStoreSidebar));
+  const expandSidebar = document.getElementById('sidebarExpandToggle');
+  expandSidebar?.addEventListener('click', () => {
+    const expanded = storeSidebar?.classList.toggle('expanded');
+    expandSidebar.setAttribute('aria-expanded', String(!!expanded));
+    expandSidebar.setAttribute('aria-label', expanded ? 'Collapse sidebar' : 'Expand sidebar');
+    expandSidebar.title = expanded ? 'Collapse menu' : 'Expand menu';
+  });
+  storeSidebar?.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
+    if (link.hash && link.hash.length > 1) {
+      storeSidebar.classList.remove('expanded');
+      expandSidebar?.setAttribute('aria-expanded','false');
+    }
+  }));
+  // Show account sign-in or sign-out action according to Firebase session.
+  import('https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js').then(({onAuthStateChanged,signOut}) => {
+    onAuthStateChanged(auth, user => {
+      const inLink=document.getElementById('sidebarSignIn'),outLink=document.getElementById('sidebarSignOut');
+      if(inLink)inLink.style.display=user?'none':'flex';
+      if(outLink)outLink.style.display=user?'flex':'none';
+      outLink?.addEventListener('click',async event=>{event.preventDefault();try{await signOut(auth);}finally{location.href='index.html';}},{once:true});
+    });
+  }).catch(console.error);
   document.addEventListener('click', event => {
     const closeButton = event.target.closest('[data-close]');
     if (closeButton) {
