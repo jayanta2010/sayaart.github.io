@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
 // Firebase Configuration
@@ -490,41 +490,125 @@ async function initAdminPanel() {
 
   if (!adminAddForm) return;
 
-  // Add Product Form Submit
+  let editingProductId = null;
+
+  const parseOptions = (str) => str ? str.split(',').map(s => {
+    const [n, ex] = s.split(':');
+    return { name: n.trim(), extra: Number(ex || 0) };
+  }).filter(option => option.name) : [];
+  const formatOptions = (options) => (options || []).map(option => `${option.name}:${Number(option.extra || 0)}`).join(', ');
+
+  // Resize local uploads before storing them in Firestore (document limit is 1 MiB).
+  async function compressImageFile(file) {
+    if (!file) return '';
+    if (!file.type.startsWith('image/')) throw new Error('Please choose an image file.');
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Could not read selected image.'));
+      reader.readAsDataURL(file);
+    });
+    const img = await new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('Could not open selected image.'));
+      image.src = dataUrl;
+    });
+    const maxSide = 1000;
+    const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(img.width * scale));
+    canvas.height = Math.max(1, Math.round(img.height * scale));
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', 0.72);
+  }
+
+  async function getImageValue(fileId, urlId, previousValue = '') {
+    const file = document.getElementById(fileId)?.files?.[0];
+    const url = document.getElementById(urlId)?.value.trim() || '';
+    if (file) return await compressImageFile(file);
+    return url || previousValue || '';
+  }
+
+  function resetProductEditor() {
+    editingProductId = null;
+    adminAddForm.reset();
+    document.getElementById('saveProductBtn').textContent = 'Add Product to Store';
+    document.getElementById('cancelEditProductBtn').style.display = 'none';
+    document.querySelector('#productsTab h3').textContent = 'Add a product';
+    if (pTypeSelect && customOnlyFields) customOnlyFields.style.display = 'block';
+  }
+
+  document.getElementById('cancelEditProductBtn')?.addEventListener('click', resetProductEditor);
+
+  // Add a new product or save edits to an existing catalogue item.
   adminAddForm.onsubmit = async (e) => {
     e.preventDefault();
-
-    const pType = document.getElementById('pType').value;
-    const name = document.getElementById('pName').value;
-    const price = Number(document.getElementById('pPrice').value);
-    const description = document.getElementById('pDesc').value;
-    const imageUrl = document.getElementById('pImg').value.trim() || '';
-
-    const frontOutline = document.getElementById('pFrontOutline')?.value || '';
-    const backOutline = document.getElementById('pBackOutline')?.value || '';
-    const finishedLink = document.getElementById('pFinishedLink')?.value || '';
-
-    const hasPhoto = document.getElementById('chkPhoto')?.checked ?? true;
-    const hasText = document.getElementById('chkText')?.checked ?? true;
-
-    const parseOptions = (str) => str ? str.split(',').map(s => {
-      const [n, ex] = s.split(':');
-      return { name: n.trim(), extra: Number(ex || 0) };
-    }) : [];
-
+    const saveButton = document.getElementById('saveProductBtn');
+    saveButton.disabled = true;
+    saveButton.textContent = editingProductId ? 'Saving changes…' : 'Adding product…';
     try {
-      await addDoc(collection(db, "products"), {
-        pType, name, price, description, imageUrl,
-        frontOutline, backOutline, finishedLink,
-        hasPhoto, hasText,
+      const previous = editingProductId ? (await getDocs(collection(db, "products"))).docs.find(d => d.id === editingProductId)?.data() || {} : {};
+      const pType = document.getElementById('pType').value;
+      const name = document.getElementById('pName').value.trim();
+      const price = Number(document.getElementById('pPrice').value);
+      const description = document.getElementById('pDesc').value.trim();
+      const productData = {
+        pType, name, price, description,
+        imageUrl: await getImageValue('pImgFile', 'pImg', previous.imageUrl),
+        frontOutline: await getImageValue('pFrontOutlineFile', 'pFrontOutline', previous.frontOutline),
+        backOutline: await getImageValue('pBackOutlineFile', 'pBackOutline', previous.backOutline),
+        finishedLink: await getImageValue('pFinishedLinkFile', 'pFinishedLink', previous.finishedLink),
+        hasPhoto: document.getElementById('chkPhoto')?.checked ?? true,
+        hasText: document.getElementById('chkText')?.checked ?? true,
         sizes: parseOptions(document.getElementById('pSizes').value),
         qualities: parseOptions(document.getElementById('pQualities').value)
-      });
-      alert("Product added successfully!");
-      adminAddForm.reset();
-      loadAdminProducts();
+      };
+      if (editingProductId) {
+        await updateDoc(doc(db, "products", editingProductId), productData);
+        alert("Product updated successfully!");
+      } else {
+        await addDoc(collection(db, "products"), productData);
+        alert("Product added successfully!");
+      }
+      resetProductEditor();
+      await loadAdminProducts();
+      await loadProducts();
     } catch (err) {
-      alert("Error adding product: " + err.message);
+      alert("Could not save product: " + err.message);
+    } finally {
+      saveButton.disabled = false;
+      saveButton.textContent = editingProductId ? 'Save Product Changes' : 'Add Product to Store';
+    }
+  };
+
+  window.editProduct = async (id) => {
+    try {
+      const snap = await getDocs(collection(db, "products"));
+      const found = snap.docs.find(d => d.id === id);
+      if (!found) throw new Error('Product not found.');
+      const p = found.data();
+      editingProductId = id;
+      document.getElementById('pType').value = p.pType || 'customizable';
+      document.getElementById('pName').value = p.name || '';
+      document.getElementById('pPrice').value = p.price ?? '';
+      document.getElementById('pDesc').value = p.description || '';
+      document.getElementById('pImg').value = p.imageUrl && !p.imageUrl.startsWith('data:') ? p.imageUrl : '';
+      document.getElementById('pFrontOutline').value = p.frontOutline && !p.frontOutline.startsWith('data:') ? p.frontOutline : '';
+      document.getElementById('pBackOutline').value = p.backOutline && !p.backOutline.startsWith('data:') ? p.backOutline : '';
+      document.getElementById('pFinishedLink').value = p.finishedLink && !p.finishedLink.startsWith('data:') ? p.finishedLink : '';
+      document.getElementById('pSizes').value = formatOptions(p.sizes);
+      document.getElementById('pQualities').value = formatOptions(p.qualities);
+      document.getElementById('chkPhoto').checked = p.hasPhoto !== false;
+      document.getElementById('chkText').checked = p.hasText !== false;
+      ['pImgFile','pFrontOutlineFile','pBackOutlineFile','pFinishedLinkFile'].forEach(id => { const input=document.getElementById(id); if(input) input.value=''; });
+      if (customOnlyFields) customOnlyFields.style.display = p.pType === 'stock' ? 'none' : 'block';
+      document.getElementById('saveProductBtn').textContent = 'Save Product Changes';
+      document.getElementById('cancelEditProductBtn').style.display = 'inline-block';
+      document.querySelector('#productsTab h3').textContent = 'Edit product';
+      adminAddForm.scrollIntoView({behavior:'smooth',block:'start'});
+    } catch (err) {
+      alert('Could not open product for editing: ' + err.message);
     }
   };
 
@@ -543,15 +627,29 @@ async function initAdminPanel() {
       adminProductList.innerHTML = "";
       snap.forEach(docSnap => {
         const p = docSnap.data();
-        adminProductList.innerHTML += `
-          <div class="product-list-item" style="display:flex; justify-content:space-between; align-items:center; border: 1px solid #cbd5e1; padding: 12px; margin-bottom: 10px; border-radius: 6px; background:#fff;">
-            <div>
-              <b>${p.name}</b> (${p.pType === 'stock' ? 'Stock Item' : 'Customizable'}) - ₹${p.price}<br>
-              <small style="color:#64748b;">${p.description || ''}</small>
-            </div>
-            <button class="btn btn-danger" onclick="deleteProduct('${docSnap.id}')">Delete</button>
-          </div>
-        `;
+        const card = document.createElement('div');
+        card.className = 'product-list-item';
+        card.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;border:1px solid #cbd5e1;padding:12px;margin-bottom:10px;border-radius:10px;background:#fff;';
+        const details = document.createElement('div');
+        details.style.cssText = 'display:flex;align-items:center;gap:12px;min-width:0;flex:1;';
+        if (p.imageUrl) {
+          const img = document.createElement('img');
+          img.src = p.imageUrl; img.alt = p.name || 'Product image';
+          img.style.cssText = 'width:76px;height:76px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;';
+          details.appendChild(img);
+        }
+        const textBox = document.createElement('div');
+        const title = document.createElement('b');
+        title.textContent = (p.name || 'Product') + ' (' + (p.pType === 'stock' ? 'Stock Item' : 'Customizable') + ') — ₹' + (p.price ?? 0);
+        const desc = document.createElement('div'); desc.textContent = p.description || '';
+        desc.style.cssText = 'color:#64748b;font-size:12px;margin-top:5px;';
+        textBox.append(title, desc); details.appendChild(textBox);
+        const actions = document.createElement('div'); actions.style.cssText='display:flex;gap:8px;flex-wrap:wrap;';
+        const edit = document.createElement('button'); edit.className='btn'; edit.type='button'; edit.textContent='✎ Edit';
+        edit.addEventListener('click', () => window.editProduct(docSnap.id));
+        const del = document.createElement('button'); del.className='btn btn-danger'; del.type='button'; del.textContent='Delete';
+        del.addEventListener('click', () => window.deleteProduct(docSnap.id));
+        actions.append(edit,del); card.append(details,actions); adminProductList.appendChild(card);
       });
     } catch (err) {
       console.error("Firestore Product Load Error:", err);
