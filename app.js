@@ -564,10 +564,13 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
   const status=document.getElementById('paymentStatus'),button=document.getElementById('placeOrderBtn');
   button.disabled=true;button.textContent=paymentMethod==='cod'?'Placing COD order…':'Connecting securely…';status.textContent=paymentMethod==='cod'?'Placing Cash on Delivery order…':'Preparing secure payment…';
   try {
-    const settingsSnap=await getDocs(collection(db,'settings'));
-    const paymentDoc=settingsSnap.docs.find(d=>d.id==='payment');
-    const payment=paymentDoc?.data()||{};
-    if(!payment.checkoutEndpoint)throw new Error('Online payment is not configured yet. Admin must set the secure checkout API URL in Payment Settings before taking prepaid orders.');
+    let payment = {};
+    if (paymentMethod !== 'cod') {
+      const settingsSnap=await getDocs(collection(db,'settings'));
+      const paymentDoc=settingsSnap.docs.find(d=>d.id==='payment');
+      payment=paymentDoc?.data()||{};
+      if(!payment.checkoutEndpoint)throw new Error('Online payment is not configured yet. Admin must set the secure checkout API URL in Payment Settings before taking prepaid orders.');
+    }
     const makeUniqueOrderId = async () => {
       const snap = await getDocs(collection(db, 'orders'));
       const existing = new Set(snap.docs.map(d => String(d.data().orderId || '')));
@@ -578,20 +581,31 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
       throw new Error('Could not generate a unique order ID. Please try again.');
     };
     const orderId = await makeUniqueOrderId();
-    const orderAmount = cart.reduce((sum,item)=>sum+Number(item.totalPrice||0),0);
+    const subtotal = cart.reduce((sum,item)=>sum+Number(item.totalPrice||0),0);
+    const deliveryCharge = paymentMethod === 'cod' ? 1000 : 0;
+    const orderAmount = subtotal + deliveryCharge;
     const orderData = {
       orderId, customerName:a.name, customerPhone:'+91'+a.phone,
-      deliveryAddress:formatAddress(a), address:a, items:cart, amount:orderAmount,
-      paymentMethod, paymentStatus:'pending', orderStatus:'Payment pending',
+      deliveryAddress:formatAddress(a), address:a, items:cart, subtotal, deliveryCharge, amount:orderAmount,
+      paymentMethod, paymentStatus:paymentMethod==='cod'?'cash on delivery':'pending',
+      orderStatus:paymentMethod==='cod'?'COD order placed':'Payment pending',
       createdAt:new Date().toISOString()
     };
-    const orderRef = await addDoc(collection(db,'orders'), orderData);
+    await addDoc(collection(db,'orders'), orderData);
+    if (paymentMethod === 'cod') {
+      status.textContent='COD order placed. Order ID: '+orderId+'. Total including ₹1,000 COD/delivery charge: ₹'+orderAmount;
+      cart = [];
+      saveCart();
+      closeModal('checkoutModal');
+      alert('Cash on Delivery order placed. Order ID: '+orderId+' | Total: ₹'+orderAmount);
+      return;
+    }
     const payload={
       orderId,
       amount:orderAmount,
       currency:'INR',paymentMethod,
       customer:{name:a.name,phone:'+91'+a.phone},
-      address:a,items:cart,
+      address:a,items:cart,deliveryCharge,
       returnUrl:window.location.origin+window.location.pathname+'?payment=return'
     };
     const response=await fetch(payment.checkoutEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
