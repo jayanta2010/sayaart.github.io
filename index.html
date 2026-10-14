@@ -16,23 +16,15 @@
 </head>
 <body>
   <div class="announcement"><span>🎉 Print more, spend less</span><b>Special offers on selected products</b><span>Delivery across India</span></div>
-  <aside class="store-sidebar" id="storeSidebar" aria-label="Store navigation">
-    <button type="button" class="sidebar-expand-toggle" id="sidebarExpandToggle" aria-label="Expand sidebar" title="Expand menu">☰</button>
-    <a class="sidebar-brand" href="#home" title="Saya Art & Advertising">SAYA <span>ART &amp; ADVERTISING</span></a>
-    <nav class="sidebar-nav" aria-label="Main navigation">
-      <a href="#home" title="Home"><span class="sidebar-icon">⌂</span><span class="sidebar-label">Home</span></a>
-      <a href="#products" title="All Products"><span class="sidebar-icon">▦</span><span class="sidebar-label">All Products</span></a>
-      <a href="#category-cards" title="Categories"><span class="sidebar-icon">◇</span><span class="sidebar-label">Categories</span></a>
-      <a href="#business" title="Business Printing"><span class="sidebar-icon">✳</span><span class="sidebar-label">Business Printing</span></a>
-      <a href="account.html#profilePanel" title="Profile"><span class="sidebar-icon">♙</span><span class="sidebar-label">Profile</span></a>
-      <a href="account.html#ordersPanel" title="Orders"><span class="sidebar-icon">▣</span><span class="sidebar-label">Orders</span></a>
-      <a href="account.html#addressesPanel" title="Saved Address"><span class="sidebar-icon">⌖</span><span class="sidebar-label">Saved Address</span></a>
-      <a href="account.html#historyPanel" title="Order History"><span class="sidebar-icon">◷</span><span class="sidebar-label">Order History</span></a>
-      <a href="account.html#returnsPanel" title="Return / Replacement"><span class="sidebar-icon">↩</span><span class="sidebar-label">Return / Replacement</span></a>
-      <a href="customer-login.html" id="sidebarSignIn" title="Sign in"><span class="sidebar-icon">⇥</span><span class="sidebar-label">Sign in</span></a>
-      <a href="customer-login.html" id="sidebarSignOut" title="Sign out" style="display:none"><span class="sidebar-icon">↪</span><span class="sidebar-label">Sign out</span></a>
-    </nav>
-  </aside>
+  <aside class="store-sidebar" id="storeSidebar" aria-label="Customer account menu"><button type="button" class="sidebar-expand-toggle" id="sidebarExpandToggle" aria-label="Expand account menu" title="Account menu">☰</button><nav class="sidebar-nav" aria-label="Customer account">
+<a href="account.html#profilePanel" title="Profile"><span class="sidebar-icon">♙</span><span class="sidebar-label">Profile</span></a>
+<a href="account.html#ordersPanel" title="Orders"><span class="sidebar-icon">▣</span><span class="sidebar-label">Orders</span></a>
+<a href="account.html#addressesPanel" title="Saved Address"><span class="sidebar-icon">⌖</span><span class="sidebar-label">Saved Address</span></a>
+<a href="account.html#historyPanel" title="Order History"><span class="sidebar-icon">◷</span><span class="sidebar-label">Order History</span></a>
+<a href="account.html#returnsPanel" title="Return / Replacement"><span class="sidebar-icon">↩</span><span class="sidebar-label">Return / Replacement</span></a>
+<a href="customer-login.html" id="sidebarSignIn" title="Sign in"><span class="sidebar-icon">⇥</span><span class="sidebar-label">Sign in</span></a>
+<a href="#" id="sidebarSignOut" title="Sign out" style="display:none"><span class="sidebar-icon">↪</span><span class="sidebar-label">Sign out</span></a>
+</nav></aside>
   <div id="sidebarScrim" class="sidebar-scrim"></div>
   <header class="site-header">
     <button type="button" id="storeMenuToggle" class="store-menu-toggle" aria-controls="storeSidebar" aria-expanded="false" aria-label="Open store menu">☰</button>
@@ -234,9 +226,9 @@
     <div class="modal-card checkout" style="width:min(760px,96vw);max-height:94vh;overflow:auto">
       <button class="close modal-close" data-close="checkoutModal">×</button>
       <h2 style="margin:0 0 16px">Secure checkout</h2>
-      <div class="checkout-steps" id="checkoutSteps"><div class="checkout-step active" data-step-label="1"><b>1</b><span>Address</span></div><i></i><div class="checkout-step" data-step-label="2"><b>2</b><span>Confirm details</span></div><i></i><div class="checkout-step" data-step-label="3"><b>3</b><span>Payment</span></div></div>
+      <div class="checkout-steps" id="checkoutSteps"><div class="checkout-step active" data-step-label="1"><b>1</b><span>Order summary</span></div><i></i><div class="checkout-step" data-step-label="2"><b>2</b><span>Address</span></div><i></i><div class="checkout-step" data-step-label="3"><b>3</b><span>Payment</span></div></div>
       <form id="checkoutForm">
-        <section class="checkout-stage" data-stage="1">
+        <section class="checkout-stage" data-stage="1"><h3>Review your order</h3><div id="checkoutItemsSummary" class="checkout-items-list"></div><div class="checkout-summary" id="orderReviewTotals">Product subtotal: ₹0<br>Coupon discount: ₹0<br><b>Order total: ₹0</b></div><div class="checkout-stage-actions"><button type="button" class="secondary-button" data-close="checkoutModal">Continue shopping</button><button type="button" id="reviewContinueBtn" class="primary-button">Continue to address →</button></div></section><section class="checkout-stage" data-stage="2">
           <h3>Delivery address</h3>
           <label for="savedAddressSelect">Saved addresses</label>
           <div style="display:flex;gap:8px;align-items:center;margin:6px 0 14px"><select id="savedAddressSelect" style="flex:1;padding:11px;border:1px solid #cbd5e1;border-radius:8px"><option value="">Add a new address</option></select><button type="button" id="newAddressBtn" class="secondary-button">+ Add new</button></div>
@@ -252,14 +244,9 @@
             <div class="checkout-field"><label for="custHouse">House / Flat / Building (optional)</label><input id="custHouse" placeholder="House or flat number"></div>
             <div class="checkout-field"><label for="custLandmark">Landmark *</label><input required id="custLandmark" placeholder="Nearby landmark"></div>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><button type="button" id="saveAddressBtn" class="secondary-button">Save address</button><button type="button" id="addressNextBtn" class="primary-button">Continue →</button></div>
-          <div id="recaptcha-container"></div>
-          <div id="otpSection" style="display:none;margin-top:14px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px"><b>Verify mobile number</b><p class="help-text">OTP is required before payment.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><input type="text" id="otpInput" inputmode="numeric" maxlength="6" placeholder="6-digit SMS OTP" style="flex:1;min-width:140px;padding:10px;border:1px solid #cbd5e1;border-radius:8px"><button type="button" id="sendOtpBtn" class="secondary-button">Send OTP</button><button type="button" id="verifyOtpBtn" class="primary-button">Verify OTP</button></div></div>
-        </section>
-        <section class="checkout-stage" data-stage="2" hidden>
-          <h3>Confirm your details</h3><div id="checkoutAddressSummary" class="checkout-summary"></div><div id="checkoutItemsSummary" class="checkout-summary"></div>
-          <div class="checkout-stage-actions"><button type="button" class="secondary-button" data-back="1">← Edit address</button><button type="button" id="confirmDetailsBtn" class="primary-button">Confirm details →</button></div>
-        </section>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><button type="button" id="saveAddressBtn" class="secondary-button">Save address</button><button type="button" id="addressNextBtn" class="primary-button">Continue to payment →</button></div>
+          
+          </section>
         <section class="checkout-stage" data-stage="3" hidden>
           <h3>Choose payment method</h3><p class="help-text">Cash on Delivery (COD) is available with a ₹1,000 COD/delivery charge.</p>
           <label class="payment-choice"><input type="radio" name="paymentMethod" value="upi" checked><span><b>UPI</b><small>Pay using a UPI app</small></span></label>
@@ -272,8 +259,7 @@
           <div class="checkout-summary"><div>Total payable</div><strong id="checkoutPayTotal">₹0</strong></div>
           <p id="paymentStatus" role="status" class="help-text"></p>
           <div class="checkout-stage-actions"><button type="button" class="secondary-button" data-back="2">← Back</button><button type="submit" id="placeOrderBtn" class="primary-button">Pay securely →</button></div>
-        </section>
-      </form>
+        </section></form>
     </div>
   </div>
   <div class="toast" id="toast"></div>
