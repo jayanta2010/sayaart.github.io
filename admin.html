@@ -7,41 +7,60 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
   <style>
-    body { font-family: 'Manrope', sans-serif; background: #f8fafc; padding: 20px; }
-    .admin-container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    .admin-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 25px; }
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 14px; }
-    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
-    .checkbox-group { display: flex; gap: 20px; margin: 15px 0; background: #fff; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
-    .btn { background: #16a34a; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 15px; }
-    .btn-danger { background: #ef4444; padding: 6px 12px; font-size: 12px; }
-    .product-list-item, .order-list-item { border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px; background: #ffffff; }
-    .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-    .tab-btn { padding: 10px 20px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
-    .tab-btn.active { background: #0f172a; color: white; }
-    .panel { display: none; }
-    .panel.active { display: block; }
-    .help-text { font-size: 12px; color: #64748b; margin-top: 3px; }
-    .design-preview-box { max-width: 150px; border: 1px solid #cbd5e1; border-radius: 4px; margin-top: 8px; display: block; }
+    :root{--ink:#102b2b;--muted:#647776;--line:#dce8e5;--paper:#f3f8f7;--green:#0e7468;--mint:#dff5ef;--red:#b42318}
+    *{box-sizing:border-box}
+    body{margin:0;padding:28px 18px 48px;background:radial-gradient(circle at 8% 0%,#d9f4eb 0,transparent 28%),linear-gradient(135deg,#f3f8f7,#edf2f8);color:var(--ink);font-family:'Manrope',Arial,sans-serif}
+    .admin-container{max-width:1120px;margin:0 auto}
+    .admin-header{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:25px 28px;margin-bottom:20px;border-radius:22px;background:linear-gradient(125deg,#0b302e,#13594f 68%,#168477);color:#fff;box-shadow:0 16px 35px #123a3226}
+    .admin-header h2{margin:0;font-size:clamp(21px,3vw,30px);letter-spacing:-.7px}
+    .header-kicker{margin:0 0 7px;color:#b8e8db;text-transform:uppercase;letter-spacing:2px;font-size:10px;font-weight:800}
+    .header-links{display:flex;gap:10px;flex-wrap:wrap}
+    .header-links a{color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:10px 13px;border:1px solid #ffffff55;border-radius:10px;background:#ffffff12}
+    .header-links a:hover{background:#ffffff25}
+    .tabs{display:flex;gap:9px;flex-wrap:wrap;margin:0 0 18px;padding:8px;border:1px solid var(--line);border-radius:15px;background:#ffffffc9}
+    .tab-btn{border:0;border-radius:10px;padding:12px 17px;background:transparent;color:#506865;cursor:pointer;font-weight:800;font-family:inherit}
+    .tab-btn.active{background:var(--ink);color:#fff;box-shadow:0 5px 14px #102b2b22}
+    .panel{display:none;background:#fff;border:1px solid var(--line);border-radius:20px;padding:clamp(18px,3vw,30px);box-shadow:0 10px 30px #153b3210}
+    .panel.active{display:block}
+    .panel h3{font-size:21px;letter-spacing:-.4px;margin:0 0 8px}
+    .section-intro{margin:0 0 22px;color:var(--muted);font-size:13px;line-height:1.6}
+    #adminAddProductForm{margin-bottom:30px;background:linear-gradient(180deg,#f8fbfa,#f2f8f6);padding:clamp(15px,2.5vw,24px);border:1px solid var(--line);border-radius:16px}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}
+    .form-group{margin-bottom:16px;min-width:0}
+    .form-group label{display:block;font-size:12px;font-weight:800;margin-bottom:7px;color:#284541}
+    .form-group input,.form-group textarea,.form-group select{width:100%;padding:12px 13px;border:1px solid #cadbd6;border-radius:10px;background:#fff;color:var(--ink);font:inherit;font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s}
+    .form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:#168477;box-shadow:0 0 0 3px #1684771b}
+    .checkbox-group{display:flex;gap:18px;flex-wrap:wrap;margin:12px 0 16px;background:#fff;padding:13px;border:1px solid var(--line);border-radius:10px}
+    .checkbox-group label{font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px}
+    .checkbox-group input{accent-color:var(--green)}
+    #customOnlyFields{border:1px dashed #8dcfc0!important;padding:16px!important;border-radius:13px!important;margin-bottom:17px!important;background:#eaf8f4!important}
+    #customOnlyFields h4{font-size:14px!important}
+    .btn{background:var(--green);color:#fff;padding:12px 18px;border:0;border-radius:10px;cursor:pointer;font-weight:800;font-size:13px;font-family:inherit;box-shadow:0 5px 12px #0e74681f}
+    .btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+    .btn-danger{background:#fff0ef;color:var(--red);border:1px solid #f3c8c5;padding:8px 11px;font-size:12px;box-shadow:none}
+    .help-text{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}
+    .product-list-item,.order-list-item{border:1px solid var(--line)!important;padding:16px!important;border-radius:13px!important;margin-bottom:12px!important;background:#fff!important;box-shadow:0 4px 14px #123a3208}
+    .design-preview-box{max-width:160px;width:100%;border:1px solid var(--line);border-radius:8px;margin-top:8px;display:block}
+    #adminProductList,#adminOrdersList{margin-top:15px}
+    @media(max-width:650px){body{padding:14px 10px 28px}.admin-header{padding:20px;border-radius:17px}.form-grid{grid-template-columns:1fr}.panel{padding:16px}.tab-btn{flex:1;padding:11px 9px;font-size:12px}.product-list-item{align-items:flex-start!important;gap:12px}.header-links a{font-size:12px}}
   </style>
 </head>
 <body>
   <div class="admin-container">
     <div class="admin-header">
-      <h2>Saya Art Admin Panel</h2>
-      <a href="index.html" style="text-decoration: none; color: #2563eb; font-weight: 600;">← Back to Store</a>
-      <a href="payments.html" style="text-decoration:none;color:#2563eb;font-weight:600;margin-left:14px;">Payment Settings</a>
+      <div><p class="header-kicker">Creative commerce studio</p><h2>Saya Art &amp; Advertising</h2><p style="margin:8px 0 0;color:#d5eee7;font-size:13px;">Admin workspace · Products, orders &amp; payments</p></div>
+      <nav class="header-links"><a href="index.html">← Back to Store</a><a href="payments.html">Payment Settings ↗</a></nav>
     </div>
 
-    <div class="tabs">
-      <button class="tab-btn active" onclick="showTab('productsTab')">Manage Products</button>
-      <button class="tab-btn" onclick="showTab('ordersTab')">View Orders & High-Res Artworks</button>
+    <div class="tabs" role="tablist" aria-label="Admin sections">
+      <button class="tab-btn active" type="button" data-tab="productsTab" role="tab" aria-selected="true">▦ &nbsp; Manage Products</button>
+      <button class="tab-btn" type="button" data-tab="ordersTab" role="tab" aria-selected="false">▣ &nbsp; Orders &amp; Artworks</button>
     </div>
 
     <!-- Products Panel -->
     <div id="productsTab" class="panel active">
-      <h3>Add New Printable Product</h3>
+      <h3>Add a product</h3>
+      <p class="section-intro">Create a store listing, set its price and configure customization options.</p>
       <form id="adminAddProductForm" style="margin-bottom: 30px; background: #f1f5f9; padding: 20px; border-radius: 8px;">
         
         <div class="form-group">
@@ -110,25 +129,30 @@
         <button type="submit" class="btn">Add Product to Store</button>
       </form>
 
-      <h3>Live Products</h3>
+      <h3>Live products</h3><p class="section-intro">Products currently loaded from your Firebase catalogue.</p>
       <div id="adminProductList">Loading...</div>
     </div>
 
     <!-- Orders Panel -->
     <div id="ordersTab" class="panel">
-      <h3>Customer Orders & Exact Artwork Files</h3>
+      <h3>Customer orders &amp; artwork files</h3><p class="section-intro">Review customer details and preview/download artwork attached to each order.</p>
       <div id="adminOrdersList">Loading orders...</div>
     </div>
   </div>
 
   <script type="module" src="app.js"></script>
   <script>
-    function showTab(tabId) {
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
-      event.target.classList.add('active');
-    }
+    document.querySelectorAll('[data-tab]').forEach(button => {
+      button.addEventListener('click', () => {
+        const tabId = button.dataset.tab;
+        document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active', panel.id === tabId));
+        document.querySelectorAll('[data-tab]').forEach(tab => {
+          const active = tab === button;
+          tab.classList.toggle('active', active);
+          tab.setAttribute('aria-selected', String(active));
+        });
+      });
+    });
   </script>
 </body>
 </html>
