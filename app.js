@@ -436,39 +436,212 @@ if (verifyOtpBtn) {
   };
 }
 
-// Checkout Form Submission
+// Multi-step checkout: address -> confirmation -> prepaid payment.
 const checkoutForm = document.getElementById('checkoutForm');
-if (checkoutForm) {
-  checkoutForm.onsubmit = async (e) => {
-    e.preventDefault();
-    if (cart.length === 0) return alert("Cart is empty!");
+const checkoutButton = document.getElementById('checkoutButton');
+let verifiedCheckoutPhone = '';
+let pinLookupTimer = null;
+let currentSavedAddresses = [];
 
-    const name = document.getElementById('custName').value;
-    const phone = document.getElementById('custPhone').value;
-    const address = document.getElementById('custAddress').value;
-    const totalAmount = cart.reduce((sum, item) => sum + item.totalPrice, 0);
-
-    try {
-      await addDoc(collection(db, "orders"), {
-        orderId: 'ORD-' + Date.now(),
-        customerName: name,
-        customerPhone: phone,
-        deliveryAddress: address,
-        items: cart,
-        amount: totalAmount,
-        createdAt: new Date().toISOString()
-      });
-
-      alert("Order Successful!");
-      cart = [];
-      saveCart();
-      closeModal('checkoutModal');
-      closeDrawer('cartDrawer');
-    } catch (err) {
-      alert("Order failed: " + err.message);
-    }
+function getAddressBook(phone) {
+  const key = String(phone || '').replace(/\D/g, '').slice(-10);
+  if (!key) return [];
+  try { return JSON.parse(localStorage.getItem('saya_addresses_' + key) || '[]').slice(0, 4); }
+  catch { return []; }
+}
+function addressFields() {
+  return {
+    pincode: document.getElementById('custPincode').value.trim(),
+    state: document.getElementById('custState').value.trim(),
+    district: document.getElementById('custDistrict').value.trim(),
+    area: document.getElementById('custArea').value.trim(),
+    name: document.getElementById('custName').value.trim(),
+    phone: document.getElementById('custPhone').value.replace(/\D/g, '').slice(-10),
+    locality: document.getElementById('custLocality').value.trim(),
+    house: document.getElementById('custHouse').value.trim(),
+    landmark: document.getElementById('custLandmark').value.trim()
   };
 }
+function fillAddress(a) {
+  for (const [field,id] of Object.entries({pincode:'custPincode',state:'custState',district:'custDistrict',name:'custName',phone:'custPhone',locality:'custLocality',house:'custHouse',landmark:'custLandmark'})) {
+    document.getElementById(id).value = a[field] || '';
+  }
+  const area = document.getElementById('custArea');
+  area.innerHTML = '';
+  const opt = document.createElement('option'); opt.value = a.area || ''; opt.textContent = a.area || 'Choose post office / area'; area.appendChild(opt);
+  area.value = a.area || '';
+  document.getElementById('savedAddressSelect').value = a._key || '';
+}
+function refreshSavedAddresses(selectedKey = '') {
+  const phone = document.getElementById('custPhone')?.value || '';
+  currentSavedAddresses = getAddressBook(phone);
+  const select = document.getElementById('savedAddressSelect');
+  if (!select) return;
+  select.innerHTML = '<option value="">Add a new address</option>';
+  currentSavedAddresses.forEach((a,i) => {
+    const opt = document.createElement('option'); opt.value = String(i);
+    opt.textContent = `${a.name} — ${a.pincode}, ${a.area}`;
+    select.appendChild(opt);
+  });
+  if (selectedKey !== '' && currentSavedAddresses[Number(selectedKey)]) select.value = selectedKey;
+  document.getElementById('addressLimitNote').textContent = `Saved addresses: ${currentSavedAddresses.length}/4 for this mobile number.`;
+}
+function saveCurrentAddress(showMessage = true) {
+  const a = addressFields();
+  if (!/^\d{10}$/.test(a.phone)) { alert('Enter a valid 10-digit mobile number first.'); return false; }
+  if (!/^\d{6}$/.test(a.pincode) || !a.state || !a.district || !a.area) { alert('Enter a valid PIN code and select the post office / area.'); return false; }
+  const required = ['name','locality','landmark'];
+  if (required.some(k => !a[k])) { alert('Please fill in name, locality and landmark.'); return false; }
+  const book = getAddressBook(a.phone);
+  const existing = book.findIndex(x => x.pincode===a.pincode && x.area===a.area && x.locality===a.locality && x.house===a.house);
+  if (existing >= 0) book[existing] = a;
+  else if (book.length >= 4) { alert('Maximum 4 saved addresses per mobile number. Delete/replace one by selecting an existing address and saving changes.'); return false; }
+  else book.push(a);
+  localStorage.setItem('saya_addresses_' + a.phone, JSON.stringify(book));
+  refreshSavedAddresses(existing >= 0 ? String(existing) : String(book.length - 1));
+  if (showMessage) alert('Address saved on this device for this mobile number.');
+  return true;
+}
+function setCheckoutStage(n) {
+  document.querySelectorAll('.checkout-stage').forEach(el => { el.hidden = Number(el.dataset.stage) !== n; });
+  document.querySelectorAll('[data-step-label]').forEach(el => {
+    const step = Number(el.dataset.stepLabel);
+    el.classList.toggle('active', step === n);
+    el.classList.toggle('done', step < n);
+  });
+}
+function formatAddress(a) {
+  return [a.name, a.phone, a.house, a.locality, a.area, a.district, a.state, a.pincode, 'Landmark: ' + a.landmark].filter(Boolean).join(', ');
+}
+function updateCheckoutSummary() {
+  const a = addressFields();
+  document.getElementById('checkoutAddressSummary').textContent = formatAddress(a);
+  const items = cart.map(x => `${x.name} × ${x.quantity} — ₹${x.totalPrice}`).join('\n');
+  const box = document.getElementById('checkoutItemsSummary');
+  box.style.whiteSpace = 'pre-line';
+  box.textContent = items + '\n\nTotal: ₹' + cart.reduce((s,x)=>s+Number(x.totalPrice||0),0);
+  document.getElementById('checkoutPayTotal').textContent = '₹' + cart.reduce((s,x)=>s+Number(x.totalPrice||0),0);
+}
+if (checkoutButton) checkoutButton.addEventListener('click', () => {
+  if (!cart.length) { alert('Your bag is empty.'); return; }
+  setCheckoutStage(1);
+  refreshSavedAddresses();
+  openDrawer('cartDrawer');
+  closeDrawer('cartDrawer');
+  openModal('checkoutModal');
+});
+document.getElementById('newAddressBtn')?.addEventListener('click', () => {
+  document.getElementById('checkoutForm').querySelectorAll('input:not([type=radio])').forEach(el => { if (!['otpInput'].includes(el.id)) el.value=''; });
+  document.getElementById('custArea').innerHTML='<option value="">Enter PIN code first</option>';
+  document.getElementById('savedAddressSelect').value='';
+  document.getElementById('otpSection').style.display='none';
+  verifiedCheckoutPhone=''; confirmationResult=null;
+  document.getElementById('placeOrderBtn').disabled=false;
+});
+document.getElementById('savedAddressSelect')?.addEventListener('change', e => {
+  if (e.target.value === '') return;
+  const a = currentSavedAddresses[Number(e.target.value)];
+  if (a) { fillAddress(a); verifiedCheckoutPhone=''; document.getElementById('otpSection').style.display='none'; }
+});
+document.getElementById('custPhone')?.addEventListener('change', () => { refreshSavedAddresses(); if (verifiedCheckoutPhone !== document.getElementById('custPhone').value.replace(/\D/g,'').slice(-10)) { verifiedCheckoutPhone=''; confirmationResult=null; document.getElementById('otpSection').style.display='none'; } });
+document.getElementById('custPincode')?.addEventListener('input', () => {
+  clearTimeout(pinLookupTimer);
+  const pin = document.getElementById('custPincode').value.replace(/\D/g,'').slice(0,6);
+  document.getElementById('custPincode').value = pin;
+  if (pin.length !== 6) { document.getElementById('custState').value=''; document.getElementById('custDistrict').value=''; document.getElementById('custArea').innerHTML='<option value="">Enter 6-digit PIN code</option>'; return; }
+  pinLookupTimer=setTimeout(async () => {
+    const area = document.getElementById('custArea');
+    area.innerHTML='<option value="">Looking up PIN code…</option>';
+    try {
+      const response=await fetch('https://api.postalpincode.in/pincode/'+pin);
+      const result=await response.json();
+      if (result?.[0]?.Status !== 'Success' || !result[0].PostOffice?.length) throw new Error('PIN code not found');
+      const offices=result[0].PostOffice;
+      document.getElementById('custState').value=offices[0].State || '';
+      document.getElementById('custDistrict').value=offices[0].District || '';
+      area.innerHTML='';
+      offices.forEach(po=>{const opt=document.createElement('option');opt.value=po.Name;opt.textContent=po.Name+' — '+po.Block;area.appendChild(opt);});
+    } catch(err) { area.innerHTML='<option value="">Could not find PIN — check the code</option>'; document.getElementById('custState').value='';document.getElementById('custDistrict').value=''; }
+  },300);
+});
+document.getElementById('saveAddressBtn')?.addEventListener('click', () => saveCurrentAddress(true));
+document.getElementById('addressNextBtn')?.addEventListener('click', () => {
+  const a=addressFields();
+  if (!checkoutForm.querySelector('[data-stage="1"]').querySelector('#custPincode').reportValidity()) return;
+  if (!/^\d{6}$/.test(a.pincode) || !a.state || !a.district || !a.area || !/^\d{10}$/.test(a.phone) || !a.name || !a.locality || !a.landmark) { alert('Please complete all required address details. PIN lookup must finish first.'); return; }
+  if (verifiedCheckoutPhone !== a.phone) {
+    document.getElementById('otpSection').style.display='block';
+    alert('Verify this mobile number by SMS OTP before continuing.');
+    return;
+  }
+  saveCurrentAddress(false);
+  updateCheckoutSummary();setCheckoutStage(2);
+});
+document.getElementById('confirmDetailsBtn')?.addEventListener('click', () => { updateCheckoutSummary();setCheckoutStage(3); });
+document.querySelectorAll('[data-back]').forEach(btn => btn.addEventListener('click',()=>setCheckoutStage(Number(btn.dataset.back))));
+
+function initRecaptcha() {
+  if (!window.recaptchaVerifier) {
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size:'invisible', callback:()=>{} });
+  }
+}
+const sendOtpBtn = document.getElementById('sendOtpBtn');
+if (sendOtpBtn) sendOtpBtn.onclick = async () => {
+  const raw = document.getElementById('custPhone').value.replace(/\D/g,'').slice(-10);
+  if (!/^\d{10}$/.test(raw)) return alert('Enter a valid 10-digit mobile number.');
+  try {
+    sendOtpBtn.disabled=true;sendOtpBtn.textContent='Sending OTP…';initRecaptcha();
+    confirmationResult=await signInWithPhoneNumber(auth,'+91'+raw,window.recaptchaVerifier);
+    document.getElementById('otpSection').style.display='block';
+    alert('SMS OTP sent.');
+  } catch(error) { alert('Could not send OTP: '+error.message); if(window.recaptchaVerifier){try{await window.recaptchaVerifier.clear();}catch{}window.recaptchaVerifier=null;} }
+  finally {sendOtpBtn.disabled=false;sendOtpBtn.textContent='Send OTP';}
+};
+const verifyOtpBtn=document.getElementById('verifyOtpBtn');
+if(verifyOtpBtn) verifyOtpBtn.onclick=async()=>{
+  const code=document.getElementById('otpInput').value.trim();
+  if(!code||!confirmationResult)return alert('Enter the SMS OTP first.');
+  try {
+    verifyOtpBtn.disabled=true;verifyOtpBtn.textContent='Verifying…';
+    await confirmationResult.confirm(code);
+    verifiedCheckoutPhone=document.getElementById('custPhone').value.replace(/\D/g,'').slice(-10);
+    verifyOtpBtn.textContent='Verified ✓';
+    alert('Mobile number verified.');
+  } catch(error) { alert('OTP verification failed: '+error.message);verifyOtpBtn.textContent='Verify OTP'; }
+  finally {verifyOtpBtn.disabled=false;}
+};
+
+if(checkoutForm) checkoutForm.onsubmit=async e=>{
+  e.preventDefault();
+  if(!cart.length)return alert('Your bag is empty.');
+  const a=addressFields();
+  if(verifiedCheckoutPhone!==a.phone)return alert('Verify your mobile number first.');
+  const paymentMethod=checkoutForm.querySelector('input[name="paymentMethod"]:checked')?.value;
+  if(!['upi','card'].includes(paymentMethod))return alert('Choose UPI or card payment.');
+  const status=document.getElementById('paymentStatus'),button=document.getElementById('placeOrderBtn');
+  button.disabled=true;button.textContent='Connecting securely…';status.textContent='Preparing secure payment…';
+  try {
+    const settingsSnap=await getDocs(collection(db,'settings'));
+    const paymentDoc=settingsSnap.docs.find(d=>d.id==='payment');
+    const payment=paymentDoc?.data()||{};
+    if(!payment.checkoutEndpoint)throw new Error('Online payment is not configured yet. Admin must set the secure checkout API URL in Payment Settings before taking prepaid orders.');
+    const payload={
+      amount:cart.reduce((sum,item)=>sum+Number(item.totalPrice||0),0),
+      currency:'INR',paymentMethod,
+      customer:{name:a.name,phone:'+91'+a.phone},
+      address:a,items:cart,
+      orderId:'ORD-'+Date.now(),
+      returnUrl:window.location.origin+window.location.pathname+'?payment=return'
+    };
+    const response=await fetch(payment.checkoutEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!response.ok)throw new Error('Payment service returned HTTP '+response.status);
+    const result=await response.json();
+    if(!result.checkoutUrl)throw new Error('Payment service did not return checkoutUrl. Configure the backend to create a UPI/card checkout session.');
+    status.textContent='Redirecting to secure payment…';
+    window.location.href=result.checkoutUrl;
+  } catch(err) { console.error('Checkout payment error:',err);status.textContent=err.message;alert(err.message); }
+  finally {button.disabled=false;button.textContent='Pay securely →';}
+};
 
 // ADMIN PANEL ENGINE WITH ROBUST ERROR HANDLING
 async function initAdminPanel() {
