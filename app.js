@@ -499,6 +499,7 @@ if (checkoutButton) checkoutButton.addEventListener('click', () => {
   const couponInput=document.getElementById('couponCodeInput');if(couponInput)couponInput.value='';
   const couponStatus=document.getElementById('couponStatus');if(couponStatus){couponStatus.textContent='Enter an active coupon code for a percentage discount.';couponStatus.style.color='';}
   refreshSavedAddresses();
+  updateCheckoutSummary();
   closeDrawer('cartDrawer');
   openModal('checkoutModal');
 });
