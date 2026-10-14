@@ -55,6 +55,7 @@
     <div class="tabs" role="tablist" aria-label="Admin sections">
       <button class="tab-btn active" type="button" data-tab="productsTab" role="tab" aria-selected="true">▦ &nbsp; Manage Products</button>
       <button class="tab-btn" type="button" data-tab="ordersTab" role="tab" aria-selected="false">▣ &nbsp; Orders &amp; Artworks</button>
+      <button class="tab-btn" type="button" data-tab="returnsTab" role="tab" aria-selected="false">↩ &nbsp; Returns</button>
     </div>
 
     <!-- Products Panel -->
@@ -146,6 +147,7 @@
       <h3>Customer orders &amp; artwork files</h3><p class="section-intro">Review customer details and preview/download artwork attached to each order.</p>
       <div id="adminOrdersList">Loading orders...</div>
     </div>
+    <div id="returnsTab" class="panel"><h3>Return requests</h3><p class="section-intro">Review return order IDs, customer details, evidence photos, and approval status.</p><div id="adminReturnsList">Loading return requests...</div></div>
   </div>
 
   <script type="module" src="app.js"></script>
