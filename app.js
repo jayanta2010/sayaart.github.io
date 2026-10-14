@@ -44,7 +44,7 @@ function initFabricCanvas() {
 
 // Storefront - Load Products
 async function loadProducts() {
-  const container = document.getElementById('productGrid');
+  const container = document.getElementById('productGrid') || document.getElementById('allProductsGrid');
   if (!container) return;
 
   let dbProducts = [];
@@ -499,7 +499,7 @@ if (checkoutButton) checkoutButton.addEventListener('click', () => {
   openModal('checkoutModal');
 });
 document.getElementById('newAddressBtn')?.addEventListener('click', () => {
-  document.getElementById('checkoutForm').querySelectorAll('input:not([type=radio])').forEach(el => { if (!['otpInput'].includes(el.id)) el.value=''; });
+  document.getElementById('checkoutForm').querySelectorAll('input:not([type=radio])').forEach(el => { el.value=''; });
   document.getElementById('custArea').innerHTML='<option value="">Enter PIN code first</option>';
   document.getElementById('savedAddressSelect').value='';
   document.getElementById('placeOrderBtn').disabled=false;
