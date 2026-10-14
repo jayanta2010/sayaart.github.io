@@ -96,23 +96,10 @@
           <h4 style="margin: 0 0 10px 0; color: #1e40af;">Customizer Canvas & Outlines Settings</h4>
           
           <div class="form-group">
-            <label>Front Outline Image URL <span style="color:#64748b;">(Optional)</span></label>
-            <input type="url" id="pFrontOutline" placeholder="Front outline image URL (optional)">
-            <input type="file" id="pFrontOutlineFile" accept="image/*" style="margin-top:8px">
+            <label><b>Design sides</b></label>
+            <label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" id="pHasBack"> Enable separate Front &amp; Back design (T-shirt, hoodie, etc.)</label>
+            <div class="help-text">Untick for products with only one printable side, such as photo frames, mugs or single-side prints.</div>
           </div>
-
-          <div class="form-group">
-            <label>Back Outline Image URL <span style="color:#64748b;">(Optional)</span></label>
-            <input type="url" id="pBackOutline" placeholder="Back outline image URL (optional)">
-            <input type="file" id="pBackOutlineFile" accept="image/*" style="margin-top:8px">
-          </div>
-
-          <div class="form-group">
-            <label>Finished Product Mockup Link/Image URL <span style="color:#64748b;">(Optional)</span></label>
-            <input type="url" id="pFinishedLink" placeholder="Finished mockup image URL (optional)">
-            <input type="file" id="pFinishedLinkFile" accept="image/*" style="margin-top:8px">
-          </div>
-
           <label><b>Enable Canvas Features:</b></label>
           <div class="checkbox-group">
             <label><input type="checkbox" id="chkPhoto" checked> Photo/Logo Upload</label>
