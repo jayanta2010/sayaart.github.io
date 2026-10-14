@@ -17,7 +17,9 @@
 <body>
   <div class="announcement"><span>🎉 Print more, spend less</span><b>Special offers on selected products</b><span>Delivery across India</span></div>
   <aside class="store-sidebar" id="storeSidebar" aria-label="Store navigation"><a class="sidebar-brand" href="#home">SAYA <span>ART &amp; ADVERTISING</span></a><div class="sidebar-profile"><span class="sidebar-avatar">♙</span><div><b>My Account</b><a href="account.html">Profile &amp; Orders</a></div></div><nav class="sidebar-nav"><a href="#home">⌂ <span>Home</span></a><a href="#products">▦ <span>All Products</span></a><a href="#category-cards">◇ <span>Categories</span></a><a href="#business">✳ <span>Business Printing</span></a><a href="account.html">▣ <span>My Orders</span></a><a href="policies.html#terms">ⓘ <span>Terms &amp; Conditions</span></a><a href="policies.html#returns">↩ <span>Return Policy</span></a></nav><div class="sidebar-bottom"><small>PRINT · PERSONALISE · PROMOTE</small><a href="account.html">Sign in / Account →</a></div></aside>
+  <div id="sidebarScrim" class="sidebar-scrim"></div>
   <header class="site-header">
+    <button type="button" id="storeMenuToggle" class="store-menu-toggle" aria-controls="storeSidebar" aria-expanded="false" aria-label="Open store menu">☰ Menu</button>
     <a class="brand" href="#home" aria-label="Saya Art & Advertising home">
       <img class="brand-logo" src="saya-art-advertising-logo.jpg" alt="Saya Art & Advertising" />
       <span><b data-shop-name>Saya Art &amp; Advertising</b><small>PRINT · PERSONALISE · PROMOTE</small></span>
@@ -121,7 +123,7 @@
         
         <!-- Left: Interactive Canvas Viewport (Shown for Customizable Items) -->
         <div id="canvasContainer" class="editor-canvas-panel" style="flex: 1; min-width: 300px; text-align: center; background: #f1f5f9; padding: 15px; border-radius: 8px;">
-          <h3 class="canvas-heading">Design canvas <small id="canvasFormatHint">Product preview · drag text/photo to position</small></h3>
+          <h3 class="canvas-heading">Design canvas <small id="canvasFormatHint">A4 Portrait · Product photo preview · add your text/photo</small></h3>
           
           <!-- View Toggle Buttons (Front / Back) -->
           <div id="viewToggleGroup" style="margin-bottom: 10px; display: flex; justify-content: center; gap: 10px;">
@@ -138,7 +140,7 @@
         <!-- Right: Tool Controls & Options -->
         <div style="flex: 1; min-width: 300px;">
           <h2 id="customTitle" style="margin: 0 0 5px 0;">Product Options</h2>
-          <div id="customPriceDisplay" style="font-size: 22px; font-weight: 800; color: #16a34a; margin-bottom: 12px;">₹0</div>
+          <div id="customPriceDisplay" style="font-size: 22px; font-weight: 800; color: #16a34a; margin-bottom: 6px;">₹0</div><p id="customizerDeliveryDate" class="product-delivery-date">Estimated delivery: calculated from today</p>
 
           <!-- Options: Size & Quality -->
           <div id="sizeSection" style="display:none; margin-bottom: 10px;">
