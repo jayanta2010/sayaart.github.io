@@ -486,6 +486,8 @@ function updateCheckoutSummary() {
   document.getElementById('checkoutPayTotal').textContent='₹'+total;
   const cs=document.getElementById('deliveryChargeSummary');if(cs)cs.innerHTML='Product subtotal: ₹'+subtotal+'<br>Coupon discount'+(appliedCoupon?' ('+appliedCoupon.code+' · '+appliedCoupon.percent+'%)':'')+': −₹'+discount+'<br>COD/delivery charge: ₹'+charge+'<br><b>Total payable: ₹'+total+'</b>';
   const rt=document.getElementById('orderReviewTotals');if(rt)rt.innerHTML='Product subtotal: ₹'+subtotal+'<br>Coupon discount'+(appliedCoupon?' ('+appliedCoupon.code+' · '+appliedCoupon.percent+'%)':'')+': −₹'+discount+'<br><b>Order total: ₹'+Math.max(0,subtotal-discount)+'</b>';
+  const payButton=document.getElementById('placeOrderBtn');
+  if(payButton)payButton.textContent=method==='card'?'Pay by card · ₹'+total+' →':method==='cod'?'Place COD order · ₹'+total+' →':'Pay with UPI · ₹'+total+' →';
 }
 if (checkoutButton) checkoutButton.addEventListener('click', () => {
   if (!cart.length) { alert('Your bag is empty.'); return; }
