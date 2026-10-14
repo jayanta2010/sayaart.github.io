@@ -37,12 +37,12 @@
       <button type="submit" aria-label="Search products">⌕</button>
     </form>
     <div class="header-actions">
-      <div class="theme-picker"><label for="themeSelect">Theme</label><select id="themeSelect" aria-label="Choose theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
+      <div class="theme-picker"><button type="button" id="themeMenuButton" aria-expanded="false" aria-controls="themeMenu">Theme ▾</button><div class="theme-menu" id="themeMenu" hidden><button type="button" data-theme-choice="light">☀ Light</button><button type="button" data-theme-choice="dark">☾ Dark</button><button type="button" data-theme-choice="system">◐ System</button></div></div>
       <button class="cart-button" id="openCart">🛒 Cart <span id="cartCount">0</span></button>
     </div>
   </header>
   <nav class="category-nav" aria-label="Shop categories">
-    <a href="#products">All products</a><a href="#category-cards">Business essentials</a><a href="#products">Visiting cards</a><a href="#products">Banners &amp; posters</a><a href="#products">T-shirts &amp; gifts</a><a href="#business">Business printing</a>
+    <a href="all-products.html">All Products</a><a href="#category-cards">Business essentials</a><a href="#products">Visiting cards</a><a href="#products">Banners &amp; posters</a><a href="#products">T-shirts &amp; gifts</a><a href="#business">Business printing</a>
   </nav>
 
   <main id="home">
@@ -66,14 +66,7 @@
     </section>
     <section class="category-section" id="category-cards">
       <div class="section-top"><div><p class="eyebrow">SHOP BY CATEGORY</p><h2>Everything you need to get noticed</h2></div></div>
-      <div class="categories">
-        <a class="category" href="#products"><div class="category-visual cat-card">Aa</div><b>Business Cards</b><span>Make a lasting first impression →</span></a>
-        <a class="category" href="#products"><div class="category-visual cat-banner">PRINT<br>BIG</div><b>Banners &amp; Posters</b><span>Stand out from across the room →</span></a>
-        <a class="category" href="#products"><div class="category-visual cat-shirt">TEE</div><b>Custom T-shirts</b><span>Wear your ideas proudly →</span></a>
-        <a class="category" href="#products"><div class="category-visual cat-gift">GIFT</div><b>Personalised Gifts</b><span>Make every moment special →</span></a>
-        <a class="category" href="#products"><div class="category-visual cat-sticker">✳</div><b>Stickers &amp; Labels</b><span>Small details, big impact →</span></a>
-        <a class="category" href="#products"><div class="category-visual cat-stationery">NOTE</div><b>Stationery</b><span>Bring your brand to the desk →</span></a>
-      </div>
+      <div class="categories" id="dynamicCategories"></div>
     </section>
 
     <section class="products-section" id="products">
@@ -84,6 +77,7 @@
           <p class="section-subtitle">Explore our catalogue and customise products to fit your idea.</p>
         </div>
       </div>
+      <div id="customProductSections"></div>
       <div class="product-grid" id="productGrid"></div>
     </section>
 
@@ -264,13 +258,7 @@
   </div>
   <div class="toast" id="toast"></div>
   <script>
-    (() => {
-      const select = document.getElementById("themeSelect");
-      const applyTheme = value => { const mode = value || "system"; document.documentElement.dataset.theme = mode === "system" ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : mode; if (select && select.value !== mode) select.value = mode; };
-      const saved = localStorage.getItem("saya_theme") || "system"; applyTheme(saved);
-      if (select) select.addEventListener("change", () => { localStorage.setItem("saya_theme", select.value); applyTheme(select.value); });
-      window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if ((localStorage.getItem("saya_theme") || "system") === "system") applyTheme("system"); });
-    })();
+    (()=>{const button=document.getElementById("themeMenuButton"),menu=document.getElementById("themeMenu");const apply=value=>{const mode=value||"system";document.documentElement.dataset.theme=mode==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):mode;localStorage.setItem("saya_theme",mode);menu?.querySelectorAll("[data-theme-choice]").forEach(b=>b.classList.toggle("selected",b.dataset.themeChoice===mode));};apply(localStorage.getItem("saya_theme")||"system");button?.addEventListener("click",()=>{const open=menu.hidden;menu.hidden=!open;button.setAttribute("aria-expanded",String(open));});menu?.querySelectorAll("[data-theme-choice]").forEach(b=>b.addEventListener("click",()=>{apply(b.dataset.themeChoice);menu.hidden=true;button?.setAttribute("aria-expanded","false");}));document.addEventListener("click",e=>{if(!e.target.closest(".theme-picker")){if(menu)menu.hidden=true;button?.setAttribute("aria-expanded","false");}});matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((localStorage.getItem("saya_theme")||"system")==="system")apply("system");});})();
   </script>
   <script type="module" src="app.js"></script>
 </body>
