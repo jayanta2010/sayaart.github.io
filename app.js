@@ -370,72 +370,6 @@ if (addCustomBtn) {
   };
 }
 
-// Phone OTP Authentication Engine
-function initRecaptcha() {
-  if (!window.recaptchaVerifier) {
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      'size': 'invisible',
-      'callback': () => {}
-    });
-  }
-}
-
-const sendOtpBtn = document.getElementById('sendOtpBtn');
-if (sendOtpBtn) {
-  sendOtpBtn.onclick = async () => {
-    let phoneNumber = document.getElementById('custPhone').value.trim();
-    if (!phoneNumber) return alert("Please enter mobile number!");
-
-    if (!phoneNumber.startsWith('+')) {
-      phoneNumber = '+91' + phoneNumber;
-    }
-
-    initRecaptcha();
-    const appVerifier = window.recaptchaVerifier;
-
-    try {
-      sendOtpBtn.innerText = "Sending...";
-      sendOtpBtn.disabled = true;
-      confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-      alert("SMS OTP Sent!");
-      document.getElementById('otpSection').style.display = 'block';
-      sendOtpBtn.innerText = "Resend OTP";
-      sendOtpBtn.disabled = false;
-    } catch (error) {
-      console.error("OTP Error:", error);
-      alert("SMS Error: " + error.message);
-      sendOtpBtn.innerText = "Send OTP";
-      sendOtpBtn.disabled = false;
-    }
-  };
-}
-
-const verifyOtpBtn = document.getElementById('verifyOtpBtn');
-if (verifyOtpBtn) {
-  verifyOtpBtn.onclick = async () => {
-    const code = document.getElementById('otpInput').value.trim();
-    if (!code || !confirmationResult) return alert("Enter 6-digit OTP!");
-
-    try {
-      verifyOtpBtn.innerText = "Verifying...";
-      await confirmationResult.confirm(code);
-      alert("Phone Number Verified!");
-      verifyOtpBtn.innerText = "Verified ✓";
-      verifyOtpBtn.style.background = "#059669";
-      
-      const placeOrderBtn = document.getElementById('placeOrderBtn');
-      if (placeOrderBtn) {
-        placeOrderBtn.disabled = false;
-        placeOrderBtn.style.opacity = '1';
-        placeOrderBtn.style.cursor = 'pointer';
-      }
-    } catch (error) {
-      alert("Invalid OTP! Try again.");
-      verifyOtpBtn.innerText = "Verify OTP";
-    }
-  };
-}
-
 // Multi-step checkout: address -> confirmation -> prepaid payment.
 const checkoutForm = document.getElementById('checkoutForm');
 const checkoutButton = document.getElementById('checkoutButton');
@@ -526,7 +460,6 @@ if (checkoutButton) checkoutButton.addEventListener('click', () => {
   if (!cart.length) { alert('Your bag is empty.'); return; }
   setCheckoutStage(1);
   refreshSavedAddresses();
-  openDrawer('cartDrawer');
   closeDrawer('cartDrawer');
   openModal('checkoutModal');
 });
@@ -625,19 +558,37 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
     const paymentDoc=settingsSnap.docs.find(d=>d.id==='payment');
     const payment=paymentDoc?.data()||{};
     if(!payment.checkoutEndpoint)throw new Error('Online payment is not configured yet. Admin must set the secure checkout API URL in Payment Settings before taking prepaid orders.');
+    const makeUniqueOrderId = async () => {
+      const snap = await getDocs(collection(db, 'orders'));
+      const existing = new Set(snap.docs.map(d => String(d.data().orderId || '')));
+      for (let attempt=0; attempt<30; attempt++) {
+        const candidate = String(Math.floor(1000000000 + Math.random()*9000000000));
+        if (!existing.has(candidate)) return candidate;
+      }
+      throw new Error('Could not generate a unique order ID. Please try again.');
+    };
+    const orderId = await makeUniqueOrderId();
+    const orderAmount = cart.reduce((sum,item)=>sum+Number(item.totalPrice||0),0);
+    const orderData = {
+      orderId, customerName:a.name, customerPhone:'+91'+a.phone,
+      deliveryAddress:formatAddress(a), address:a, items:cart, amount:orderAmount,
+      paymentMethod, paymentStatus:'pending', orderStatus:'Payment pending',
+      createdAt:new Date().toISOString()
+    };
+    const orderRef = await addDoc(collection(db,'orders'), orderData);
     const payload={
-      amount:cart.reduce((sum,item)=>sum+Number(item.totalPrice||0),0),
+      orderId,
+      amount:orderAmount,
       currency:'INR',paymentMethod,
       customer:{name:a.name,phone:'+91'+a.phone},
       address:a,items:cart,
-      orderId:'ORD-'+Date.now(),
       returnUrl:window.location.origin+window.location.pathname+'?payment=return'
     };
     const response=await fetch(payment.checkoutEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     if(!response.ok)throw new Error('Payment service returned HTTP '+response.status);
     const result=await response.json();
     if(!result.checkoutUrl)throw new Error('Payment service did not return checkoutUrl. Configure the backend to create a UPI/card checkout session.');
-    status.textContent='Redirecting to secure payment…';
+    status.textContent='Order ID: '+orderId+'. Redirecting to secure payment…';
     window.location.href=result.checkoutUrl;
   } catch(err) { console.error('Checkout payment error:',err);status.textContent=err.message;alert(err.message); }
   finally {button.disabled=false;button.textContent='Pay securely →';}
@@ -648,6 +599,7 @@ async function initAdminPanel() {
   const adminAddForm = document.getElementById('adminAddProductForm');
   const adminProductList = document.getElementById('adminProductList');
   const adminOrdersList = document.getElementById('adminOrdersList');
+  const adminReturnsList = document.getElementById('adminReturnsList');
   const pTypeSelect = document.getElementById('pType');
   const customOnlyFields = document.getElementById('customOnlyFields');
 
@@ -883,8 +835,37 @@ async function initAdminPanel() {
     }
   };
 
+  async function loadAdminReturns() {
+    if (!adminReturnsList) return;
+    adminReturnsList.innerHTML = '<p>Loading return requests…</p>';
+    try {
+      const snap = await getDocs(collection(db, 'returns'));
+      if (snap.empty) { adminReturnsList.innerHTML = '<p>No return requests yet.</p>'; return; }
+      adminReturnsList.innerHTML = '';
+      snap.docs.sort((a,b)=>String(b.data().createdAt||'').localeCompare(String(a.data().createdAt||''))).forEach(returnDoc => {
+        const r = returnDoc.data();
+        const card = document.createElement('article');
+        card.className = 'order-list-item';
+        const heading = document.createElement('h4'); heading.textContent = 'Return for Order #' + (r.orderId || 'N/A') + ' · ' + (r.status || 'Pending approval');
+        const details = document.createElement('p'); details.textContent = (r.customerName||'Customer') + ' · ' + (r.customerPhone||'') + ' · ' + (r.reason||'No reason supplied') + ' · Submitted: ' + (r.createdAt||'');
+        card.append(heading,details);
+        const photos = document.createElement('div'); photos.style.cssText='display:flex;gap:10px;flex-wrap:wrap;margin:10px 0';
+        (r.photos||[]).forEach((src,i)=>{const link=document.createElement('a');link.href=src;link.target='_blank';link.rel='noopener';const img=document.createElement('img');img.src=src;img.alt='Return evidence '+(i+1);img.style.cssText='width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #dbe4ed';link.appendChild(img);photos.appendChild(link);});
+        card.appendChild(photos);
+        const actions=document.createElement('div');actions.style.cssText='display:flex;gap:8px;flex-wrap:wrap';
+        ['Approved','Rejected','More information required'].forEach(status=>{
+          const btn=document.createElement('button');btn.className='btn'+(status==='Rejected'?' btn-danger':'');btn.type='button';btn.textContent=status;
+          btn.addEventListener('click',async()=>{try{await updateDoc(doc(db,'returns',returnDoc.id),{status,reviewedAt:new Date().toISOString()});loadAdminReturns();}catch(e){alert('Could not update return status: '+e.message);}});
+          actions.appendChild(btn);
+        });
+        card.appendChild(actions);adminReturnsList.appendChild(card);
+      });
+    } catch(err) { adminReturnsList.textContent='Could not load return requests: '+err.message; }
+  }
+
   loadAdminProducts();
   loadAdminOrders();
+  loadAdminReturns();
 }
 
 // UI Helpers
