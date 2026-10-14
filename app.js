@@ -722,9 +722,7 @@ async function initAdminPanel() {
       document.getElementById('pPrice').value = p.price ?? '';
       document.getElementById('pDesc').value = p.description || '';
       document.getElementById('pImg').value = p.imageUrl && !p.imageUrl.startsWith('data:') ? p.imageUrl : '';
-      document.getElementById('pFrontOutline').value = p.frontOutline && !p.frontOutline.startsWith('data:') ? p.frontOutline : '';
-      document.getElementById('pBackOutline').value = p.backOutline && !p.backOutline.startsWith('data:') ? p.backOutline : '';
-      document.getElementById('pFinishedLink').value = p.finishedLink && !p.finishedLink.startsWith('data:') ? p.finishedLink : '';
+      document.getElementById('pHasBack').checked = !!p.hasBack;
       document.getElementById('pSizes').value = formatOptions(p.sizes);
       document.getElementById('pQualities').value = formatOptions(p.qualities);
       document.getElementById('chkPhoto').checked = p.hasPhoto !== false;
