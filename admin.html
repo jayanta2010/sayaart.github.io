@@ -88,13 +88,14 @@
           <label>Front / Main Product Image <span style="color:#64748b;">(Optional)</span></label>
           <input type="url" id="pImg" placeholder="Image URL (optional)">
           <input type="file" id="pImgFile" accept="image/*" style="margin-top:8px">
-          <div class="help-text">This image is used as the front preview in the design canvas. Upload a T-shirt photo/product mockup for T-shirts.</div>
+          <div class="help-text">This image is used as the front preview in the A4 portrait design canvas. Upload a T-shirt photo/product mockup here.</div>
+          <img id="pImgPreview" alt="Front image preview" style="display:none;max-width:140px;max-height:140px;object-fit:contain;margin-top:8px;border:1px solid #dce8e5;border-radius:8px">
         </div>
-        <div class="form-group">
+        <div class="form-group" id="backImageFields">
           <label>Back-side Product Image <span style="color:#64748b;">(Optional)</span></label>
           <input type="url" id="pBackImg" placeholder="Back image URL (optional)">
           <input type="file" id="pBackImgFile" accept="image/*" style="margin-top:8px">
-          <div class="help-text">Optional. If supplied, it is shown for Back View. Leave blank to use the main product image for both sides.</div>
+          <div class="help-text">Optional. Enable Front &amp; Back design below to use this image. If blank, the front image is used on both sides.</div>
           <img id="pBackImgPreview" alt="Back image preview" style="display:none;max-width:140px;max-height:140px;object-fit:contain;margin-top:8px;border:1px solid #dce8e5;border-radius:8px">
         </div>
 
