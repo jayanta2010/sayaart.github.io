@@ -430,7 +430,9 @@ function fillAddress(a) {
   document.getElementById('savedAddressSelect').value = a._key || '';
 }
 function refreshSavedAddresses(selectedKey = '') {
-  const phone = document.getElementById('custPhone')?.value || '';
+  const phoneField = document.getElementById('custPhone');
+  const phone = phoneField?.value || localStorage.getItem('saya_last_customer_phone') || '';
+  if (phoneField && !phoneField.value && phone) phoneField.value = phone;
   currentSavedAddresses = getAddressBook(phone);
   const select = document.getElementById('savedAddressSelect');
   if (!select) return;
@@ -442,7 +444,7 @@ function refreshSavedAddresses(selectedKey = '') {
   });
   const defaultIndex = currentSavedAddresses.findIndex(a => a.isDefault);
   if (selectedKey !== '' && currentSavedAddresses[Number(selectedKey)]) select.value = selectedKey;
-  else if (defaultIndex >= 0) select.value = String(defaultIndex);
+  else if (defaultIndex >= 0) { select.value = String(defaultIndex); fillAddress(currentSavedAddresses[defaultIndex]); }
   document.getElementById('addressLimitNote').textContent = `Saved addresses: ${currentSavedAddresses.length}/4 for this mobile number.`;
 }
 function saveCurrentAddress(showMessage = true) {
@@ -457,6 +459,7 @@ function saveCurrentAddress(showMessage = true) {
   else if (book.length >= 4) { alert('Maximum 4 saved addresses per mobile number. Delete/replace one by selecting an existing address and saving changes.'); return false; }
   else book.push(a);
   if (!book.some(x => x.isDefault)) book[book.length - 1].isDefault = true;
+  localStorage.setItem('saya_last_customer_phone', a.phone);
   localStorage.setItem('saya_addresses_' + a.phone, JSON.stringify(book));
   refreshSavedAddresses(existing >= 0 ? String(existing) : String(book.length - 1));
   if (showMessage) alert('Address saved on this device for this mobile number.');
@@ -990,6 +993,13 @@ window.closeDrawer = function(id) {
 document.addEventListener('DOMContentLoaded', () => {
   loadProducts();
   window.updateCartUI();
+  const menuToggle = document.getElementById('storeMenuToggle');
+  const storeSidebar = document.getElementById('storeSidebar');
+  const sidebarScrim = document.getElementById('sidebarScrim');
+  const closeStoreSidebar = () => { storeSidebar?.classList.remove('mobile-open'); sidebarScrim?.classList.remove('show'); menuToggle?.setAttribute('aria-expanded','false'); };
+  menuToggle?.addEventListener('click', () => { const open = !storeSidebar?.classList.contains('mobile-open'); storeSidebar?.classList.toggle('mobile-open', open); sidebarScrim?.classList.toggle('show', open); menuToggle.setAttribute('aria-expanded', String(open)); });
+  sidebarScrim?.addEventListener('click', closeStoreSidebar);
+  storeSidebar?.querySelectorAll('a').forEach(link => link.addEventListener('click', closeStoreSidebar));
   document.addEventListener('click', event => {
     const closeButton = event.target.closest('[data-close]');
     if (closeButton) {
