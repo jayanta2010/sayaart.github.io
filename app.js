@@ -666,6 +666,23 @@ async function initAdminPanel() {
 
   let editingProductId = null;
 
+  const frontImageFile = document.getElementById('pImgFile');
+  const frontImageUrl = document.getElementById('pImg');
+  const frontImagePreview = document.getElementById('pImgPreview');
+  const backImageFields = document.getElementById('backImageFields');
+  const hasBackCheckbox = document.getElementById('pHasBack');
+  const updateFrontImagePreview = () => {
+    if (!frontImagePreview) return;
+    const file = frontImageFile?.files?.[0];
+    if (file) { frontImagePreview.src = URL.createObjectURL(file); frontImagePreview.style.display = 'block'; }
+    else if (frontImageUrl?.value.trim()) { frontImagePreview.src = frontImageUrl.value.trim(); frontImagePreview.style.display = 'block'; }
+    else { frontImagePreview.src = ''; frontImagePreview.style.display = 'none'; }
+  };
+  frontImageFile?.addEventListener('change', updateFrontImagePreview);
+  frontImageUrl?.addEventListener('input', updateFrontImagePreview);
+  const updateBackFieldsVisibility = () => { if (backImageFields) backImageFields.style.opacity = hasBackCheckbox?.checked ? '1' : '.65'; };
+  hasBackCheckbox?.addEventListener('change', updateBackFieldsVisibility);
+  updateBackFieldsVisibility();
   const backImageFile = document.getElementById('pBackImgFile');
   const backImageUrl = document.getElementById('pBackImg');
   const backImagePreview = document.getElementById('pBackImgPreview');
