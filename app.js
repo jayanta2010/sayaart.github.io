@@ -56,6 +56,8 @@ async function loadProducts() {
         id: docSnap.id,
         name: item.name || "Product",
         description: item.description || "",
+        category: String(item.category || '').trim(),
+        storefrontSection: String(item.storefrontSection || '').trim(),
         price: Number(item.price) || 0,
         imageUrl: item.imageUrl || "",
         pType: item.pType || "customizable",
@@ -73,6 +75,12 @@ async function loadProducts() {
 
   allProductsList = dbProducts;
   renderProducts(allProductsList);
+  renderProducts(allProductsList,'allProductsGrid');
+  renderDynamicCategories();
+  renderCustomProductSections();
+  const params=new URLSearchParams(location.search),categoryFilter=params.get('category'),sectionFilter=params.get('section');
+  if(categoryFilter||sectionFilter){const filtered=allProductsList.filter(p=>(!categoryFilter||p.category===categoryFilter)&&(!sectionFilter||p.storefrontSection===sectionFilter));renderProducts(filtered,'allProductsGrid');const heading=document.getElementById('allProductsHeading');if(heading)heading.textContent=categoryFilter||sectionFilter;}
+  const searchInput=document.getElementById('storeSearchInput');if(searchInput?.value.trim())runStoreSearch(searchInput.value);
 }
 
 function getEstimatedDeliveryDate() {
@@ -90,29 +98,16 @@ function productPreviewImage(p) {
   const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="350" height="495"><rect width="100%" height="100%" fill="#f8fafc"/><rect x="30" y="30" width="290" height="435" rx="8" fill="#fff" stroke="#cbd5e1"/><text x="175" y="240" font-family="Arial" font-size="16" fill="#64748b" text-anchor="middle">Product preview</text></svg>';
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
-function renderProducts(products) {
-  const container = document.getElementById('productGrid');
-  if (!container) return;
-
-  if (products.length === 0) {
-    container.innerHTML = "<p style='color:#64748b;'>No products available yet.</p>";
-    return;
-  }
-
-  container.innerHTML = products.map(p => `
-    <div class="product" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; background: #ffffff; display: flex; flex-direction: column; justify-content: space-between;">
-      <div>
-        <img src="${productPreviewImage(p)}" alt="${p.name}" style="width: 100%; height: 160px; object-fit: contain; background:#f8fafc; border-radius: 6px; margin-bottom: 12px;">
-        <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 6px 0;">${p.name}</h3>
-        <p style="font-size: 13px; color: #64748b; margin: 0 0 14px 0;">${p.description}</p>
-      </div>
-      <div>
-        <div style="font-size: 18px; font-weight: 800; color: #16a34a; margin-bottom: 6px;">Starting ₹${p.price}</div><div class="product-delivery-date">Estimated delivery: <b>${getEstimatedDeliveryDate()}</b></div>
-        <button class="primary-button full" onclick="openProductCustomizer('${p.id}')">${p.pType === 'stock' ? 'Select & Buy →' : 'Customize & Design →'}</button>
-      </div>
-    </div>
-  `).join('');
+function escapeStoreText(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function dogNoResultsMarkup(){return `<div class="no-results" role="status"><svg viewBox="0 0 220 150" aria-label="Dog says no result found" role="img"><ellipse cx="110" cy="133" rx="55" ry="7" fill="#dbe4ea"/><path d="M72 63Q45 55 42 85Q44 108 71 103L83 88Z M148 63Q175 55 178 85Q176 108 149 103L137 88Z" fill="#b77945"/><path d="M70 55Q70 28 105 30Q140 28 150 55L155 101Q148 126 110 126Q72 126 65 101Z" fill="#f4d2a6" stroke="#8a5733" stroke-width="2"/><ellipse cx="91" cy="68" rx="5" ry="7" fill="#30251f"/><ellipse cx="129" cy="68" rx="5" ry="7" fill="#30251f"/><ellipse cx="110" cy="86" rx="11" ry="8" fill="#30251f"/><path d="M110 94Q101 103 94 96M110 94Q119 103 126 96" fill="none" stroke="#30251f" stroke-width="2" stroke-linecap="round"/><path d="M151 32Q168 19 177 31L171 48Z M69 32Q52 19 43 31L49 48Z" fill="#b77945"/><rect x="14" y="7" width="192" height="27" rx="13" fill="#fff" stroke="#dbe4ea"/><text x="110" y="25" text-anchor="middle" font-size="11" font-weight="800" fill="#475569">No Result Found 🐶</text></svg><h3>No Result Found</h3><p>Woof! We couldn't find a product matching your search.</p></div>`;}
+function renderProducts(products,targetId='productGrid'){
+ const container=document.getElementById(targetId);if(!container)return;
+ if(!products.length){container.innerHTML=dogNoResultsMarkup();return;}
+ container.innerHTML=products.map(p=>`<article class="product" data-product-id="${escapeStoreText(p.id)}"><div class="product-image-wrap"><img loading="lazy" src="${escapeStoreText(productPreviewImage(p))}" alt="${escapeStoreText(p.name)}" onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22350%22 height=%22495%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23f8fafc%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 fill=%22%2364748b%22 font-size=%2216%22%3EImage unavailable%3C/text%3E%3C/svg%3E'"></div><div class="product-details"><h3>${escapeStoreText(p.name)}</h3><p>${escapeStoreText(p.description)}</p><div class="product-price">Starting ₹${Number(p.price)||0}</div><div class="product-delivery-date">Estimated delivery: <b>${getEstimatedDeliveryDate()}</b></div><button class="primary-button full" type="button" onclick="openProductCustomizer('${String(p.id).replace(/'/g,"\\'")}')">${p.pType==='stock'?'Select & Buy →':'Customize & Design →'}</button></div></article>`).join('');
 }
+function renderDynamicCategories(){const target=document.getElementById('dynamicCategories');if(!target)return;const counts=new Map();allProductsList.forEach(p=>{if(p.category)counts.set(p.category,(counts.get(p.category)||0)+1);});target.innerHTML=[...counts.keys()].map(category=>`<a class="category" href="all-products.html?category=${encodeURIComponent(category)}"><div class="category-visual cat-card">✦</div><b>${escapeStoreText(category)}</b><span>Explore products →</span></a>`).join('');if(!target.innerHTML)target.innerHTML='<p class="help-text">Categories appear here when products are assigned.</p>';}
+function renderCustomProductSections(){const target=document.getElementById('customProductSections');if(!target)return;const names=[...new Set(allProductsList.map(p=>p.storefrontSection).filter(Boolean))];target.innerHTML=names.map(name=>{const products=allProductsList.filter(p=>p.storefrontSection===name);if(!products.length)return '';return `<section class="custom-product-section"><div class="section-top"><div><p class="eyebrow">CURATED COLLECTION</p><h2>${escapeStoreText(name)}</h2></div><a class="text-button" href="all-products.html?section=${encodeURIComponent(name)}">View all →</a></div><div class="product-grid">${products.slice(0,4).map(p=>`<article class="product"><div class="product-image-wrap"><img loading="lazy" src="${escapeStoreText(productPreviewImage(p))}" alt="${escapeStoreText(p.name)}"></div><div class="product-details"><h3>${escapeStoreText(p.name)}</h3><p>${escapeStoreText(p.description)}</p><div class="product-price">Starting ₹${Number(p.price)||0}</div><button class="primary-button full" type="button" onclick="openProductCustomizer('${String(p.id).replace(/'/g,"\\'")}')">View product →</button></div></article>`).join('')}</div></section>`;}).join('');}
+function runStoreSearch(raw){const query=String(raw||'').trim().toLowerCase();const filtered=!query?allProductsList:allProductsList.filter(p=>[p.name,p.description,p.pType,p.category,p.storefrontSection].some(v=>String(v||'').toLowerCase().includes(query)));if(document.getElementById('productGrid'))renderProducts(filtered);if(document.getElementById('allProductsGrid'))renderProducts(filtered,'allProductsGrid');const section=document.getElementById('products')||document.getElementById('all-products');if(query&&section&&document.getElementById('storeSearchInput'))section.scrollIntoView({behavior:'smooth',block:'start'});}
 
 // Open Product Customizer Modal
 window.openProductCustomizer = function(productId) {
@@ -539,7 +534,7 @@ document.getElementById('saveAddressBtn')?.addEventListener('click', () => saveC
 document.getElementById('addressNextBtn')?.addEventListener('click', () => {
   const a=addressFields();
   if (!document.getElementById('custPincode').reportValidity()) return;
-  if (!/^\d{6}$/.test(a.pincode) || !a.state || !a.district || !a.area || !/^\d{10}$/.test(a.phone) || !a.name || !a.locality || !a.landmark) { alert('Please complete all required address details. PIN lookup must finish first.'); return; }
+  if (!/^\d{6}$/.test(a.pincode) || !a.state || !a.district || !a.area || !/^\d{10}$/.test(a.phone) || !a.name || !a.locality) { alert('Please complete all required address details. PIN lookup must finish first.'); return; }
   saveCurrentAddress(false);
   updateCheckoutSummary();setCheckoutStage(3);
 });
@@ -745,8 +740,10 @@ async function initAdminPanel() {
       const name = document.getElementById('pName').value.trim();
       const price = Number(document.getElementById('pPrice').value);
       const description = document.getElementById('pDesc').value.trim();
+      const category = document.getElementById('pCategory')?.value.trim() || '';
+      const storefrontSection = document.getElementById('pStorefrontSection')?.value.trim() || '';
       const productData = {
-        pType, name, price, description,
+        pType, name, price, description, category, storefrontSection,
         imageUrl: await getImageValue('pImgFile', 'pImg', previous.imageUrl),
         backImageUrl: await getImageValue('pBackImgFile', 'pBackImg', previous.backImageUrl),
         hasBack: document.getElementById('pHasBack')?.checked ?? (previous.hasBack ?? false),
@@ -784,6 +781,8 @@ async function initAdminPanel() {
       document.getElementById('pName').value = p.name || '';
       document.getElementById('pPrice').value = p.price ?? '';
       document.getElementById('pDesc').value = p.description || '';
+      if(document.getElementById('pCategory'))document.getElementById('pCategory').value=p.category||'';
+      if(document.getElementById('pStorefrontSection'))document.getElementById('pStorefrontSection').value=p.storefrontSection||'';
       document.getElementById('pImg').value = p.imageUrl && !p.imageUrl.startsWith('data:') ? p.imageUrl : '';
       const backImageUrlField = document.getElementById('pBackImg');
       if (backImageUrlField) backImageUrlField.value = p.backImageUrl && !p.backImageUrl.startsWith('data:') ? p.backImageUrl : '';
@@ -1067,19 +1066,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchForm = document.getElementById('storeSearchForm');
   const searchInput = document.getElementById('storeSearchInput');
   if (searchForm && searchInput) {
-    const runSearch = () => {
-      const query = searchInput.value.trim().toLowerCase();
-      const filtered = !query ? allProductsList : allProductsList.filter(product =>
-        [product.name, product.description, product.pType].some(value => String(value || '').toLowerCase().includes(query))
-      );
-      renderProducts(filtered);
-      const productSection = document.getElementById('products');
-      if (query && productSection) productSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
-    searchForm.addEventListener('submit', event => { event.preventDefault(); runSearch(); });
-    searchInput.addEventListener('input', () => {
-      if (!searchInput.value.trim()) renderProducts(allProductsList);
-    });
+    searchForm.addEventListener('submit',event=>{event.preventDefault();runStoreSearch(searchInput.value);});
+    searchInput.addEventListener('input',()=>runStoreSearch(searchInput.value));
   }
   if (typeof initAdminPanel === 'function') {
     initAdminPanel();
