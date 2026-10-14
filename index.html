@@ -22,6 +22,7 @@
       <button type="submit" aria-label="Search products">⌕</button>
     </form>
     <div class="header-actions">
+      <div class="theme-picker"><label for="themeSelect">Theme</label><select id="themeSelect" aria-label="Choose theme"><option value="system">System default</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
       <div class="theme-picker" aria-label="Theme preference"><label for="themeSelect">Theme</label><select id="themeSelect" aria-label="Choose colour theme"><option value="system">System default</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
       <a class="text-button account-link" id="openProfile" href="https://jayanta2010.github.io/sayaart.github.io/customer-login.html" target="_blank" rel="noopener">♙ <span>Sign in</span></a>
       <button class="cart-button" id="openCart">🛍 Bag <span id="cartCount">0</span></button>
@@ -192,6 +193,7 @@
           </div>
 
           <div id="canvasControls" style="margin-bottom: 12px; display:none;">
+            <div class="selected-object-settings"><b>Selected photo / text settings</b><label>Size <input type="range" id="objectScale" min="10" max="250" value="100"></label><label>Rotate <input type="range" id="objectRotate" min="-180" max="180" value="0"></label><label>Text colour <input type="color" id="objectColor" value="#111111"></label><p id="selectionHint">Select an item on the canvas to edit it. Drag to position.</p></div>
             <div class="selected-object-settings"><b>Selected photo / text settings</b><label>Size <input type="range" id="objectScale" min="10" max="250" value="100"></label><label>Rotate <input type="range" id="objectRotate" min="-180" max="180" value="0"></label><label>Text colour <input type="color" id="objectColor" value="#111111"></label><p id="selectionHint">Select an item on the canvas to edit its settings. Drag it to position.</p></div>
             <button id="deleteSelectedBtn" style="padding: 5px 10px; background: #fee2e2; border: 1px solid #ef4444; color: #ef4444; border-radius: 4px; font-weight: bold; font-size: 12px; cursor: pointer;">🗑 Delete Selected Canvas Item</button>
           </div>
@@ -252,6 +254,19 @@
       const select = document.getElementById("themeSelect");
       const applyTheme = value => { const mode = value || "system"; document.documentElement.dataset.theme = mode === "system" ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : mode; if (select && select.value !== mode) select.value = mode; };
       const saved = localStorage.getItem("saya_theme") || "system"; applyTheme(saved);
+      if (select) select.addEventListener("change", () => { localStorage.setItem("saya_theme", select.value); applyTheme(select.value); });
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if ((localStorage.getItem("saya_theme") || "system") === "system") applyTheme("system"); });
+    })();
+  </script>
+  <script>
+    (() => {
+      const select = document.getElementById("themeSelect");
+      const applyTheme = mode => {
+        const preference = mode || "system";
+        document.documentElement.dataset.theme = preference === "system" ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : preference;
+        if (select && select.value !== preference) select.value = preference;
+      };
+      applyTheme(localStorage.getItem("saya_theme") || "system");
       if (select) select.addEventListener("change", () => { localStorage.setItem("saya_theme", select.value); applyTheme(select.value); });
       window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if ((localStorage.getItem("saya_theme") || "system") === "system") applyTheme("system"); });
     })();
