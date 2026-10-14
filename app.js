@@ -135,11 +135,11 @@ window.openProductCustomizer = function(productId) {
     }
 
     if (btnViewBack) {
-      btnViewBack.style.display = selectedProduct.backOutline ? 'inline-block' : 'none';
+      btnViewBack.style.display = selectedProduct.hasBack ? 'inline-block' : 'none';
     }
 
     initFabricCanvas();
-    loadOutlineOnCanvas(selectedProduct.frontOutline);
+    loadOutlineOnCanvas('');
 
     const photoSec = document.getElementById('photoSection');
     const textSec = document.getElementById('textSection');
@@ -219,16 +219,9 @@ function switchCanvasView(targetSide) {
     btnBack.style.color = targetSide === 'back' ? '#fff' : '#0f172a';
   }
 
-  const targetOutline = targetSide === 'front' ? selectedProduct.frontOutline : selectedProduct.backOutline;
   const targetJSON = targetSide === 'front' ? frontCanvasJSON : backCanvasJSON;
-
-  if (targetJSON) {
-    fabricCanvas.loadFromJSON(targetJSON, () => {
-      loadOutlineOnCanvas(targetOutline);
-    });
-  } else {
-    loadOutlineOnCanvas(targetOutline);
-  }
+  if (targetJSON) fabricCanvas.loadFromJSON(targetJSON, () => fabricCanvas.renderAll());
+  else { fabricCanvas.clear(); fabricCanvas.setBackgroundColor('#ffffff', fabricCanvas.renderAll.bind(fabricCanvas)); }
 }
 
 // Upload High-Res Original Photo
@@ -334,18 +327,28 @@ function recalculatePrice() {
 // Add Item to Bag
 const addCustomBtn = document.getElementById('addCustomProduct');
 if (addCustomBtn) {
-  addCustomBtn.onclick = () => {
+  addCustomBtn.onclick = async () => {
     if (!selectedProduct) return;
 
     let frontSnapshot = null;
     let backSnapshot = null;
+    if (selectedProduct.pType === 'customizable' && selectedProduct.hasBack && activeSide === 'front' && fabricCanvas) frontCanvasJSON = fabricCanvas.toJSON();
+    if (selectedProduct.pType === 'customizable' && selectedProduct.hasBack && activeSide === 'back' && fabricCanvas) backCanvasJSON = fabricCanvas.toJSON();
+    if (selectedProduct.pType === 'customizable' && fabricCanvas) {
+      if (activeSide === 'front' && frontCanvasJSON) fabricCanvas.loadFromJSON(frontCanvasJSON, () => fabricCanvas.renderAll());
+      else if (activeSide === 'back' && backCanvasJSON) fabricCanvas.loadFromJSON(backCanvasJSON, () => fabricCanvas.renderAll());
+    }
 
     if (selectedProduct.pType === 'customizable' && fabricCanvas) {
-      if (activeSide === 'front') {
-        frontSnapshot = fabricCanvas.toDataURL({ format: 'png', quality: 1.0 });
-      } else {
-        backSnapshot = fabricCanvas.toDataURL({ format: 'png', quality: 1.0 });
-      }
+      const capture = side => new Promise(resolve => {
+        const json = side === 'front' ? frontCanvasJSON : backCanvasJSON;
+        const finish = () => resolve(fabricCanvas.toDataURL({ format: 'png', multiplier: 3 }));
+        if (json) fabricCanvas.loadFromJSON(json, finish); else finish();
+      });
+      frontSnapshot = await capture('front');
+      if (selectedProduct.hasBack) backSnapshot = await capture('back');
+      loadOutlineOnCanvas(''); activeSide = 'front'; frontCanvasJSON = null; backCanvasJSON = null;
+      if (btnFront) { btnFront.style.background='#0f172a'; btnFront.style.color='#fff'; } if (btnBack) { btnBack.style.background='#e2e8f0'; btnBack.style.color='#0f172a'; }
     }
 
     const qtyInput = document.getElementById('quantity');
@@ -360,7 +363,8 @@ if (addCustomBtn) {
       totalPrice: currentCalculatedPrice,
       personalMessage: personalMessage,
       frontArtwork: frontSnapshot,
-      backArtwork: backSnapshot,
+      backArtwork: selectedProduct.hasBack ? backSnapshot : null,
+      hasBack: !!selectedProduct.hasBack,
       rawUploadedPhoto: rawUploadedPhotoDataUrl
     });
 
@@ -662,6 +666,7 @@ async function initAdminPanel() {
     document.getElementById('cancelEditProductBtn').style.display = 'none';
     document.querySelector('#productsTab h3').textContent = 'Add a product';
     if (pTypeSelect && customOnlyFields) customOnlyFields.style.display = 'block';
+    const backChoice = document.getElementById('pHasBack'); if (backChoice) backChoice.checked = false;
   }
 
   document.getElementById('cancelEditProductBtn')?.addEventListener('click', resetProductEditor);
@@ -681,9 +686,7 @@ async function initAdminPanel() {
       const productData = {
         pType, name, price, description,
         imageUrl: await getImageValue('pImgFile', 'pImg', previous.imageUrl),
-        frontOutline: await getImageValue('pFrontOutlineFile', 'pFrontOutline', previous.frontOutline),
-        backOutline: await getImageValue('pBackOutlineFile', 'pBackOutline', previous.backOutline),
-        finishedLink: await getImageValue('pFinishedLinkFile', 'pFinishedLink', previous.finishedLink),
+        hasBack: document.getElementById('pHasBack')?.checked ?? (previous.hasBack ?? false),
         hasPhoto: document.getElementById('chkPhoto')?.checked ?? true,
         hasText: document.getElementById('chkText')?.checked ?? true,
         sizes: parseOptions(document.getElementById('pSizes').value),
