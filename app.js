@@ -427,7 +427,9 @@ function fillAddress(a) {
   area.innerHTML = '';
   const opt = document.createElement('option'); opt.value = a.area || ''; opt.textContent = a.area || 'Choose post office / area'; area.appendChild(opt);
   area.value = a.area || '';
-  document.getElementById('savedAddressSelect').value = a._key || '';
+  const addressSelect = document.getElementById('savedAddressSelect');
+  const addressIndex = currentSavedAddresses.findIndex(x => x.pincode === a.pincode && x.area === a.area && x.locality === a.locality && x.house === a.house);
+  if (addressSelect) addressSelect.value = addressIndex >= 0 ? String(addressIndex) : '';
 }
 function refreshSavedAddresses(selectedKey = '') {
   const phoneField = document.getElementById('custPhone');
