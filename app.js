@@ -176,20 +176,24 @@ function populateDropdown(sectionId, selectId, options) {
   }
 }
 
-function loadOutlineOnCanvas(outlineUrl) {
+function applyCanvasProductBackground() {
   if (!fabricCanvas) return;
-  fabricCanvas.clear();
+  const src = selectedProduct?.imageUrl || '';
+  fabricCanvas.setBackgroundImage(null, fabricCanvas.renderAll.bind(fabricCanvas));
   fabricCanvas.setBackgroundColor('#ffffff', fabricCanvas.renderAll.bind(fabricCanvas));
-  if (outlineUrl) {
-    fabric.Image.fromURL(outlineUrl, function(img) {
+  if (src) {
+    fabric.Image.fromURL(src, img => {
+      if (!img) return;
       img.scaleToWidth(350);
       img.scaleToHeight(495);
-      fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas), {
-        originX: 'left',
-        originY: 'top'
-      });
+      fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas), { originX: 'left', originY: 'top' });
     }, { crossOrigin: 'anonymous' });
   }
+}
+function loadOutlineOnCanvas() {
+  if (!fabricCanvas) return;
+  fabricCanvas.clear();
+  applyCanvasProductBackground();
 }
 
 // Front / Back View Switcher
@@ -220,8 +224,8 @@ function switchCanvasView(targetSide) {
   }
 
   const targetJSON = targetSide === 'front' ? frontCanvasJSON : backCanvasJSON;
-  if (targetJSON) fabricCanvas.loadFromJSON(targetJSON, () => fabricCanvas.renderAll());
-  else { fabricCanvas.clear(); fabricCanvas.setBackgroundColor('#ffffff', fabricCanvas.renderAll.bind(fabricCanvas)); }
+  if (targetJSON) fabricCanvas.loadFromJSON(targetJSON, () => applyCanvasProductBackground());
+  else { fabricCanvas.clear(); applyCanvasProductBackground(); }
 }
 
 // Upload High-Res Original Photo
@@ -727,6 +731,7 @@ async function initAdminPanel() {
       document.getElementById('pHasBack').checked = !!p.hasBack;
       document.getElementById('pSizes').value = formatOptions(p.sizes);
       document.getElementById('pQualities').value = formatOptions(p.qualities);
+      document.getElementById('pHasBack').checked = !!p.hasBack;
       document.getElementById('chkPhoto').checked = p.hasPhoto !== false;
       document.getElementById('chkText').checked = p.hasText !== false;
       ['pImgFile','pFrontOutlineFile','pBackOutlineFile','pFinishedLinkFile'].forEach(id => { const input=document.getElementById(id); if(input) input.value=''; });
