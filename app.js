@@ -278,21 +278,6 @@ if (addTextBtn) {
   };
 }
 
-// Selection-aware photo and text editing controls
-function updateSelectedObjectSettings(obj) {
- const scale=document.getElementById('objectScale'), rotate=document.getElementById('objectRotate'), color=document.getElementById('objectColor'), hint=document.getElementById('selectionHint');
- if(!obj){if(hint)hint.textContent='Select a photo or text on the canvas to edit its settings.';return;}
- if(scale)scale.value=String(Math.max(10,Math.min(250,Math.round((obj.scaleX||1)*100))));
- if(rotate)rotate.value=String(Math.round(obj.angle||0));
- if(color)color.value=/^#[0-9a-f]{6}$/i.test(obj.fill||'')?obj.fill:'#111111';
- if(hint)hint.textContent=obj.type==='image'?'Photo selected · resize, rotate or drag it. Original upload is kept for print.':'Text selected · resize, rotate, change colour or drag it.';
-}
-function getActiveDesignObject(){return fabricCanvas?.getActiveObject();}
-const objectScaleControl=document.getElementById('objectScale'), objectRotateControl=document.getElementById('objectRotate'), objectColorControl=document.getElementById('objectColor');
-if(objectScaleControl)objectScaleControl.addEventListener('input',()=>{const o=getActiveDesignObject();if(o){o.scale(Number(objectScaleControl.value)/100);o.setCoords();fabricCanvas.requestRenderAll();}});
-if(objectRotateControl)objectRotateControl.addEventListener('input',()=>{const o=getActiveDesignObject();if(o){o.rotate(Number(objectRotateControl.value));o.setCoords();fabricCanvas.requestRenderAll();}});
-if(objectColorControl)objectColorControl.addEventListener('input',()=>{const o=getActiveDesignObject();if(o&&(o.type==='text'||o.type==='i-text')){o.set('fill',objectColorControl.value);fabricCanvas.requestRenderAll();}});
-
 // Selected photo/text editing controls
 function updateSelectedObjectSettings(obj) {
   const scale = document.getElementById('objectScale'), rotate = document.getElementById('objectRotate'), color = document.getElementById('objectColor'), hint = document.getElementById('selectionHint');
