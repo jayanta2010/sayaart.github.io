@@ -58,7 +58,7 @@ async function loadProducts() {
         name: item.name || "Product",
         description: item.description || "",
         price: Number(item.price) || 0,
-        imageUrl: item.imageUrl || "saya-art-advertising-logo.jpg",
+        imageUrl: item.imageUrl || "",
         pType: item.pType || "customizable",
         hasBack: item.hasBack === true,
         backImageUrl: item.backImageUrl || "",
@@ -76,6 +76,21 @@ async function loadProducts() {
   renderProducts(allProductsList);
 }
 
+function getEstimatedDeliveryDate() {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + 14);
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+function productPreviewImage(p) {
+  if (p.imageUrl) return p.imageUrl;
+  if (/t.?shirt|tee|hoodie|sweatshirt/i.test(String(p.name || ''))) {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="350" height="495" viewBox="0 0 350 495"><rect width="350" height="495" fill="#f8fafc"/><path d="M118 58 L151 42 Q175 65 199 42 L232 58 L290 101 L254 155 L224 138 L224 430 Q175 449 126 430 L126 138 L96 155 L60 101 Z" fill="#fff" stroke="#cbd5e1" stroke-width="3" stroke-linejoin="round"/><path d="M151 42 Q175 94 199 42" fill="none" stroke="#cbd5e1" stroke-width="4"/><text x="175" y="250" text-anchor="middle" font-family="Arial" font-size="13" fill="#94a3b8">YOUR DESIGN HERE</text></svg>';
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="350" height="495"><rect width="100%" height="100%" fill="#f8fafc"/><rect x="30" y="30" width="290" height="435" rx="8" fill="#fff" stroke="#cbd5e1"/><text x="175" y="240" font-family="Arial" font-size="16" fill="#64748b" text-anchor="middle">Product preview</text></svg>';
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
 function renderProducts(products) {
   const container = document.getElementById('productGrid');
   if (!container) return;
@@ -88,12 +103,12 @@ function renderProducts(products) {
   container.innerHTML = products.map(p => `
     <div class="product" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; background: #ffffff; display: flex; flex-direction: column; justify-content: space-between;">
       <div>
-        <img src="${p.imageUrl}" alt="${p.name}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 6px; margin-bottom: 12px;">
+        <img src="${productPreviewImage(p)}" alt="${p.name}" style="width: 100%; height: 160px; object-fit: contain; background:#f8fafc; border-radius: 6px; margin-bottom: 12px;">
         <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 6px 0;">${p.name}</h3>
         <p style="font-size: 13px; color: #64748b; margin: 0 0 14px 0;">${p.description}</p>
       </div>
       <div>
-        <div style="font-size: 18px; font-weight: 800; color: #16a34a; margin-bottom: 10px;">Starting ₹${p.price}</div>
+        <div style="font-size: 18px; font-weight: 800; color: #16a34a; margin-bottom: 6px;">Starting ₹${p.price}</div><div class="product-delivery-date">Estimated delivery: <b>${getEstimatedDeliveryDate()}</b></div>
         <button class="primary-button full" onclick="openProductCustomizer('${p.id}')">${p.pType === 'stock' ? 'Select & Buy →' : 'Customize & Design →'}</button>
       </div>
     </div>
@@ -106,6 +121,10 @@ window.openProductCustomizer = function(productId) {
   if (!selectedProduct) return;
 
   document.getElementById('customTitle').innerText = selectedProduct.name;
+  const formatHint = document.getElementById('canvasFormatHint');
+  if (formatHint) formatHint.textContent = 'A4 Portrait · Product photo preview · add your text/photo';
+  const deliveryHint = document.getElementById('customizerDeliveryDate');
+  if (deliveryHint) deliveryHint.textContent = 'Estimated delivery: ' + getEstimatedDeliveryDate();
   const msgInput = document.getElementById('personalMessageInput');
   if (msgInput) msgInput.value = '';
 
@@ -167,7 +186,7 @@ function populateDropdown(sectionId, selectId, options) {
 
 function applyCanvasProductBackground(done = () => {}) {
   if (!fabricCanvas) { done(); return; }
-  const src = (activeSide === 'back' && selectedProduct?.backImageUrl) || selectedProduct?.imageUrl || '';
+  const src = (activeSide === 'back' && selectedProduct?.backImageUrl) || productPreviewImage(selectedProduct || {});
   fabricCanvas.setBackgroundImage(null, () => {
     fabricCanvas.setBackgroundColor('#ffffff', () => {
       if (!src) { fabricCanvas.renderAll(); done(); return; }
@@ -418,10 +437,12 @@ function refreshSavedAddresses(selectedKey = '') {
   select.innerHTML = '<option value="">Add a new address</option>';
   currentSavedAddresses.forEach((a,i) => {
     const opt = document.createElement('option'); opt.value = String(i);
-    opt.textContent = `${a.name} — ${a.pincode}, ${a.area}`;
+    opt.textContent = `${a.isDefault ? '★ Default · ' : ''}${a.name} — ${a.pincode}, ${a.area}`;
     select.appendChild(opt);
   });
+  const defaultIndex = currentSavedAddresses.findIndex(a => a.isDefault);
   if (selectedKey !== '' && currentSavedAddresses[Number(selectedKey)]) select.value = selectedKey;
+  else if (defaultIndex >= 0) select.value = String(defaultIndex);
   document.getElementById('addressLimitNote').textContent = `Saved addresses: ${currentSavedAddresses.length}/4 for this mobile number.`;
 }
 function saveCurrentAddress(showMessage = true) {
@@ -435,6 +456,7 @@ function saveCurrentAddress(showMessage = true) {
   if (existing >= 0) book[existing] = a;
   else if (book.length >= 4) { alert('Maximum 4 saved addresses per mobile number. Delete/replace one by selecting an existing address and saving changes.'); return false; }
   else book.push(a);
+  if (!book.some(x => x.isDefault)) book[book.length - 1].isDefault = true;
   localStorage.setItem('saya_addresses_' + a.phone, JSON.stringify(book));
   refreshSavedAddresses(existing >= 0 ? String(existing) : String(book.length - 1));
   if (showMessage) alert('Address saved on this device for this mobile number.');
