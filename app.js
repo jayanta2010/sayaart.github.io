@@ -391,6 +391,7 @@ const checkoutForm = document.getElementById('checkoutForm');
 const checkoutButton = document.getElementById('checkoutButton');
 let pinLookupTimer = null;
 let currentSavedAddresses = [];
+let editingAddressIndex = -1;
 let appliedCoupon = null;
 function couponDiscount(subtotal) { return appliedCoupon ? Math.min(subtotal, Math.floor(subtotal * Number(appliedCoupon.percent || 0) / 100)) : 0; }
 
@@ -441,6 +442,7 @@ function refreshSavedAddresses(selectedKey = '') {
   const defaultIndex = currentSavedAddresses.findIndex(a => a.isDefault);
   if (selectedKey !== '' && currentSavedAddresses[Number(selectedKey)]) select.value = selectedKey;
   else if (defaultIndex >= 0) { select.value = String(defaultIndex); fillAddress(currentSavedAddresses[defaultIndex]); }
+  updateAddressOptions();
   document.getElementById('addressLimitNote').textContent = `Saved addresses: ${currentSavedAddresses.length}/4 for this mobile number.`;
 }
 function saveCurrentAddress(showMessage = true) {
@@ -450,17 +452,89 @@ function saveCurrentAddress(showMessage = true) {
   const required = ['name','locality','landmark'];
   if (required.some(k => !a[k])) { alert('Please fill in name, locality and landmark.'); return false; }
   const book = getAddressBook(a.phone);
-  const existing = book.findIndex(x => x.pincode===a.pincode && x.area===a.area && x.locality===a.locality && x.house===a.house);
-  if (existing >= 0) book[existing] = a;
-  else if (book.length >= 4) { alert('Maximum 4 saved addresses per mobile number. Delete/replace one by selecting an existing address and saving changes.'); return false; }
+  const existing = editingAddressIndex >= 0 && book[editingAddressIndex] ? editingAddressIndex : book.findIndex(x => x.pincode===a.pincode && x.area===a.area && x.locality===a.locality && x.house===a.house);
+  if (existing >= 0) { a.isDefault = !!book[existing].isDefault; book[existing] = a; }
+  else if (book.length >= 4) { alert('Maximum 4 saved addresses per mobile number. Delete an address before adding another.'); return false; }
   else book.push(a);
   if (!book.some(x => x.isDefault)) book[book.length - 1].isDefault = true;
   localStorage.setItem('saya_last_customer_phone', a.phone);
   localStorage.setItem('saya_addresses_' + a.phone, JSON.stringify(book));
-  refreshSavedAddresses(existing >= 0 ? String(existing) : String(book.length - 1));
+  const savedIndex = existing >= 0 ? existing : book.length - 1;
+  editingAddressIndex = -1;
+  const saveButton = document.getElementById('saveAddressBtn');
+  if (saveButton) saveButton.textContent = 'Save address';
+  refreshSavedAddresses(String(savedIndex));
   if (showMessage) alert('Address saved on this device for this mobile number.');
   return true;
 }
+function updateAddressOptions() {
+  const select = document.getElementById('savedAddressSelect');
+  const index = select && select.value !== '' ? Number(select.value) : -1;
+  const address = currentSavedAddresses[index];
+  const menu = document.getElementById('addressOptionsMenu');
+  if (!address) menu?.setAttribute('hidden', '');
+  for (const id of ['addressOptionsBtn','editSavedAddressBtn','deleteSavedAddressBtn','defaultSavedAddressBtn']) {
+    const button = document.getElementById(id);
+    if (button) button.disabled = !address;
+  }
+  const defaultButton = document.getElementById('defaultSavedAddressBtn');
+  if (defaultButton && address) defaultButton.textContent = address.isDefault ? '✓ Default address' : '★ Set as default';
+}
+function storeAddressBookForCurrentPhone(book) {
+  const phone = document.getElementById('custPhone')?.value || localStorage.getItem('saya_last_customer_phone') || '';
+  const key = String(phone).replace(/\\D/g, '').slice(-10);
+  if (!/^\\d{10}$/.test(key)) { alert('Enter the saved address mobile number first.'); return false; }
+  localStorage.setItem('saya_addresses_' + key, JSON.stringify(book));
+  return true;
+}
+document.getElementById('addressOptionsBtn')?.addEventListener('click', () => {
+  const menu = document.getElementById('addressOptionsMenu');
+  if (!currentSavedAddresses[Number(document.getElementById('savedAddressSelect').value)]) return;
+  const willOpen = menu.hidden;
+  menu.hidden = !willOpen;
+  document.getElementById('addressOptionsBtn').setAttribute('aria-expanded', String(willOpen));
+});
+document.getElementById('editSavedAddressBtn')?.addEventListener('click', () => {
+  const index = Number(document.getElementById('savedAddressSelect').value);
+  const address = currentSavedAddresses[index];
+  if (!address) return;
+  editingAddressIndex = index;
+  fillAddress(address);
+  const saveButton = document.getElementById('saveAddressBtn');
+  if (saveButton) saveButton.textContent = 'Update address';
+  document.getElementById('addressOptionsMenu').hidden = true;
+  document.getElementById('addressOptionsBtn').setAttribute('aria-expanded', 'false');
+  document.getElementById('custName')?.focus();
+});
+document.getElementById('deleteSavedAddressBtn')?.addEventListener('click', () => {
+  const index = Number(document.getElementById('savedAddressSelect').value);
+  if (!currentSavedAddresses[index]) return;
+  if (!confirm('Delete this saved address?')) return;
+  const book = [...currentSavedAddresses];
+  const wasDefault = !!book[index].isDefault;
+  book.splice(index, 1);
+  if (wasDefault && book.length) book[0].isDefault = true;
+  else if (book.length && !book.some(item => item.isDefault)) book[0].isDefault = true;
+  if (!storeAddressBookForCurrentPhone(book)) return;
+  editingAddressIndex = -1;
+  refreshSavedAddresses(book.length ? String(Math.max(0, index - (index === book.length ? 1 : 0))) : '');
+  if (!book.length) {
+    document.getElementById('savedAddressSelect').value = '';
+    document.getElementById('checkoutForm').querySelectorAll('#custName,#custPhone,#custPincode,#custState,#custDistrict,#custLocality,#custHouse,#custLandmark').forEach(el => el.value = '');
+    document.getElementById('custArea').innerHTML = '<option value="">Enter PIN code first</option>';
+  }
+  updateAddressOptions();
+});
+document.getElementById('defaultSavedAddressBtn')?.addEventListener('click', () => {
+  const index = Number(document.getElementById('savedAddressSelect').value);
+  if (!currentSavedAddresses[index]) return;
+  const book = currentSavedAddresses.map((address, i) => ({...address, isDefault: i === index}));
+  if (!storeAddressBookForCurrentPhone(book)) return;
+  refreshSavedAddresses(String(index));
+  updateAddressOptions();
+  document.getElementById('addressOptionsMenu').hidden = true;
+  document.getElementById('addressOptionsBtn').setAttribute('aria-expanded', 'false');
+});
 function setCheckoutStage(n) {
   document.querySelectorAll('.checkout-stage').forEach(el => { el.hidden = Number(el.dataset.stage) !== n; });
   document.querySelectorAll('[data-step-label]').forEach(el => {
@@ -501,15 +575,22 @@ if (checkoutButton) checkoutButton.addEventListener('click', () => {
   openModal('checkoutModal');
 });
 document.getElementById('newAddressBtn')?.addEventListener('click', () => {
+  editingAddressIndex = -1;
+  const saveButton = document.getElementById('saveAddressBtn'); if (saveButton) saveButton.textContent = 'Save address';
   document.getElementById('checkoutForm').querySelectorAll('input:not([type=radio])').forEach(el => { el.value=''; });
   document.getElementById('custArea').innerHTML='<option value="">Enter PIN code first</option>';
   document.getElementById('savedAddressSelect').value='';
   document.getElementById('placeOrderBtn').disabled=false;
 });
 document.getElementById('savedAddressSelect')?.addEventListener('change', e => {
-  if (e.target.value === '') return;
-  const a = currentSavedAddresses[Number(e.target.value)];
-  if (a) { fillAddress(a); }
+  editingAddressIndex = -1;
+  const saveButton = document.getElementById('saveAddressBtn');
+  if (saveButton) saveButton.textContent = 'Save address';
+  if (e.target.value !== '') {
+    const a = currentSavedAddresses[Number(e.target.value)];
+    if (a) fillAddress(a);
+  }
+  updateAddressOptions();
 });
 document.getElementById('custPhone')?.addEventListener('change', () => refreshSavedAddresses());
 document.getElementById('custPincode')?.addEventListener('input', () => {
