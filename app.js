@@ -61,6 +61,7 @@ async function loadProducts() {
         imageUrl: item.imageUrl || "saya-art-advertising-logo.jpg",
         pType: item.pType || "customizable",
         hasBack: item.hasBack === true,
+        backImageUrl: item.backImageUrl || "",
         hasPhoto: item.hasPhoto !== false,
         hasText: item.hasText !== false,
         sizes: item.sizes || [],
@@ -166,7 +167,7 @@ function populateDropdown(sectionId, selectId, options) {
 
 function applyCanvasProductBackground(done = () => {}) {
   if (!fabricCanvas) { done(); return; }
-  const src = selectedProduct?.imageUrl || '';
+  const src = (activeSide === 'back' && selectedProduct?.backImageUrl) || selectedProduct?.imageUrl || '';
   fabricCanvas.setBackgroundImage(null, () => {
     fabricCanvas.setBackgroundColor('#ffffff', () => {
       if (!src) { fabricCanvas.renderAll(); done(); return; }
@@ -683,6 +684,7 @@ async function initAdminPanel() {
       const productData = {
         pType, name, price, description,
         imageUrl: await getImageValue('pImgFile', 'pImg', previous.imageUrl),
+        backImageUrl: await getImageValue('pBackImgFile', 'pBackImg', previous.backImageUrl),
         hasBack: document.getElementById('pHasBack')?.checked ?? (previous.hasBack ?? false),
         hasPhoto: document.getElementById('chkPhoto')?.checked ?? true,
         hasText: document.getElementById('chkText')?.checked ?? true,
@@ -725,7 +727,7 @@ async function initAdminPanel() {
       document.getElementById('pHasBack').checked = !!p.hasBack;
       document.getElementById('chkPhoto').checked = p.hasPhoto !== false;
       document.getElementById('chkText').checked = p.hasText !== false;
-      ['pImgFile','pFrontOutlineFile','pBackOutlineFile','pFinishedLinkFile'].forEach(id => { const input=document.getElementById(id); if(input) input.value=''; });
+      ['pImgFile','pBackImgFile','pFrontOutlineFile','pBackOutlineFile','pFinishedLinkFile'].forEach(id => { const input=document.getElementById(id); if(input) input.value=''; });
       if (customOnlyFields) customOnlyFields.style.display = p.pType === 'stock' ? 'none' : 'block';
       document.getElementById('saveProductBtn').textContent = 'Save Product Changes';
       document.getElementById('cancelEditProductBtn').style.display = 'inline-block';
