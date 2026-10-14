@@ -338,7 +338,9 @@ if (addCustomBtn) {
     if (selectedProduct.pType === 'customizable' && fabricCanvas) {
       const capture = side => new Promise(resolve => {
         const json = side === 'front' ? frontCanvasJSON : backCanvasJSON;
-        const finish = () => resolve(fabricCanvas.toDataURL({ format: 'png', multiplier: 3 }));
+        const previousSide = activeSide;
+        activeSide = side;
+        const finish = () => { const data = fabricCanvas.toDataURL({ format: 'png', multiplier: 3 }); activeSide = previousSide; resolve(data); };
         if (json) fabricCanvas.loadFromJSON(json, finish);
         else if (side === activeSide) finish();
         else { fabricCanvas.clear(); fabricCanvas.setBackgroundColor('#ffffff', () => { fabricCanvas.renderAll(); finish(); }); }
@@ -624,6 +626,19 @@ async function initAdminPanel() {
   if (!adminAddForm) return;
 
   let editingProductId = null;
+
+  const backImageFile = document.getElementById('pBackImgFile');
+  const backImageUrl = document.getElementById('pBackImg');
+  const backImagePreview = document.getElementById('pBackImgPreview');
+  const updateBackImagePreview = () => {
+    if (!backImagePreview) return;
+    const file = backImageFile?.files?.[0];
+    if (file) { backImagePreview.src = URL.createObjectURL(file); backImagePreview.style.display = 'block'; }
+    else if (backImageUrl?.value.trim()) { backImagePreview.src = backImageUrl.value.trim(); backImagePreview.style.display = 'block'; }
+    else { backImagePreview.src = ''; backImagePreview.style.display = 'none'; }
+  };
+  backImageFile?.addEventListener('change', updateBackImagePreview);
+  backImageUrl?.addEventListener('input', updateBackImagePreview);
 
   const parseOptions = (str) => str ? str.split(',').map(s => {
     const [n, ex] = s.split(':');
