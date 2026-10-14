@@ -6,7 +6,7 @@
   <title>Saya Art &amp; Advertising — Print Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&family=Impact&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&family=Poppins:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Lato:wght@400;700&family=Roboto:wght@400;700&family=Oswald:wght@400;600&family=Dancing+Script:wght@500;700&family=Pacifico&family=Lobster&family=Cinzel:wght@400;700&family=Bebas+Neue&family=Merriweather:wght@400;700&family=Nunito:wght@400;700&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 </head>
@@ -22,6 +22,7 @@
       <button type="submit" aria-label="Search products">⌕</button>
     </form>
     <div class="header-actions">
+      <div class="theme-picker" aria-label="Theme preference"><label for="themeSelect">Theme</label><select id="themeSelect" aria-label="Choose colour theme"><option value="system">System default</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
       <a class="text-button account-link" id="openProfile" href="https://jayanta2010.github.io/sayaart.github.io/customer-login.html" target="_blank" rel="noopener">♙ <span>Sign in</span></a>
       <button class="cart-button" id="openCart">🛍 Bag <span id="cartCount">0</span></button>
     </div>
@@ -113,7 +114,8 @@
       <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px;">
         
         <!-- Left: Interactive Canvas Viewport (Shown for Customizable Items) -->
-        <div id="canvasContainer" style="flex: 1; min-width: 300px; text-align: center; background: #f1f5f9; padding: 15px; border-radius: 8px;">
+        <div id="canvasContainer" class="editor-canvas-panel" style="flex: 1; min-width: 300px; text-align: center; background: #f1f5f9; padding: 15px; border-radius: 8px;">
+          <h3 class="canvas-heading">Design canvas <small>A4 portrait · drag to position</small></h3>
           
           <!-- View Toggle Buttons (Front / Back) -->
           <div id="viewToggleGroup" style="margin-bottom: 10px; display: flex; justify-content: center; gap: 10px;">
@@ -122,7 +124,7 @@
           </div>
 
           <div style="display: inline-block; border: 2px dashed #94a3b8; background: #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden;">
-            <canvas id="designCanvas" width="350" height="380"></canvas>
+            <canvas id="designCanvas" width="350" height="495"></canvas>
           </div>
 
           <div style="margin-top: 8px;">
@@ -164,7 +166,20 @@
                 <option value="Arial">Font: Arial</option>
                 <option value="Playfair Display">Font: Playfair</option>
                 <option value="Impact">Font: Impact</option>
-                <option value="Courier New">Font: Courier</option>
+                <option value="Courier New">Courier New · Typewriter</option>
+<option value="Poppins">Poppins · Modern</option>
+<option value="Montserrat">Montserrat · Bold</option>
+<option value="Lato">Lato · Clean</option>
+<option value="Roboto">Roboto · Simple</option>
+<option value="Oswald">Oswald · Tall</option>
+<option value="Dancing Script">Dancing Script · Handwritten</option>
+<option value="Pacifico">Pacifico · Stylish</option>
+<option value="Lobster">Lobster · Display</option>
+<option value="Cinzel">Cinzel · Elegant</option>
+<option value="Bebas Neue">Bebas Neue · Poster</option>
+<option value="Merriweather">Merriweather · Classic</option>
+<option value="Nunito">Nunito · Rounded</option>
+<option value="Caveat">Caveat · Casual</option>
               </select>
               <button id="addTextBtn" style="padding:6px 12px; background:#0f172a; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">+ Add</button>
             </div>
@@ -177,6 +192,7 @@
           </div>
 
           <div id="canvasControls" style="margin-bottom: 12px; display:none;">
+            <div class="selected-object-settings"><b>Selected photo / text settings</b><label>Size <input type="range" id="objectScale" min="10" max="250" value="100"></label><label>Rotate <input type="range" id="objectRotate" min="-180" max="180" value="0"></label><label>Text colour <input type="color" id="objectColor" value="#111111"></label><p id="selectionHint">Select an item on the canvas to edit its settings. Drag it to position.</p></div>
             <button id="deleteSelectedBtn" style="padding: 5px 10px; background: #fee2e2; border: 1px solid #ef4444; color: #ef4444; border-radius: 4px; font-weight: bold; font-size: 12px; cursor: pointer;">🗑 Delete Selected Canvas Item</button>
           </div>
 
@@ -231,6 +247,15 @@
     </div>
   </div>
   <div class="toast" id="toast"></div>
+  <script>
+    (() => {
+      const select = document.getElementById("themeSelect");
+      const applyTheme = value => { const mode = value || "system"; document.documentElement.dataset.theme = mode === "system" ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : mode; if (select && select.value !== mode) select.value = mode; };
+      const saved = localStorage.getItem("saya_theme") || "system"; applyTheme(saved);
+      if (select) select.addEventListener("change", () => { localStorage.setItem("saya_theme", select.value); applyTheme(select.value); });
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if ((localStorage.getItem("saya_theme") || "system") === "system") applyTheme("system"); });
+    })();
+  </script>
   <script type="module" src="app.js"></script>
 </body>
 </html>
