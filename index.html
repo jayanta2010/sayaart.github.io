@@ -16,6 +16,7 @@
 </head>
 <body>
   <div class="announcement"><span>🎉 Print more, spend less</span><b>Special offers on selected products</b><span>Delivery across India</span></div>
+  <aside class="store-sidebar" id="storeSidebar" aria-label="Store navigation"><a class="sidebar-brand" href="#home">SAYA <span>ART &amp; ADVERTISING</span></a><div class="sidebar-profile"><span class="sidebar-avatar">♙</span><div><b>My Account</b><a href="account.html">Profile &amp; Orders</a></div></div><nav class="sidebar-nav"><a href="#home">⌂ <span>Home</span></a><a href="#products">▦ <span>All Products</span></a><a href="#category-cards">◇ <span>Categories</span></a><a href="#business">✳ <span>Business Printing</span></a><a href="account.html">▣ <span>My Orders</span></a><a href="policies.html#terms">ⓘ <span>Terms &amp; Conditions</span></a><a href="policies.html#returns">↩ <span>Return Policy</span></a></nav><div class="sidebar-bottom"><small>PRINT · PERSONALISE · PROMOTE</small><a href="account.html">Sign in / Account →</a></div></aside>
   <header class="site-header">
     <a class="brand" href="#home" aria-label="Saya Art & Advertising home">
       <img class="brand-logo" src="saya-art-advertising-logo.jpg" alt="Saya Art & Advertising" />
@@ -120,7 +121,7 @@
         
         <!-- Left: Interactive Canvas Viewport (Shown for Customizable Items) -->
         <div id="canvasContainer" class="editor-canvas-panel" style="flex: 1; min-width: 300px; text-align: center; background: #f1f5f9; padding: 15px; border-radius: 8px;">
-          <h3 class="canvas-heading">Design canvas <small>A4 portrait · drag to position</small></h3>
+          <h3 class="canvas-heading">Design canvas <small id="canvasFormatHint">Product preview · drag text/photo to position</small></h3>
           
           <!-- View Toggle Buttons (Front / Back) -->
           <div id="viewToggleGroup" style="margin-bottom: 10px; display: flex; justify-content: center; gap: 10px;">
@@ -243,9 +244,9 @@
           <div class="checkout-stage-actions"><button type="button" class="secondary-button" data-back="1">← Edit address</button><button type="button" id="confirmDetailsBtn" class="primary-button">Confirm details →</button></div>
         </section>
         <section class="checkout-stage" data-stage="3" hidden>
-          <h3>Choose prepaid payment</h3><p class="help-text">Only prepaid orders are accepted. Cash on delivery is not available.</p>
+          <h3>Choose payment method</h3><p class="help-text">Cash on Delivery (COD) is available with a ₹1,000 COD/delivery charge.</p>
           <label class="payment-choice"><input type="radio" name="paymentMethod" value="upi" checked><span><b>UPI</b><small>Pay using a UPI app</small></span></label>
-          <label class="payment-choice"><input type="radio" name="paymentMethod" value="card"><span><b>Credit / Debit Card</b><small>Secure card payment through the payment provider</small></span></label>
+          <label class="payment-choice"><input type="radio" name="paymentMethod" value="card"><span><b>Credit / Debit Card</b><small>Secure card payment through the payment provider</small></span></label><label class="payment-choice"><input type="radio" name="paymentMethod" value="cod"><span><b>Cash on Delivery (COD)</b><small>Pay at delivery · ₹1,000 COD/delivery charge applies</small></span></label><div class="checkout-summary" id="deliveryChargeSummary">Product subtotal: ₹0<br>COD/delivery charge: ₹0</div>
           <div class="checkout-summary"><div>Total payable</div><strong id="checkoutPayTotal">₹0</strong></div>
           <p id="paymentStatus" role="status" class="help-text"></p>
           <div class="checkout-stage-actions"><button type="button" class="secondary-button" data-back="2">← Back</button><button type="submit" id="placeOrderBtn" class="primary-button">Pay securely →</button></div>
@@ -259,19 +260,6 @@
       const select = document.getElementById("themeSelect");
       const applyTheme = value => { const mode = value || "system"; document.documentElement.dataset.theme = mode === "system" ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : mode; if (select && select.value !== mode) select.value = mode; };
       const saved = localStorage.getItem("saya_theme") || "system"; applyTheme(saved);
-      if (select) select.addEventListener("change", () => { localStorage.setItem("saya_theme", select.value); applyTheme(select.value); });
-      window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if ((localStorage.getItem("saya_theme") || "system") === "system") applyTheme("system"); });
-    })();
-  </script>
-  <script>
-    (() => {
-      const select = document.getElementById("themeSelect");
-      const applyTheme = mode => {
-        const preference = mode || "system";
-        document.documentElement.dataset.theme = preference === "system" ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : preference;
-        if (select && select.value !== preference) select.value = preference;
-      };
-      applyTheme(localStorage.getItem("saya_theme") || "system");
       if (select) select.addEventListener("change", () => { localStorage.setItem("saya_theme", select.value); applyTheme(select.value); });
       window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if ((localStorage.getItem("saya_theme") || "system") === "system") applyTheme("system"); });
     })();
