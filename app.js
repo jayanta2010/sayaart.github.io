@@ -756,6 +756,11 @@ async function initAdminPanel() {
       document.getElementById('pPrice').value = p.price ?? '';
       document.getElementById('pDesc').value = p.description || '';
       document.getElementById('pImg').value = p.imageUrl && !p.imageUrl.startsWith('data:') ? p.imageUrl : '';
+      const backImageUrlField = document.getElementById('pBackImg');
+      if (backImageUrlField) backImageUrlField.value = p.backImageUrl && !p.backImageUrl.startsWith('data:') ? p.backImageUrl : '';
+      const backPreview = document.getElementById('pBackImgPreview');
+      if (backPreview && p.backImageUrl) { backPreview.src=p.backImageUrl; backPreview.style.display='block'; }
+      else if (backPreview) { backPreview.src=''; backPreview.style.display='none'; }
       document.getElementById('pHasBack').checked = !!p.hasBack;
       document.getElementById('pSizes').value = formatOptions(p.sizes);
       document.getElementById('pQualities').value = formatOptions(p.qualities);
