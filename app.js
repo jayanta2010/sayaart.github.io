@@ -343,7 +343,9 @@ if (addCustomBtn) {
       const capture = side => new Promise(resolve => {
         const json = side === 'front' ? frontCanvasJSON : backCanvasJSON;
         const finish = () => resolve(fabricCanvas.toDataURL({ format: 'png', multiplier: 3 }));
-        if (json) fabricCanvas.loadFromJSON(json, finish); else finish();
+        if (json) fabricCanvas.loadFromJSON(json, finish);
+        else if (side === activeSide) finish();
+        else { fabricCanvas.clear(); fabricCanvas.setBackgroundColor('#ffffff', () => { fabricCanvas.renderAll(); finish(); }); }
       });
       frontSnapshot = await capture('front');
       if (selectedProduct.hasBack) backSnapshot = await capture('back');
