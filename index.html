@@ -8,6 +8,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&family=Poppins:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Lato:wght@400;700&family=Roboto:wght@400;700&family=Oswald:wght@400;600&family=Dancing+Script:wght@500;700&family=Pacifico&family=Lobster&family=Cinzel:wght@400;700&family=Bebas+Neue&family=Merriweather:wght@400;700&family=Nunito:wght@400;700&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    .checkout-steps{display:flex;align-items:center;gap:8px;margin:12px 0 24px}.checkout-steps i{height:2px;flex:1;background:#dbe4ed}.checkout-step{display:flex;align-items:center;gap:7px;color:#64748b;font-size:12px;font-weight:700;white-space:nowrap}.checkout-step b{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#e2e8f0;color:#334155}.checkout-step.active,.checkout-step.done{color:#0f766e}.checkout-step.active b,.checkout-step.done b{background:#0f766e;color:white}.checkout-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.checkout-field{min-width:0}.checkout-field.full{grid-column:1/-1}.checkout-field label,.checkout>form>section>label{display:block;font-size:12px;font-weight:800;margin-bottom:5px;color:#334155}.checkout-field input,.checkout-field select,.checkout select{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;background:#fff}.checkout-summary{border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin:12px 0;line-height:1.7;overflow-wrap:anywhere}.checkout-stage-actions{display:flex;gap:9px;justify-content:space-between;flex-wrap:wrap;margin-top:18px}.secondary-button{border:1px solid #cbd5e1;background:#fff;color:#1e293b;border-radius:9px;padding:11px 14px;font-weight:700;cursor:pointer}.payment-choice{display:flex;gap:12px;align-items:center;padding:15px;border:1px solid #dbe4ed;border-radius:12px;margin:10px 0;cursor:pointer}.payment-choice:has(input:checked){border-color:#0f766e;background:#f0fdfa}.payment-choice span{display:grid;gap:3px}.payment-choice small{color:#64748b}.payment-choice input{accent-color:#0f766e}.checkout-stage[hidden]{display:none!important}@media(max-width:520px){.checkout-grid{grid-template-columns:1fr}.checkout-field.full{grid-column:auto}.checkout-steps{gap:4px}.checkout-step{font-size:10px;gap:4px}.checkout-step b{width:24px;height:24px}}
+  </style>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 </head>
 <body>
@@ -213,39 +217,44 @@
 
 <!-- Checkout Modal -->
   <div class="modal" id="checkoutModal" aria-hidden="true">
-    <div class="modal-card checkout">
+    <div class="modal-card checkout" style="width:min(760px,96vw);max-height:94vh;overflow:auto">
       <button class="close modal-close" data-close="checkoutModal">×</button>
-      <h2>Enter Delivery Details</h2>
-      
-      <!-- Checkout Form with SMS OTP -->
+      <h2 style="margin:0 0 16px">Secure checkout</h2>
+      <div class="checkout-steps" id="checkoutSteps"><div class="checkout-step active" data-step-label="1"><b>1</b><span>Address</span></div><i></i><div class="checkout-step" data-step-label="2"><b>2</b><span>Confirm details</span></div><i></i><div class="checkout-step" data-step-label="3"><b>3</b><span>Payment</span></div></div>
       <form id="checkoutForm">
-        <input required id="custName" placeholder="Your Name" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
-        
-        <!-- Mobile Number & Send OTP Button -->
-        <div style="display:flex; gap:8px; margin-bottom:10px;">
-          <input required type="tel" id="custPhone" placeholder="Mobile Number (e.g. 9876543210)" style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
-          <button type="button" id="sendOtpBtn" style="padding:10px 14px; background:#0f172a; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer; white-space:nowrap;">Send OTP</button>
-        </div>
-
-        <!-- Hidden Recaptcha Container for Firebase -->
-        <div id="recaptcha-container"></div>
-
-        <!-- OTP Input (Initially Hidden) -->
-        <div id="otpSection" style="display:none; margin-bottom:10px; background:#f8fafc; padding:10px; border:1px solid #e2e8f0; border-radius:6px;">
-          <label style="font-size:12px; font-weight:bold; color:#334155;">Enter SMS OTP</label>
-          <div style="display:flex; gap:8px; margin-top:4px;">
-            <input type="text" id="otpInput" placeholder="Enter 6-digit OTP" style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
-            <button type="button" id="verifyOtpBtn" style="padding:10px 14px; background:#16a34a; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer; white-space:nowrap;">Verify OTP</button>
+        <section class="checkout-stage" data-stage="1">
+          <h3>Delivery address</h3>
+          <label for="savedAddressSelect">Saved addresses</label>
+          <div style="display:flex;gap:8px;align-items:center;margin:6px 0 14px"><select id="savedAddressSelect" style="flex:1;padding:11px;border:1px solid #cbd5e1;border-radius:8px"><option value="">Add a new address</option></select><button type="button" id="newAddressBtn" class="secondary-button">+ Add new</button></div>
+          <p id="addressLimitNote" class="help-text">Save up to 4 addresses for each mobile number.</p>
+          <div class="checkout-grid">
+            <div class="checkout-field full"><label for="custPincode">PIN code *</label><input required inputmode="numeric" maxlength="6" id="custPincode" placeholder="Enter 6-digit PIN code"></div>
+            <div class="checkout-field"><label for="custState">State</label><input required id="custState" readonly placeholder="Auto-filled from PIN"></div>
+            <div class="checkout-field"><label for="custDistrict">District</label><input required id="custDistrict" readonly placeholder="Auto-filled from PIN"></div>
+            <div class="checkout-field full"><label for="custArea">Post office / Area</label><select required id="custArea"><option value="">Enter PIN code first</option></select></div>
+            <div class="checkout-field"><label for="custName">Full name *</label><input required id="custName" autocomplete="name" placeholder="Recipient name"></div>
+            <div class="checkout-field"><label for="custPhone">Mobile number *</label><input required type="tel" id="custPhone" autocomplete="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number"></div>
+            <div class="checkout-field full"><label for="custLocality">Locality / Street *</label><input required id="custLocality" placeholder="Village, locality, road"></div>
+            <div class="checkout-field"><label for="custHouse">House / Flat / Building (optional)</label><input id="custHouse" placeholder="House or flat number"></div>
+            <div class="checkout-field"><label for="custLandmark">Landmark *</label><input required id="custLandmark" placeholder="Nearby landmark"></div>
           </div>
-        </div>
-
-        <!-- Delivery Address -->
-        <input required id="custAddress" placeholder="Full Delivery Address" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
-        
-        <!-- Place Order Button (Disabled until OTP is verified) -->
-        <button class="primary-button full" type="submit" id="placeOrderBtn" disabled style="opacity:0.5; cursor:not-allowed;">Place Order Now →</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><button type="button" id="saveAddressBtn" class="secondary-button">Save address</button><button type="button" id="addressNextBtn" class="primary-button">Continue →</button></div>
+          <div id="recaptcha-container"></div>
+          <div id="otpSection" style="display:none;margin-top:14px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px"><b>Verify mobile number</b><p class="help-text">OTP is required before payment.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><input type="text" id="otpInput" inputmode="numeric" maxlength="6" placeholder="6-digit SMS OTP" style="flex:1;min-width:140px;padding:10px;border:1px solid #cbd5e1;border-radius:8px"><button type="button" id="sendOtpBtn" class="secondary-button">Send OTP</button><button type="button" id="verifyOtpBtn" class="primary-button">Verify OTP</button></div></div>
+        </section>
+        <section class="checkout-stage" data-stage="2" hidden>
+          <h3>Confirm your details</h3><div id="checkoutAddressSummary" class="checkout-summary"></div><div id="checkoutItemsSummary" class="checkout-summary"></div>
+          <div class="checkout-stage-actions"><button type="button" class="secondary-button" data-back="1">← Edit address</button><button type="button" id="confirmDetailsBtn" class="primary-button">Confirm details →</button></div>
+        </section>
+        <section class="checkout-stage" data-stage="3" hidden>
+          <h3>Choose prepaid payment</h3><p class="help-text">Only prepaid orders are accepted. Cash on delivery is not available.</p>
+          <label class="payment-choice"><input type="radio" name="paymentMethod" value="upi" checked><span><b>UPI</b><small>Pay using a UPI app</small></span></label>
+          <label class="payment-choice"><input type="radio" name="paymentMethod" value="card"><span><b>Credit / Debit Card</b><small>Secure card payment through the payment provider</small></span></label>
+          <div class="checkout-summary"><div>Total payable</div><strong id="checkoutPayTotal">₹0</strong></div>
+          <p id="paymentStatus" role="status" class="help-text"></p>
+          <div class="checkout-stage-actions"><button type="button" class="secondary-button" data-back="2">← Back</button><button type="submit" id="placeOrderBtn" class="primary-button">Pay securely →</button></div>
+        </section>
       </form>
-
     </div>
   </div>
   <div class="toast" id="toast"></div>
