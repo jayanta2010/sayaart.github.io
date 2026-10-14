@@ -56,6 +56,7 @@
       <button class="tab-btn active" type="button" data-tab="productsTab" role="tab" aria-selected="true">▦ &nbsp; Manage Products</button>
       <button class="tab-btn" type="button" data-tab="ordersTab" role="tab" aria-selected="false">▣ &nbsp; Orders &amp; Artworks</button>
       <button class="tab-btn" type="button" data-tab="returnsTab" role="tab" aria-selected="false">↩ &nbsp; Returns</button>
+      <button class="tab-btn" type="button" data-tab="couponsTab" role="tab" aria-selected="false">％ &nbsp; Coupon Codes</button>
     </div>
 
     <!-- Products Panel -->
@@ -143,6 +144,17 @@
       <div id="adminOrdersList">Loading orders...</div>
     </div>
     <div id="returnsTab" class="panel"><h3>Return requests</h3><p class="section-intro">Review return order IDs, customer details, evidence photos, and approval status.</p><div id="adminReturnsList">Loading return requests...</div></div>
+    <div id="couponsTab" class="panel">
+      <h3>Coupon codes</h3>
+      <p class="section-intro">Create a coupon code and choose the percentage discount. Only active coupons can be used at checkout.</p>
+      <form id="couponAdminForm" class="form-grid" style="padding:16px;background:#f7faf9;border:1px solid var(--line);border-radius:12px;margin-bottom:20px">
+        <div class="form-group"><label for="couponAdminCode">Coupon code</label><input id="couponAdminCode" required maxlength="32" placeholder="e.g. SAYA10" style="text-transform:uppercase"></div>
+        <div class="form-group"><label for="couponAdminPercent">Discount percent (%)</label><input id="couponAdminPercent" type="number" min="1" max="100" required placeholder="10"></div>
+        <div class="form-group"><label style="display:flex;align-items:center;gap:8px"><input id="couponAdminActive" type="checkbox" checked> Coupon active</label><div class="help-text">Turn off to disable the code without deleting it.</div></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button class="btn" id="saveCouponBtn" type="submit">Save coupon</button><button class="btn btn-danger" id="cancelCouponEdit" type="button" style="display:none">Cancel edit</button></div>
+      </form>
+      <div id="adminCouponsList">Loading coupons…</div>
+    </div>
   </div>
 
   <script type="module" src="app.js"></script>
