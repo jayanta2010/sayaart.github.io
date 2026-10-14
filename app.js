@@ -60,9 +60,7 @@ async function loadProducts() {
         price: Number(item.price) || 0,
         imageUrl: item.imageUrl || "saya-art-advertising-logo.jpg",
         pType: item.pType || "customizable",
-        frontOutline: item.frontOutline || "",
-        backOutline: item.backOutline || "",
-        finishedLink: item.finishedLink || "",
+        hasBack: item.hasBack === true,
         hasPhoto: item.hasPhoto !== false,
         hasText: item.hasText !== false,
         sizes: item.sizes || [],
@@ -118,21 +116,11 @@ window.openProductCustomizer = function(productId) {
   const isCustom = selectedProduct.pType === 'customizable';
   const canvasContainer = document.getElementById('canvasContainer');
   const canvasControls = document.getElementById('canvasControls');
-  const finishedMockupLink = document.getElementById('finishedMockupLink');
   const btnViewBack = document.getElementById('btnViewBack');
 
   if (isCustom) {
     if (canvasContainer) canvasContainer.style.display = 'block';
     if (canvasControls) canvasControls.style.display = 'block';
-
-    if (finishedMockupLink) {
-      if (selectedProduct.finishedLink) {
-        finishedMockupLink.href = selectedProduct.finishedLink;
-        finishedMockupLink.style.display = 'inline-block';
-      } else {
-        finishedMockupLink.style.display = 'none';
-      }
-    }
 
     if (btnViewBack) {
       btnViewBack.style.display = selectedProduct.hasBack ? 'inline-block' : 'none';
@@ -176,23 +164,26 @@ function populateDropdown(sectionId, selectId, options) {
   }
 }
 
-function applyCanvasProductBackground() {
-  if (!fabricCanvas) return;
+function applyCanvasProductBackground(done = () => {}) {
+  if (!fabricCanvas) { done(); return; }
   const src = selectedProduct?.imageUrl || '';
-  fabricCanvas.setBackgroundImage(null, fabricCanvas.renderAll.bind(fabricCanvas));
-  fabricCanvas.setBackgroundColor('#ffffff', fabricCanvas.renderAll.bind(fabricCanvas));
-  if (src) {
-    fabric.Image.fromURL(src, img => {
-      if (!img) return;
-      img.scaleToWidth(350);
-      img.scaleToHeight(495);
-      fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas), { originX: 'left', originY: 'top' });
-    }, { crossOrigin: 'anonymous' });
-  }
+  fabricCanvas.setBackgroundImage(null, () => {
+    fabricCanvas.setBackgroundColor('#ffffff', () => {
+      if (!src) { fabricCanvas.renderAll(); done(); return; }
+      fabric.Image.fromURL(src, img => {
+        if (!img) { fabricCanvas.renderAll(); done(); return; }
+        const cw = fabricCanvas.getWidth(), ch = fabricCanvas.getHeight();
+        const scale = Math.min(cw / img.width, ch / img.height);
+        img.set({ originX: 'center', originY: 'center', left: cw / 2, top: ch / 2, scaleX: scale, scaleY: scale });
+        fabricCanvas.setBackgroundImage(img, () => { fabricCanvas.renderAll(); done(); });
+      }, { crossOrigin: 'anonymous' });
+    });
+  });
 }
 function loadOutlineOnCanvas() {
   if (!fabricCanvas) return;
   fabricCanvas.clear();
+  fabricCanvas.setBackgroundColor('#ffffff');
   applyCanvasProductBackground();
 }
 
@@ -225,7 +216,7 @@ function switchCanvasView(targetSide) {
 
   const targetJSON = targetSide === 'front' ? frontCanvasJSON : backCanvasJSON;
   if (targetJSON) fabricCanvas.loadFromJSON(targetJSON, () => applyCanvasProductBackground());
-  else { fabricCanvas.clear(); applyCanvasProductBackground(); }
+  else { fabricCanvas.clear(); fabricCanvas.setBackgroundColor('#ffffff'); applyCanvasProductBackground(); }
 }
 
 // Upload High-Res Original Photo
@@ -908,6 +899,7 @@ window.openModal = function(id) {
   if (el) {
     el.classList.add('show');
     el.style.display = 'flex';
+    el.setAttribute('aria-hidden', 'false');
   }
 };
 
@@ -916,6 +908,7 @@ window.closeModal = function(id) {
   if (el) {
     el.classList.remove('show');
     el.style.display = 'none';
+    el.setAttribute('aria-hidden', 'true');
   }
 };
 
@@ -933,6 +926,15 @@ window.closeDrawer = function(id) {
 document.addEventListener('DOMContentLoaded', () => {
   loadProducts();
   window.updateCartUI();
+  document.addEventListener('click', event => {
+    const closeButton = event.target.closest('[data-close]');
+    if (closeButton) {
+      const id = closeButton.getAttribute('data-close');
+      if (id === 'cartDrawer') window.closeDrawer(id); else window.closeModal(id);
+      return;
+    }
+    if (event.target.classList?.contains('modal')) window.closeModal(event.target.id);
+  });
   const searchForm = document.getElementById('storeSearchForm');
   const searchInput = document.getElementById('storeSearchInput');
   if (searchForm && searchInput) {
