@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mobile OTP Login — Saya Art & Advertising</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:#f4f6f3;color:#162b28;font-family:Arial,sans-serif}.card{width:min(100%,430px);background:#fff;border:1px solid #e0e8e4;border-radius:20px;padding:30px;box-shadow:0 16px 50px #1232}.brand{font-size:13px;letter-spacing:2px;color:#55716a;font-weight:700}.card h1{font-size:28px;margin:12px 0 8px}.muted{color:#64746f;line-height:1.5;font-size:14px}.field{margin:18px 0}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}.field input{width:100%;padding:13px 14px;border:1px solid #cbd5d1;border-radius:10px;font-size:16px}.phone-row{display:flex;gap:8px}.phone-row input{min-width:0;flex:1}.btn{border:0;border-radius:10px;background:#173d35;color:#fff;padding:13px 16px;font-weight:700;cursor:pointer}.btn:disabled{opacity:.55;cursor:wait}.primary{width:100%}.status{font-size:13px;line-height:1.5;margin-top:14px;overflow-wrap:anywhere}.error{color:#b42318}.success{color:#067647}.hidden{display:none}.back{display:inline-block;margin-top:20px;color:#173d35;font-size:14px}
+</style>
+</head>
+<body><main class="card">
+<div class="brand">SAYA ART &amp; ADVERTISING</div>
+<h1>Login with mobile</h1>
+<p class="muted">Enter your Indian mobile number. We'll send a one-time password (OTP) by SMS to verify it's you.</p>
+<form id="phoneForm">
+<div class="field"><label for="phone">Mobile number</label><div class="phone-row"><input id="phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="9876543210" maxlength="15" required><button class="btn" id="sendBtn" type="submit">Send OTP</button></div><p class="muted">India country code +91 is added automatically if omitted.</p></div>
+<div id="otpWrap" class="field hidden"><label for="otp">6-digit OTP</label><input id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="Enter OTP" required><button class="btn primary" id="verifyBtn" type="button" style="margin-top:10px">Verify &amp; Login</button></div>
+<div id="recaptcha-container"></div><p id="status" class="status" role="status" aria-live="polite"></p>
+</form>
+<a class="back" href="index.html">← Back to store</a>
+</main>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+import {getAuth,RecaptchaVerifier,signInWithPhoneNumber,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+const firebaseConfig={apiKey:"AIzaSyC6CxokC0KwAtP9EMilEQHMJQKWCgLWYJc",authDomain:"sayaart.firebaseapp.com",projectId:"sayaart",storageBucket:"sayaart.firebasestorage.app",messagingSenderId:"805892692460",appId:"1:805892692460:web:417ef9926bbc01d9f288c9"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app);
+const form=document.getElementById("phoneForm"),phoneInput=document.getElementById("phone"),sendBtn=document.getElementById("sendBtn"),otpWrap=document.getElementById("otpWrap"),otpInput=document.getElementById("otp"),verifyBtn=document.getElementById("verifyBtn"),status=document.getElementById("status");
+let verifier=null,confirmation=null;
+function say(message,kind=""){status.className="status "+kind;status.textContent=message;}
+function makeVerifier(){if(verifier){try{verifier.clear()}catch{}verifier=null;}verifier=new RecaptchaVerifier(auth,"recaptcha-container",{size:"normal"});return verifier;}
+onAuthStateChanged(auth,user=>{if(user&&user.phoneNumber){say("Already logged in with "+user.phoneNumber+".","success");}});
+form.addEventListener("submit",async e=>{e.preventDefault();let raw=phoneInput.value.trim().replace(/[\s()-]/g,"");if(/^\d{10}$/.test(raw))raw="+91"+raw;else if(/^91\d{10}$/.test(raw))raw="+"+raw;if(!/^\+[1-9]\d{7,14}$/.test(raw)){say("Enter a valid number with country code, e.g. +919876543210.","error");return;}sendBtn.disabled=true;say("Please complete the reCAPTCHA, then wait for the SMS.");try{const v=makeVerifier();confirmation=await signInWithPhoneNumber(auth,raw,v);otpWrap.classList.remove("hidden");otpInput.focus();say("OTP sent. Check your SMS and enter the 6-digit code.","success");sendBtn.textContent="Resend OTP";}catch(err){say("Could not send OTP: "+(err.code||err.message)+". Check that Phone sign-in is enabled and this domain is authorized in Firebase Authentication settings.","error");try{if(verifier){verifier.clear();verifier=null;}}catch{}}finally{sendBtn.disabled=false;}});
+verifyBtn.addEventListener("click",async()=>{const code=otpInput.value.trim();if(!confirmation){say("First request an OTP.","error");return;}if(!/^\d{6}$/.test(code)){say("Enter the 6-digit OTP.","error");return;}verifyBtn.disabled=true;say("Verifying OTP…");try{const result=await confirmation.confirm(code);say("Login successful for "+(result.user.phoneNumber||"your mobile number")+". Redirecting to the store…","success");setTimeout(()=>location.href="index.html",900);}catch(err){say("OTP verification failed: "+(err.code||err.message)+". Check the code and try again.","error");}finally{verifyBtn.disabled=false;}});
+</script></body></html>
