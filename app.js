@@ -456,7 +456,12 @@ function updateCheckoutSummary() {
   const box = document.getElementById('checkoutItemsSummary');
   box.style.whiteSpace = 'pre-line';
   box.textContent = items + '\n\nTotal: ₹' + cart.reduce((s,x)=>s+Number(x.totalPrice||0),0);
-  document.getElementById('checkoutPayTotal').textContent = '₹' + cart.reduce((s,x)=>s+Number(x.totalPrice||0),0);
+  const subtotal = cart.reduce((s,x)=>s+Number(x.totalPrice||0),0);
+  const method = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'upi';
+  const charge = method === 'cod' ? 1000 : 0;
+  document.getElementById('checkoutPayTotal').textContent = '₹' + (subtotal + charge);
+  const chargeSummary = document.getElementById('deliveryChargeSummary');
+  if (chargeSummary) chargeSummary.innerHTML = 'Product subtotal: ₹' + subtotal + '<br>COD/delivery charge: ₹' + charge + '<br><b>Total payable: ₹' + (subtotal + charge) + '</b>';
 }
 if (checkoutButton) checkoutButton.addEventListener('click', () => {
   if (!cart.length) { alert('Your bag is empty.'); return; }
@@ -513,6 +518,7 @@ document.getElementById('addressNextBtn')?.addEventListener('click', () => {
   updateCheckoutSummary();setCheckoutStage(2);
 });
 document.getElementById('confirmDetailsBtn')?.addEventListener('click', () => { updateCheckoutSummary();setCheckoutStage(3); });
+document.querySelectorAll('input[name="paymentMethod"]').forEach(input => input.addEventListener('change', updateCheckoutSummary));
 document.querySelectorAll('[data-back]').forEach(btn => btn.addEventListener('click',()=>setCheckoutStage(Number(btn.dataset.back))));
 
 function initRecaptcha() {
@@ -552,9 +558,9 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
   const a=addressFields();
   if(verifiedCheckoutPhone!==a.phone)return alert('Verify your mobile number first.');
   const paymentMethod=checkoutForm.querySelector('input[name="paymentMethod"]:checked')?.value;
-  if(!['upi','card'].includes(paymentMethod))return alert('Choose UPI or card payment.');
+  if(!['upi','card','cod'].includes(paymentMethod))return alert('Choose UPI, card or Cash on Delivery.');
   const status=document.getElementById('paymentStatus'),button=document.getElementById('placeOrderBtn');
-  button.disabled=true;button.textContent='Connecting securely…';status.textContent='Preparing secure payment…';
+  button.disabled=true;button.textContent=paymentMethod==='cod'?'Placing COD order…':'Connecting securely…';status.textContent=paymentMethod==='cod'?'Placing Cash on Delivery order…':'Preparing secure payment…';
   try {
     const settingsSnap=await getDocs(collection(db,'settings'));
     const paymentDoc=settingsSnap.docs.find(d=>d.id==='payment');
@@ -593,7 +599,7 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
     status.textContent='Order ID: '+orderId+'. Redirecting to secure payment…';
     window.location.href=result.checkoutUrl;
   } catch(err) { console.error('Checkout payment error:',err);status.textContent=err.message;alert(err.message); }
-  finally {button.disabled=false;button.textContent='Pay securely →';}
+  finally {button.disabled=false;button.textContent=(document.querySelector('input[name="paymentMethod"]:checked')?.value==='cod')?'Place COD order →':'Pay securely →';}
 };
 
 // ADMIN PANEL ENGINE WITH ROBUST ERROR HANDLING
