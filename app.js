@@ -541,7 +541,27 @@ document.getElementById('addressNextBtn')?.addEventListener('click', () => {
   updateCheckoutSummary();setCheckoutStage(3);
 });
 document.getElementById('reviewContinueBtn')?.addEventListener('click', () => { updateCheckoutSummary();setCheckoutStage(2); });
-document.querySelectorAll('input[name="paymentMethod"]').forEach(input => input.addEventListener('change', updateCheckoutSummary));
+function syncPaymentChoiceUI(){
+  document.querySelectorAll('.payment-choice').forEach(label=>{
+    const radio=label.querySelector('input[name="paymentMethod"]');
+    label.classList.toggle('is-selected',!!radio?.checked);
+    label.setAttribute('aria-checked',String(!!radio?.checked));
+    label.setAttribute('role','radio');
+    label.tabIndex=0;
+  });
+  updateCheckoutSummary();
+}
+document.querySelectorAll('input[name="paymentMethod"]').forEach(input=>input.addEventListener('change',syncPaymentChoiceUI));
+document.querySelectorAll('.payment-choice').forEach(label=>{
+  label.addEventListener('click',event=>{
+    if(event.target.closest('input'))return;
+    const radio=label.querySelector('input[name="paymentMethod"]');
+    if(radio){radio.checked=true;radio.dispatchEvent(new Event('change',{bubbles:true}));}
+  });
+  label.addEventListener('keydown',event=>{
+    if(event.key==='Enter'||event.key===' '){event.preventDefault();const radio=label.querySelector('input[name="paymentMethod"]');if(radio){radio.checked=true;radio.dispatchEvent(new Event('change',{bubbles:true}));}}
+  });
+});
 document.getElementById('applyCouponBtn')?.addEventListener('click', async () => {
   const input=document.getElementById('couponCodeInput'),status=document.getElementById('couponStatus');
   const code=String(input?.value||'').trim().toUpperCase();
@@ -622,7 +642,7 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
     status.textContent='Order ID: '+orderId+'. Redirecting to secure payment…';
     window.location.href=result.checkoutUrl;
   } catch(err) { console.error('Checkout payment error:',err);status.textContent=err.message;alert(err.message); }
-  finally {button.disabled=false;button.textContent=(document.querySelector('input[name="paymentMethod"]:checked')?.value==='cod')?'Place COD order →':'Pay securely →';}
+  finally {button.disabled=false;updateCheckoutSummary();}
 };
 
 // ADMIN PANEL ENGINE WITH ROBUST ERROR HANDLING
