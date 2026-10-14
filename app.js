@@ -482,8 +482,8 @@ function updateAddressOptions() {
 }
 function storeAddressBookForCurrentPhone(book) {
   const phone = document.getElementById('custPhone')?.value || localStorage.getItem('saya_last_customer_phone') || '';
-  const key = String(phone).replace(/\\D/g, '').slice(-10);
-  if (!/^\\d{10}$/.test(key)) { alert('Enter the saved address mobile number first.'); return false; }
+  const key = String(phone).replace(/\D/g, '').slice(-10);
+  if (!/^\d{10}$/.test(key)) { alert('Enter the saved address mobile number first.'); return false; }
   localStorage.setItem('saya_addresses_' + key, JSON.stringify(book));
   return true;
 }
