@@ -85,8 +85,9 @@
         </div>
         <div class="form-group">
           <label>Main Store Display Image URL <span style="color:#64748b;">(Optional)</span></label>
-          <input type="url" id="pImg" placeholder="Leave blank to use the default shop image">
-          <div class="help-text">Optional for every product type. Without a link, the shop logo/default image will be shown.</div>
+          <input type="url" id="pImg" placeholder="https://... (optional)">
+          <input type="file" id="pImgFile" accept="image/*" style="margin-top:8px">
+          <div class="help-text">Optional: choose an image from PC or paste an image URL. If both are set, uploaded file takes priority.</div>
         </div>
 
         <!-- Custom Product Specific Options -->
@@ -95,17 +96,20 @@
           
           <div class="form-group">
             <label>Front Outline Image URL <span style="color:#64748b;">(Optional)</span></label>
-            <input type="text" id="pFrontOutline" placeholder="https://example.com/tshirt-front-outline.png">
+            <input type="url" id="pFrontOutline" placeholder="Front outline image URL (optional)">
+            <input type="file" id="pFrontOutlineFile" accept="image/*" style="margin-top:8px">
           </div>
 
           <div class="form-group">
             <label>Back Outline Image URL <span style="color:#64748b;">(Optional)</span></label>
-            <input type="text" id="pBackOutline" placeholder="https://example.com/tshirt-back-outline.png">
+            <input type="url" id="pBackOutline" placeholder="Back outline image URL (optional)">
+            <input type="file" id="pBackOutlineFile" accept="image/*" style="margin-top:8px">
           </div>
 
           <div class="form-group">
             <label>Finished Product Mockup Link/Image URL <span style="color:#64748b;">(Optional)</span></label>
-            <input type="text" id="pFinishedLink" placeholder="https://example.com/finished-product-sample.jpg">
+            <input type="url" id="pFinishedLink" placeholder="Finished mockup image URL (optional)">
+            <input type="file" id="pFinishedLinkFile" accept="image/*" style="margin-top:8px">
           </div>
 
           <label><b>Enable Canvas Features:</b></label>
@@ -127,7 +131,10 @@
           <div class="help-text">Format: <code>Quality:ExtraPrice</code> separated by commas</div>
         </div>
 
-        <button type="submit" class="btn">Add Product to Store</button>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button type="submit" class="btn" id="saveProductBtn">Add Product to Store</button>
+          <button type="button" class="btn btn-danger" id="cancelEditProductBtn" style="display:none">Cancel Edit</button>
+        </div>
       </form>
 
       <h3>Live products</h3><p class="section-intro">Products currently loaded from your Firebase catalogue.</p>
