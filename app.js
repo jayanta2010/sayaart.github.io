@@ -653,6 +653,23 @@ window.closeDrawer = function(id) {
 document.addEventListener('DOMContentLoaded', () => {
   loadProducts();
   window.updateCartUI();
+  const searchForm = document.getElementById('storeSearchForm');
+  const searchInput = document.getElementById('storeSearchInput');
+  if (searchForm && searchInput) {
+    const runSearch = () => {
+      const query = searchInput.value.trim().toLowerCase();
+      const filtered = !query ? allProductsList : allProductsList.filter(product =>
+        [product.name, product.description, product.pType].some(value => String(value || '').toLowerCase().includes(query))
+      );
+      renderProducts(filtered);
+      const productSection = document.getElementById('products');
+      if (query && productSection) productSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    searchForm.addEventListener('submit', event => { event.preventDefault(); runSearch(); });
+    searchInput.addEventListener('input', () => {
+      if (!searchInput.value.trim()) renderProducts(allProductsList);
+    });
+  }
   if (typeof initAdminPanel === 'function') {
     initAdminPanel();
   }
