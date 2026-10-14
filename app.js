@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -27,7 +27,6 @@ let activeSide = 'front';
 let frontCanvasJSON = null;
 let backCanvasJSON = null;
 let rawUploadedPhotoDataUrl = null; // Store High-Res Original Photo
-let confirmationResult = null; // Store Phone OTP Session
 
 function saveCart() {
   localStorage.setItem('saya_cart', JSON.stringify(cart));
@@ -375,11 +374,10 @@ if (addCustomBtn) {
     const msgInput = document.getElementById('personalMessageInput');
     const personalMessage = msgInput ? msgInput.value.trim() : '';
 
-    cart.push({
-      productId: selectedProduct.id,
-      name: selectedProduct.name,
-      quantity: qty,
-      totalPrice: currentCalculatedPrice,
+    const sizeChoice=document.getElementById('sizeSelect'),qualityChoice=document.getElementById('qualitySelect');
+    const chosenSize=selectedProduct.sizes?.length&&sizeChoice?.value!==''?selectedProduct.sizes[Number(sizeChoice.value)]?.name||'':'';
+    const chosenQuality=selectedProduct.qualities?.length&&qualityChoice?.value!==''?selectedProduct.qualities[Number(qualityChoice.value)]?.name||'':'';
+    cart.push({productId:selectedProduct.id,name:selectedProduct.name,imageUrl:selectedProduct.imageUrl||'',size:chosenSize,quality:chosenQuality,quantity:qty,totalPrice:currentCalculatedPrice,
       personalMessage: personalMessage,
       frontArtwork: frontSnapshot,
       backArtwork: selectedProduct.hasBack ? backSnapshot : null,
@@ -396,7 +394,6 @@ if (addCustomBtn) {
 // Multi-step checkout: address -> confirmation -> prepaid payment.
 const checkoutForm = document.getElementById('checkoutForm');
 const checkoutButton = document.getElementById('checkoutButton');
-let verifiedCheckoutPhone = '';
 let pinLookupTimer = null;
 let currentSavedAddresses = [];
 let appliedCoupon = null;
@@ -481,20 +478,19 @@ function formatAddress(a) {
   return [a.name, a.phone, a.house, a.locality, a.area, a.district, a.state, a.pincode, 'Landmark: ' + a.landmark].filter(Boolean).join(', ');
 }
 function updateCheckoutSummary() {
-  const a = addressFields();
-  document.getElementById('checkoutAddressSummary').textContent = formatAddress(a);
-  const items = cart.map(x => `${x.name} × ${x.quantity} — ₹${x.totalPrice}`).join('\n');
-  const box = document.getElementById('checkoutItemsSummary');
-  box.style.whiteSpace = 'pre-line';
-  box.textContent = items + '\n\nTotal: ₹' + cart.reduce((s,x)=>s+Number(x.totalPrice||0),0);
-  const subtotal = cart.reduce((s,x)=>s+Number(x.totalPrice||0),0);
-  const method = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'upi';
-  const charge = method === 'cod' ? 1000 : 0;
-  const discount = couponDiscount(subtotal);
-  const total = Math.max(0, subtotal - discount) + charge;
-  document.getElementById('checkoutPayTotal').textContent = '₹' + total;
-  const chargeSummary = document.getElementById('deliveryChargeSummary');
-  if (chargeSummary) chargeSummary.innerHTML = 'Product subtotal: ₹' + subtotal + '<br>Coupon discount' + (appliedCoupon ? ' ('+appliedCoupon.code+' · '+appliedCoupon.percent+'%)' : '') + ': −₹' + discount + '<br>COD/delivery charge: ₹' + charge + '<br><b>Total payable: ₹' + total + '</b>';
+  const a=addressFields(),addressSummary=document.getElementById('checkoutAddressSummary');
+  if(addressSummary)addressSummary.textContent=formatAddress(a);
+  const box=document.getElementById('checkoutItemsSummary');
+  if(box)box.innerHTML=cart.map(item=>{
+    const product=allProductsList.find(p=>p.id===item.productId),image=item.imageUrl||product?.imageUrl||productPreviewImage(product||{name:item.name});
+    const options=[item.size?'Size: '+item.size:'',item.quality?'Quality: '+item.quality:''].filter(Boolean).join(' · ');
+    const name=String(item.name||'Product').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    return '<article class="checkout-item-row"><img src="'+image+'" alt=""><div class="checkout-item-info"><b>'+name+'</b><small>'+options+'</small><small>Qty: '+Number(item.quantity||1)+'</small></div><strong>₹'+Number(item.totalPrice||0)+'</strong></article>';
+  }).join('')||'<p class="help-text">Your cart is empty.</p>';
+  const subtotal=cart.reduce((s,x)=>s+Number(x.totalPrice||0),0),method=document.querySelector('input[name="paymentMethod"]:checked')?.value||'upi',charge=method==='cod'?1000:0,discount=couponDiscount(subtotal),total=Math.max(0,subtotal-discount)+charge;
+  document.getElementById('checkoutPayTotal').textContent='₹'+total;
+  const cs=document.getElementById('deliveryChargeSummary');if(cs)cs.innerHTML='Product subtotal: ₹'+subtotal+'<br>Coupon discount'+(appliedCoupon?' ('+appliedCoupon.code+' · '+appliedCoupon.percent+'%)':'')+': −₹'+discount+'<br>COD/delivery charge: ₹'+charge+'<br><b>Total payable: ₹'+total+'</b>';
+  const rt=document.getElementById('orderReviewTotals');if(rt)rt.innerHTML='Product subtotal: ₹'+subtotal+'<br>Coupon discount'+(appliedCoupon?' ('+appliedCoupon.code+' · '+appliedCoupon.percent+'%)':'')+': −₹'+discount+'<br><b>Order total: ₹'+Math.max(0,subtotal-discount)+'</b>';
 }
 if (checkoutButton) checkoutButton.addEventListener('click', () => {
   if (!cart.length) { alert('Your bag is empty.'); return; }
@@ -510,16 +506,14 @@ document.getElementById('newAddressBtn')?.addEventListener('click', () => {
   document.getElementById('checkoutForm').querySelectorAll('input:not([type=radio])').forEach(el => { if (!['otpInput'].includes(el.id)) el.value=''; });
   document.getElementById('custArea').innerHTML='<option value="">Enter PIN code first</option>';
   document.getElementById('savedAddressSelect').value='';
-  document.getElementById('otpSection').style.display='none';
-  verifiedCheckoutPhone=''; confirmationResult=null;
   document.getElementById('placeOrderBtn').disabled=false;
 });
 document.getElementById('savedAddressSelect')?.addEventListener('change', e => {
   if (e.target.value === '') return;
   const a = currentSavedAddresses[Number(e.target.value)];
-  if (a) { fillAddress(a); verifiedCheckoutPhone=''; document.getElementById('otpSection').style.display='none'; }
+  if (a) { fillAddress(a); }
 });
-document.getElementById('custPhone')?.addEventListener('change', () => { refreshSavedAddresses(); if (verifiedCheckoutPhone !== document.getElementById('custPhone').value.replace(/\D/g,'').slice(-10)) { verifiedCheckoutPhone=''; confirmationResult=null; document.getElementById('otpSection').style.display='none'; } });
+document.getElementById('custPhone')?.addEventListener('change', () => refreshSavedAddresses());
 document.getElementById('custPincode')?.addEventListener('input', () => {
   clearTimeout(pinLookupTimer);
   const pin = document.getElementById('custPincode').value.replace(/\D/g,'').slice(0,6);
@@ -543,17 +537,12 @@ document.getElementById('custPincode')?.addEventListener('input', () => {
 document.getElementById('saveAddressBtn')?.addEventListener('click', () => saveCurrentAddress(true));
 document.getElementById('addressNextBtn')?.addEventListener('click', () => {
   const a=addressFields();
-  if (!checkoutForm.querySelector('[data-stage="1"]').querySelector('#custPincode').reportValidity()) return;
+  if (!document.getElementById('custPincode').reportValidity()) return;
   if (!/^\d{6}$/.test(a.pincode) || !a.state || !a.district || !a.area || !/^\d{10}$/.test(a.phone) || !a.name || !a.locality || !a.landmark) { alert('Please complete all required address details. PIN lookup must finish first.'); return; }
-  if (verifiedCheckoutPhone !== a.phone) {
-    document.getElementById('otpSection').style.display='block';
-    alert('Verify this mobile number by SMS OTP before continuing.');
-    return;
-  }
   saveCurrentAddress(false);
-  updateCheckoutSummary();setCheckoutStage(2);
+  updateCheckoutSummary();setCheckoutStage(3);
 });
-document.getElementById('confirmDetailsBtn')?.addEventListener('click', () => { updateCheckoutSummary();setCheckoutStage(3); });
+document.getElementById('reviewContinueBtn')?.addEventListener('click', () => { updateCheckoutSummary();setCheckoutStage(2); });
 document.querySelectorAll('input[name="paymentMethod"]').forEach(input => input.addEventListener('change', updateCheckoutSummary));
 document.getElementById('applyCouponBtn')?.addEventListener('click', async () => {
   const input=document.getElementById('couponCodeInput'),status=document.getElementById('couponStatus');
@@ -574,42 +563,10 @@ document.getElementById('applyCouponBtn')?.addEventListener('click', async () =>
 });
 document.querySelectorAll('[data-back]').forEach(btn => btn.addEventListener('click',()=>setCheckoutStage(Number(btn.dataset.back))));
 
-function initRecaptcha() {
-  if (!window.recaptchaVerifier) {
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size:'invisible', callback:()=>{} });
-  }
-}
-const sendOtpBtn = document.getElementById('sendOtpBtn');
-if (sendOtpBtn) sendOtpBtn.onclick = async () => {
-  const raw = document.getElementById('custPhone').value.replace(/\D/g,'').slice(-10);
-  if (!/^\d{10}$/.test(raw)) return alert('Enter a valid 10-digit mobile number.');
-  try {
-    sendOtpBtn.disabled=true;sendOtpBtn.textContent='Sending OTP…';initRecaptcha();
-    confirmationResult=await signInWithPhoneNumber(auth,'+91'+raw,window.recaptchaVerifier);
-    document.getElementById('otpSection').style.display='block';
-    alert('SMS OTP sent.');
-  } catch(error) { alert('Could not send OTP: '+error.message); if(window.recaptchaVerifier){try{await window.recaptchaVerifier.clear();}catch{}window.recaptchaVerifier=null;} }
-  finally {sendOtpBtn.disabled=false;sendOtpBtn.textContent='Send OTP';}
-};
-const verifyOtpBtn=document.getElementById('verifyOtpBtn');
-if(verifyOtpBtn) verifyOtpBtn.onclick=async()=>{
-  const code=document.getElementById('otpInput').value.trim();
-  if(!code||!confirmationResult)return alert('Enter the SMS OTP first.');
-  try {
-    verifyOtpBtn.disabled=true;verifyOtpBtn.textContent='Verifying…';
-    await confirmationResult.confirm(code);
-    verifiedCheckoutPhone=document.getElementById('custPhone').value.replace(/\D/g,'').slice(-10);
-    verifyOtpBtn.textContent='Verified ✓';
-    alert('Mobile number verified.');
-  } catch(error) { alert('OTP verification failed: '+error.message);verifyOtpBtn.textContent='Verify OTP'; }
-  finally {verifyOtpBtn.disabled=false;}
-};
-
 if(checkoutForm) checkoutForm.onsubmit=async e=>{
   e.preventDefault();
   if(!cart.length)return alert('Your bag is empty.');
   const a=addressFields();
-  if(verifiedCheckoutPhone!==a.phone)return alert('Verify your mobile number first.');
   const paymentMethod=checkoutForm.querySelector('input[name="paymentMethod"]:checked')?.value;
   if(!['upi','card','cod'].includes(paymentMethod))return alert('Choose UPI, card or Cash on Delivery.');
   const status=document.getElementById('paymentStatus'),button=document.getElementById('placeOrderBtn');
@@ -1086,29 +1043,17 @@ window.closeDrawer = function(id) {
 document.addEventListener('DOMContentLoaded', () => {
   loadProducts();
   window.updateCartUI();
-  const storeSidebar = document.getElementById('storeSidebar');
-  const expandSidebar = document.getElementById('sidebarExpandToggle');
-  expandSidebar?.addEventListener('click', () => {
-    const expanded = storeSidebar?.classList.toggle('expanded');
-    expandSidebar.setAttribute('aria-expanded', String(!!expanded));
-    expandSidebar.setAttribute('aria-label', expanded ? 'Collapse sidebar' : 'Expand sidebar');
-    expandSidebar.title = expanded ? 'Collapse menu' : 'Expand menu';
-  });
-  storeSidebar?.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
-    if (link.hash && link.hash.length > 1) {
-      storeSidebar.classList.remove('expanded');
-      expandSidebar?.setAttribute('aria-expanded','false');
-    }
-  }));
-  // Show account sign-in or sign-out action according to Firebase session.
-  import('https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js').then(({onAuthStateChanged,signOut}) => {
-    onAuthStateChanged(auth, user => {
-      const inLink=document.getElementById('sidebarSignIn'),outLink=document.getElementById('sidebarSignOut');
-      if(inLink)inLink.style.display=user?'none':'flex';
-      if(outLink)outLink.style.display=user?'flex':'none';
-      outLink?.addEventListener('click',async event=>{event.preventDefault();try{await signOut(auth);}finally{location.href='index.html';}},{once:true});
-    });
-  }).catch(console.error);
+  const storeSidebar=document.getElementById('storeSidebar'),expandSidebar=document.getElementById('sidebarExpandToggle');
+  const setSidebarExpanded=expanded=>{storeSidebar?.classList.toggle('expanded',!!expanded);expandSidebar?.setAttribute('aria-expanded',String(!!expanded));};
+  storeSidebar?.addEventListener('mouseenter',()=>setSidebarExpanded(true));
+  storeSidebar?.addEventListener('mouseleave',()=>setSidebarExpanded(false));
+  expandSidebar?.addEventListener('click',()=>setSidebarExpanded(!storeSidebar?.classList.contains('expanded')));
+  storeSidebar?.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>{if(window.matchMedia('(hover: none)').matches)setSidebarExpanded(false);}));
+  import('https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js').then(({onAuthStateChanged,signOut})=>onAuthStateChanged(auth,user=>{
+    const inLink=document.getElementById('sidebarSignIn'),outLink=document.getElementById('sidebarSignOut');
+    if(inLink)inLink.style.display=user?'none':'flex';if(outLink)outLink.style.display=user?'flex':'none';
+    if(outLink)outLink.onclick=async event=>{event.preventDefault();try{await signOut(auth);inLink.style.display='flex';outLink.style.display='none';}catch(err){alert('Could not sign out: '+err.message);}};
+  })).catch(console.error);
   document.addEventListener('click', event => {
     const closeButton = event.target.closest('[data-close]');
     if (closeButton) {
