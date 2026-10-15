@@ -84,6 +84,11 @@ async function loadProducts() {
   const params=new URLSearchParams(location.search),categoryFilter=params.get('category'),sectionFilter=params.get('section');
   if(categoryFilter||sectionFilter){const filtered=allProductsList.filter(p=>(!categoryFilter||p.category===categoryFilter)&&(!sectionFilter||p.storefrontSection===sectionFilter));renderProducts(filtered,'allProductsGrid');const heading=document.getElementById('allProductsHeading');if(heading)heading.textContent=categoryFilter||sectionFilter;}
   const searchInput=document.getElementById('storeSearchInput');if(searchInput?.value.trim())runStoreSearch(searchInput.value);
+  const requestedProduct = new URLSearchParams(location.search).get('product');
+  if (requestedProduct && document.getElementById('productModal')) {
+    history.replaceState(null, '', location.pathname + location.hash);
+    window.openProductCustomizer(requestedProduct);
+  }
 }
 
 function getEstimatedDeliveryDate() {
@@ -129,10 +134,13 @@ function renderCustomProductSections(){
 
 // Open Product Customizer Modal
 window.openProductCustomizer = function(productId) {
+  if (!document.getElementById('productModal')) {
+    location.href = 'index.html?product=' + encodeURIComponent(String(productId));
+    return;
+  }
   if (window.productGalleryTimer) { clearInterval(window.productGalleryTimer); window.productGalleryTimer = null; }
   selectedProduct = allProductsList.find(p => String(p.id) === String(productId));
   if (!selectedProduct) return;
-  if (selectedProduct.stockStatus === 'out_of_stock' || Number(selectedProduct.stockQuantity) === 0) { alert('This product is out of stock and cannot be ordered.'); return; }
   document.getElementById('customTitle').innerText = selectedProduct.name;
   const modalCardGallery = document.querySelector('#productModal .modal-card');
   const isCustomGallery = selectedProduct.pType === 'customizable';
