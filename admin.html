@@ -167,6 +167,11 @@
     <div id="ordersTab" class="panel">
       <h3>Customer orders &amp; artwork files</h3><p class="section-intro">Review customer details and preview/download artwork attached to each order.</p>
       <div id="adminOrdersList">Loading orders...</div>
+      <section style="margin-top:26px;padding-top:18px;border-top:2px solid var(--line)">
+        <h3>🗑️ Orders Bin <span id="ordersBinCount" class="badge">0</span></h3>
+        <p class="section-intro">Deleted orders stay here for 7 days. Restore them anytime before the retention period ends; after 7 days they are permanently removed.</p>
+        <div id="adminOrdersBin">Loading bin...</div>
+      </section>
     </div>
     <div id="returnsTab" class="panel"><h3>Return requests</h3><p class="section-intro">Review return order IDs, customer details, evidence photos, and approval status.</p><div id="adminReturnsList">Loading return requests...</div></div>
     <div id="couponsTab" class="panel">
