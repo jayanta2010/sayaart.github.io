@@ -39,6 +39,12 @@
     .btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
     .btn-danger{background:#fff0ef;color:var(--red);border:1px solid #f3c8c5;padding:8px 11px;font-size:12px;box-shadow:none}
     .help-text{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}
+    .product-gallery-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+    .gallery-image-field{min-width:0;padding:12px;background:#fff;border:1px solid var(--line);border-radius:10px}
+    .gallery-image-field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}
+    .gallery-image-field input[type="url"],.gallery-image-field input[type="file"]{width:100%;margin:4px 0;font-size:12px}
+    .gallery-preview{display:none;max-width:100%;width:auto;max-height:110px;object-fit:contain;margin-top:8px;border:1px solid #dce8e5;border-radius:8px}
+    @media(max-width:650px){.product-gallery-fields{grid-template-columns:1fr}}
     .product-list-item,.order-list-item{border:1px solid var(--line)!important;padding:16px!important;border-radius:13px!important;margin-bottom:12px!important;background:#fff!important;box-shadow:0 4px 14px #123a3208}
     .design-preview-box{max-width:160px;width:100%;border:1px solid var(--line);border-radius:8px;margin-top:8px;display:block}
     #adminProductList,#adminOrdersList{margin-top:15px}
@@ -93,6 +99,13 @@
           <input type="file" id="pImgFile" accept="image/*" style="margin-top:8px">
           <div class="help-text">This image is used as the front preview in the A4 portrait design canvas. Upload a T-shirt photo/product mockup here.</div>
           <img id="pImgPreview" alt="Front image preview" style="display:none;max-width:140px;max-height:140px;object-fit:contain;margin-top:8px;border:1px solid #dce8e5;border-radius:8px">
+          <div class="help-text"><b>Product gallery: 5 images total.</b> Image 1 is the main image above. Add up to four extra views below.</div>
+          <div class="product-gallery-fields">
+            <div class="gallery-image-field"><label>Product Image 2 (Optional)</label><input type="url" id="pGallery2" placeholder="Image 2 URL (optional)"><input type="file" id="pGallery2File" accept="image/*"><img id="pGallery2Preview" alt="Product image 2 preview" class="gallery-preview"></div>
+            <div class="gallery-image-field"><label>Product Image 3 (Optional)</label><input type="url" id="pGallery3" placeholder="Image 3 URL (optional)"><input type="file" id="pGallery3File" accept="image/*"><img id="pGallery3Preview" alt="Product image 3 preview" class="gallery-preview"></div>
+            <div class="gallery-image-field"><label>Product Image 4 (Optional)</label><input type="url" id="pGallery4" placeholder="Image 4 URL (optional)"><input type="file" id="pGallery4File" accept="image/*"><img id="pGallery4Preview" alt="Product image 4 preview" class="gallery-preview"></div>
+            <div class="gallery-image-field"><label>Product Image 5 (Optional)</label><input type="url" id="pGallery5" placeholder="Image 5 URL (optional)"><input type="file" id="pGallery5File" accept="image/*"><img id="pGallery5Preview" alt="Product image 5 preview" class="gallery-preview"></div>
+          </div>
         </div>
         <div class="form-group" id="backImageFields">
           <label>Back-side Product Image <span style="color:#64748b;">(Optional)</span></label>
