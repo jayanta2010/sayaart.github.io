@@ -702,7 +702,7 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
     const orderAmount = Math.max(0, subtotal - discount) + deliveryCharge;
     const orderData = {
       orderId, customerName:a.name, customerPhone:'+91'+a.phone,
-      deliveryAddress:formatAddress(a), address:a, items:cart, subtotal, discount,
+      deliveryAddress:formatAddress(a), address:a, items:cart.map(item=>({...item,frontArtwork:item.frontArtwork&&typeof item.frontArtwork==='object'?JSON.stringify(item.frontArtwork):item.frontArtwork,backArtwork:item.backArtwork&&typeof item.backArtwork==='object'?JSON.stringify(item.backArtwork):item.backArtwork})), subtotal, discount,
       couponCode:appliedCoupon?.code||'', couponPercent:appliedCoupon?.percent||0,
       deliveryCharge, amount:orderAmount, paymentMethod,
       paymentStatus:paymentMethod==='cod'?'cash on delivery':'pending',
