@@ -1113,7 +1113,7 @@ async function initAdminPanel() {
           </div>
         `).join('');
 
-        adminOrdersList.innerHTML += `
+        adminOrdersList.insertAdjacentHTML('beforeend', `
           <div class="order-list-item" style="border:1px solid #cbd5e1; padding:15px; border-radius:8px; margin-bottom:15px; background:#fff;">
             <b>Order #${String(o.orderId || docSnap.id)}</b> - <span style="color:#16a34a; font-weight:bold;">₹${Number(o.amount||0)}</span><br>
             Customer: <b>${String(o.customerName || 'N/A')}</b> (${String(o.customerPhone || 'N/A')})<br>
