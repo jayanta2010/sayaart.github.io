@@ -1423,3 +1423,11 @@ html[data-theme="dark"] .address-options-menu button{background:#202d3b;color:#e
 #productModal .modal-card.stock-product-detail #canvasContainer,#productModal .modal-card.stock-product-detail #canvasControls{display:none!important}#productModal .modal-card.stock-product-detail{max-width:760px!important}
 .store-sidebar.mobile-open{transform:translateX(0)!important;visibility:visible!important;z-index:1001!important}.sidebar-scrim.visible{display:block!important;position:fixed!important;inset:0!important;background:rgba(10,20,30,.48)!important;z-index:1000!important}
 @media(max-width:700px){.detail-main-image{height:230px}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.product-card-actions .primary-button{font-size:13px;padding:10px 8px}}
+
+/* Canvas background image visibility and bestseller card buttons */
+#productModal .editor-canvas-panel{position:relative;z-index:1}
+#productModal #designCanvas{max-width:100%;height:auto}
+.product-open-detail{cursor:pointer}
+.product-open-detail .product-details{display:block}
+.custom-product-section .product-open-detail{color:inherit;text-align:left}
+.custom-product-section .product-card-actions{display:flex;gap:8px}
