@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
 // Firebase Configuration
@@ -408,6 +408,28 @@ function getAddressBook(phone) {
   try { return JSON.parse(localStorage.getItem('saya_addresses_' + key) || '[]').slice(0, 4); }
   catch { return []; }
 }
+async function loadCloudAddressBook(phone) {
+  const key = String(phone || '').replace(/\D/g, '').slice(-10);
+  if (!/^\d{10}$/.test(key) || !auth.currentUser) return getAddressBook(key);
+  try {
+    const ref = doc(db, 'customerProfiles', auth.currentUser.uid);
+    const snap = await getDoc(ref);
+    const cloud = snap.exists() && Array.isArray(snap.data().addresses) ? snap.data().addresses.slice(0,4) : null;
+    const local = getAddressBook(key);
+    const book = cloud && cloud.length ? cloud : local;
+    if (book.length) {
+      localStorage.setItem('saya_addresses_' + key, JSON.stringify(book));
+      if (!cloud || !cloud.length) await setDoc(ref, { phoneDigits:key, phoneNumber:auth.currentUser.phoneNumber||'', addresses:book, updatedAt:new Date().toISOString() }, {merge:true});
+    }
+    return book;
+  } catch (error) { console.warn('Cloud address book unavailable; using this device copy.', error); return getAddressBook(key); }
+}
+async function saveCloudAddressBook(phone, book) {
+  const key = String(phone || '').replace(/\D/g, '').slice(-10);
+  if (!/^\d{10}$/.test(key) || !auth.currentUser) return false;
+  await setDoc(doc(db,'customerProfiles',auth.currentUser.uid), { phoneDigits:key, phoneNumber:auth.currentUser.phoneNumber||'', addresses:book.slice(0,4), updatedAt:new Date().toISOString() }, {merge:true});
+  return true;
+}
 function addressFields() {
   return {
     pincode: document.getElementById('custPincode').value.trim(),
@@ -466,6 +488,7 @@ function saveCurrentAddress(showMessage = true) {
   if (!book.some(x => x.isDefault)) book[book.length - 1].isDefault = true;
   localStorage.setItem('saya_last_customer_phone', a.phone);
   localStorage.setItem('saya_addresses_' + a.phone, JSON.stringify(book));
+  saveCloudAddressBook(a.phone, book).catch(err => console.error('Address cloud sync failed:', err));
   const savedIndex = existing >= 0 ? existing : book.length - 1;
   editingAddressIndex = -1;
   const saveButton = document.getElementById('saveAddressBtn');
@@ -492,6 +515,7 @@ function storeAddressBookForCurrentPhone(book) {
   const key = String(phone).replace(/\D/g, '').slice(-10);
   if (!/^\d{10}$/.test(key)) { alert('Enter the saved address mobile number first.'); return false; }
   localStorage.setItem('saya_addresses_' + key, JSON.stringify(book));
+  saveCloudAddressBook(key, book).catch(err => console.error('Address cloud sync failed:', err));
   return true;
 }
 document.getElementById('addressOptionsBtn')?.addEventListener('click', () => {
@@ -582,7 +606,8 @@ if (checkoutButton) checkoutButton.addEventListener('click', async () => {
   appliedCoupon=null;
   const couponInput=document.getElementById('couponCodeInput');if(couponInput)couponInput.value='';
   const couponStatus=document.getElementById('couponStatus');if(couponStatus){couponStatus.textContent='Enter an active coupon code for a percentage discount.';couponStatus.style.color='';}
-  refreshSavedAddresses();
+  await loadCloudAddressBook(auth.currentUser.phoneNumber || document.getElementById('custPhone')?.value || '');
+  refreshSavedAddresses(auth.currentUser.phoneNumber || document.getElementById('custPhone')?.value || '');
   updateCheckoutSummary();
   closeDrawer('cartDrawer');
   openModal('checkoutModal');
