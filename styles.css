@@ -1416,3 +1416,10 @@ html[data-theme="dark"] .address-options-menu button{background:#202d3b;color:#e
 .order-status-timeline span.done{background:#dff5ef;color:#11675d;font-weight:800}
 .tracking-link{display:inline-block;color:#176b63;font-weight:800;margin:7px 0}
 @media(max-width:520px){.order-status-timeline{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Product detail gallery and mobile navigation */
+.product-open-detail{display:block;width:100%;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}.product-open-detail .product-details{padding:0}.product-card-actions{padding-top:10px}
+.detail-gallery{margin:0 0 16px}.detail-main-image{height:300px;background:#f6f8fa;border-radius:12px;display:grid;place-items:center;overflow:hidden}.detail-main-image img{max-width:100%;max-height:100%;object-fit:contain}.detail-thumbnails{display:flex;gap:8px;overflow-x:auto;padding:10px 2px}.detail-thumb{flex:0 0 64px;width:64px;height:64px;border:1px solid #d7e0e7;border-radius:8px;background:#fff;padding:3px;cursor:pointer}.detail-thumb.active{border:2px solid #147d70}.detail-thumb img{width:100%;height:100%;object-fit:contain}
+#productModal .modal-card.stock-product-detail #canvasContainer,#productModal .modal-card.stock-product-detail #canvasControls{display:none!important}#productModal .modal-card.stock-product-detail{max-width:760px!important}
+.store-sidebar.mobile-open{transform:translateX(0)!important;visibility:visible!important;z-index:1001!important}.sidebar-scrim.visible{display:block!important;position:fixed!important;inset:0!important;background:rgba(10,20,30,.48)!important;z-index:1000!important}
+@media(max-width:700px){.detail-main-image{height:230px}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.product-card-actions .primary-button{font-size:13px;padding:10px 8px}}
