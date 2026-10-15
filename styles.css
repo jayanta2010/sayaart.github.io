@@ -1468,3 +1468,69 @@ html[data-theme="dark"] .address-options-menu button{background:#202d3b;color:#e
 .product-grid .product-card-actions button:hover{filter:brightness(1.07);transform:translateY(-1px)}
 .product-grid .product-card-actions .out-of-stock-badge{border-radius:10px}
 @media(max-width:640px){.product-grid{gap:12px!important}.product-grid .product{padding:8px!important;border-radius:13px!important}.product-grid .product-image-wrap{height:155px!important;flex-basis:155px}.product-grid .product-details h3{font-size:13px!important}.product-grid .product-details .product-price{font-size:17px!important}.product-grid .product-card-actions button{min-height:40px;padding:10px 8px;font-size:12px}}
+
+
+/* ===== Saya Art premium dark storefront refresh ===== */
+:root{--ink:#eaf2ff;--paper:#0b1220;--line:#27354a;--muted:#a9b8ce;--lime:#63e6be;--orange:#55a7ff}
+html[data-theme="dark"]{color-scheme:dark}
+html[data-theme="dark"] body{background:radial-gradient(ellipse at 80% 0%,#142744 0,#0b1220 45%,#090f1a 100%)!important;color:#eaf2ff!important}
+html[data-theme="dark"] .site-header{background:rgba(10,18,31,.92)!important;border-color:#26364c!important;box-shadow:0 8px 32px #0002}
+html[data-theme="dark"] .brand{color:#f4f8ff!important}
+html[data-theme="dark"] .brand-logo{width:58px;height:58px;object-fit:contain;border-radius:50%!important;border:2px solid #65d9c2;background:#fff;padding:4px;box-shadow:0 0 0 4px #65d9c21a,0 8px 22px #0004}
+html[data-theme="dark"] .brand small{color:#93a9c4}
+html[data-theme="dark"] .announcement{background:linear-gradient(90deg,#080d17,#13243b,#080d17)!important;color:#bdcce0!important;border-bottom:1px solid #263a54}
+html[data-theme="dark"] .announcement b{color:#63e6be}
+html[data-theme="dark"] .category-nav{background:#0f1a2b!important;border-color:#273950!important}
+html[data-theme="dark"] .category-nav a,html[data-theme="dark"] nav a,html[data-theme="dark"] .text-button{color:#d8e6f8!important}
+html[data-theme="dark"] .site-search{background:#f8fbff;border:1px solid #405773;border-radius:12px;overflow:hidden;box-shadow:0 6px 24px #0002}
+html[data-theme="dark"] .site-search input{color:#17263b}
+html[data-theme="dark"] .site-search button{background:#1479d4;color:#fff;border:0}
+html[data-theme="dark"] .hero,html[data-theme="dark"] .category-section,html[data-theme="dark"] .products-section{background:transparent!important;color:#edf4ff!important}
+html[data-theme="dark"] .hero h1,html[data-theme="dark"] .section-top h2,html[data-theme="dark"] .business-banner h2{color:#f3f7ff!important}
+html[data-theme="dark"] .hero h1 em{color:#62aaff}
+html[data-theme="dark"] .eyebrow{color:#66d9c2!important}
+html[data-theme="dark"] .hero-text,html[data-theme="dark"] .section-subtitle{color:#b6c7dd!important}
+html[data-theme="dark"] .proof{border-color:#293b52;color:#a9bdd5}
+html[data-theme="dark"] .hero-art{border-radius:28px;box-shadow:0 24px 60px #0005}
+html[data-theme="dark"] .primary-button,html[data-theme="dark"] .light-button,html[data-theme="dark"] .cart-button,html[data-theme="dark"] .icon-button,html[data-theme="dark"] #themeMenuButton{border:1px solid #3e688c;border-radius:12px;background:linear-gradient(135deg,#1683df,#1161a8)!important;color:white!important;box-shadow:0 7px 20px #0066bb30;transition:transform .18s ease,filter .18s ease}
+html[data-theme="dark"] .light-button{background:#eaf4ff!important;color:#12243a!important;border-color:#d3e7fb}
+html[data-theme="dark"] .primary-button:hover,html[data-theme="dark"] .light-button:hover,html[data-theme="dark"] .cart-button:hover,html[data-theme="dark"] .icon-button:hover,html[data-theme="dark"] #themeMenuButton:hover{transform:translateY(-2px);filter:brightness(1.08)}
+html[data-theme="dark"] .cart-button span{background:#63e6be;color:#08231e}
+html[data-theme="dark"] .category{background:linear-gradient(145deg,#142238,#101b2d)!important;border:1px solid #2d4563!important;color:#eaf2ff!important;border-radius:18px;box-shadow:0 12px 28px #0002}
+html[data-theme="dark"] .category:hover{border-color:#62b6ff!important;transform:translateY(-3px)}
+html[data-theme="dark"] .category span,html[data-theme="dark"] .product p{color:#b2c3d8!important}
+html[data-theme="dark"] .product,html[data-theme="dark"] .product-grid .product{background:linear-gradient(155deg,#17263a,#101b2b)!important;border:1px solid #2b405b!important;border-radius:18px!important;box-shadow:0 12px 28px #0003!important}
+html[data-theme="dark"] .product-grid .product:hover{border-color:#4c9eea!important;box-shadow:0 18px 38px #0005!important}
+html[data-theme="dark"] .product-grid .product-open-detail,html[data-theme="dark"] .product-grid .product-details{background:transparent!important;color:#eaf2ff!important}
+html[data-theme="dark"] .product-grid .product-details h3,html[data-theme="dark"] .product h3{color:#f3f7ff!important}
+html[data-theme="dark"] .product-grid .product-details p{color:#aebfd4!important}
+html[data-theme="dark"] .product-grid .product-image-wrap{background:linear-gradient(145deg,#f3f7fc,#dfeaf5)!important;border-color:#314660!important}
+html[data-theme="dark"] .product-grid .product-details .product-price{color:#63e6be!important}
+html[data-theme="dark"] .product-grid .product-details .return-policy-note{color:#aebfd4!important;border-color:#2d4058!important}
+html[data-theme="dark"] .product-grid .product-card-actions button{background:linear-gradient(120deg,#0f9f91,#087b82)!important;border:1px solid #36c9b9!important;border-radius:12px!important;color:#fff!important}
+html[data-theme="dark"] .feature-strip{background:#111f32!important;color:#eaf2ff!important;border-color:#2c4059!important;border-radius:18px}
+html[data-theme="dark"] .feature-strip h3,html[data-theme="dark"] .feature-strip p{color:#d9e7f7!important}
+html[data-theme="dark"] .business-banner{background:linear-gradient(120deg,#142e49,#183b56)!important;border:1px solid #315572!important;border-radius:22px;color:#f3f8ff!important}
+html[data-theme="dark"] .business-banner p:not(.eyebrow){color:#c2d4e9!important}
+html[data-theme="dark"] footer{background:linear-gradient(140deg,#08101c,#101d30)!important;color:#b9cbe0!important;border-top:1px solid #2a3d55!important}
+html[data-theme="dark"] footer a{color:#7fc6ff!important}
+html[data-theme="dark"] .drawer,html[data-theme="dark"] .modal-card{background:#111f32!important;color:#eaf2ff!important;border-color:#304762!important;box-shadow:0 28px 90px #0009}
+html[data-theme="dark"] #canvasContainer{background:#17283d!important}
+html[data-theme="dark"] input,html[data-theme="dark"] textarea,html[data-theme="dark"] select{border-color:#3a506a}
+html[data-theme="dark"] .theme-menu{background:#122137;border-color:#2c4562}
+html[data-theme="dark"] .theme-menu button{color:#eaf2ff}
+html[data-theme="dark"] .theme-menu button:hover,html[data-theme="dark"] .theme-menu button.selected{background:#1c3c54;color:#63e6be}
+html[data-theme="dark"] .all-products-head{background:linear-gradient(120deg,#12233a,#142c40)!important;color:#edf5ff;border-bottom:1px solid #2b415a}
+html[data-theme="dark"] .all-products-head h1{color:#f4f8ff}
+html[data-theme="dark"] .all-products-head p{color:#b7c9df}
+html[data-theme="dark"] .all-products-wrap{background:transparent}
+html[data-theme="dark"] .all-products-head .eyebrow{color:#63e6be}
+html[data-theme="dark"] .policy-links{display:flex;flex-wrap:wrap;gap:18px}
+html[data-theme="dark"] .contact-footer{display:grid;grid-template-columns:1.2fr 1fr;gap:28px;padding:28px 0;border-top:1px solid #2a3d55;margin-top:24px}
+html[data-theme="dark"] .contact-footer h3{margin:0 0 12px;color:#f4f8ff;font-size:16px}
+html[data-theme="dark"] .contact-line{display:flex;align-items:flex-start;gap:10px;margin:9px 0;line-height:1.7;color:#b9cbe0;font-size:13px}
+html[data-theme="dark"] .contact-line .contact-icon{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border-radius:10px;background:#183653;color:#63e6be}
+html[data-theme="dark"] .contact-line a{color:#83c9ff;text-decoration:none}
+html[data-theme="dark"] .contact-line a:hover{text-decoration:underline}
+html[data-theme="dark"] .footer-bottom{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-top:18px;border-top:1px solid #26384e;font-size:12px}
+@media(max-width:700px){html[data-theme="dark"] .brand-logo{width:46px;height:46px}html[data-theme="dark"] .contact-footer{grid-template-columns:1fr;gap:16px}html[data-theme="dark"] .hero{padding-top:40px;padding-bottom:40px}}
