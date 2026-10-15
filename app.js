@@ -69,7 +69,7 @@ async function loadProducts() {
         sizes: item.sizes || [],
         qualities: item.qualities || [],
         stockStatus: item.stockStatus || "in_stock",
-        stockQuantity: Number(item.stockQuantity ?? 0)
+        stockQuantity: Number(item.stockQuantity ?? 1)
       });
     });
   } catch (err) {
@@ -379,7 +379,7 @@ if (addCustomBtn) {
     const sizeChoice=document.getElementById('sizeSelect'),qualityChoice=document.getElementById('qualitySelect');
     const chosenSize=selectedProduct.sizes?.length&&sizeChoice?.value!==''?selectedProduct.sizes[Number(sizeChoice.value)]?.name||'':'';
     const chosenQuality=selectedProduct.qualities?.length&&qualityChoice?.value!==''?selectedProduct.qualities[Number(qualityChoice.value)]?.name||'':'';
-    cart.push({productId:selectedProduct.id,name:selectedProduct.name,imageUrl:selectedProduct.imageUrl||'',size:chosenSize,quality:chosenQuality,quantity:qty,totalPrice:currentCalculatedPrice,
+    cart.push({productId:selectedProduct.id,name:selectedProduct.name,imageUrl:selectedProduct.imageUrl||'',pType:selectedProduct.pType||'customizable',size:chosenSize,quality:chosenQuality,quantity:qty,totalPrice:currentCalculatedPrice,
       personalMessage: personalMessage,
       frontArtwork: frontSnapshot,
       backArtwork: selectedProduct.hasBack ? backSnapshot : null,
@@ -572,6 +572,11 @@ function updateCheckoutSummary() {
 }
 if (checkoutButton) checkoutButton.addEventListener('click', () => {
   if (!cart.length) { alert('Your bag is empty.'); return; }
+  if (!auth.currentUser) {
+    const returnTo = encodeURIComponent('index.html?checkout=1');
+    location.href = 'customer-login.html?next=' + returnTo;
+    return;
+  }
   setCheckoutStage(1);
   appliedCoupon=null;
   const couponInput=document.getElementById('couponCodeInput');if(couponInput)couponInput.value='';
