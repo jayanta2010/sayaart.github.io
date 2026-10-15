@@ -1048,102 +1048,148 @@ async function initAdminPanel() {
   // Load Orders & High-Res Artworks
   async function loadAdminOrders() {
     if (!adminOrdersList) return;
-    adminOrdersList.innerHTML = "<p style='color:#2563eb;'>Loading orders...</p>";
-
+    adminOrdersList.textContent = "Loading orders...";
     try {
       const snap = await getDocs(collection(db, "orders"));
-      if (snap.empty) {
-        adminOrdersList.innerHTML = "<p style='color:#64748b;'>No orders placed yet.</p>";
-        return;
-      }
-
+      const active = snap.docs.filter(d => !d.data().deletedAt);
+      const deleted = snap.docs.filter(d => !!d.data().deletedAt);
       adminOrdersList.innerHTML = "";
-      const activeOrderDocs = snap.docs.filter(d => !d.data().deletedAt);
-      const deletedOrderDocs = snap.docs.filter(d => !!d.data().deletedAt);
-      const bin = document.getElementById('adminOrdersBin');
-      const binCount = document.getElementById('ordersBinCount');
-      if (binCount) binCount.textContent = String(deletedOrderDocs.length);
-      const nowMs = Date.now();
-      for (const deletedDoc of deletedOrderDocs) {
-        const deletedAt = Date.parse(deletedDoc.data().deletedAt || '');
-        if (Number.isFinite(deletedAt) && nowMs - deletedAt >= 7*24*60*60*1000) {
-          try { await deleteDoc(doc(db,'orders',deletedDoc.id)); } catch (purgeError) { console.error('Could not permanently purge expired order:',purgeError); }
-        }
-      }
-      const remainingBinDocs = deletedOrderDocs.filter(d => {
-        const t=Date.parse(d.data().deletedAt||''); return !Number.isFinite(t)||nowMs-t<7*24*60*60*1000;
-      });
+      const bin = document.getElementById("adminOrdersBin");
+      const binCount = document.getElementById("ordersBinCount");
+      if (binCount) binCount.textContent = String(deleted.length);
       if (bin) {
-        bin.innerHTML = remainingBinDocs.length ? '' : '<p class="help-text">The bin is empty.</p>';
-        remainingBinDocs.sort((a,b)=>String(b.data().deletedAt||'').localeCompare(String(a.data().deletedAt||''))).forEach(d=>{
-          const o=d.data(), deletedAt=Date.parse(o.deletedAt||''), purgeAt=Number.isFinite(deletedAt)?new Date(deletedAt+7*24*60*60*1000):null;
-          const card=document.createElement('article');card.className='order-list-item';
-          const info=document.createElement('div');
-          info.innerHTML='<b>Order #'+String(o.orderId||d.id)+'</b> · ₹'+Number(o.amount||0)+'<br>Deleted: '+(Number.isFinite(deletedAt)?new Date(deletedAt).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'}):'Date unavailable')+'<br>Permanent deletion: '+(purgeAt?purgeAt.toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'}):'After 7 days');
-          const actions=document.createElement('div');actions.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-top:10px';
-          const restore=document.createElement('button');restore.className='btn';restore.type='button';restore.textContent='Restore order';
-          restore.addEventListener('click',async()=>{try{await updateDoc(doc(db,'orders',d.id),{deletedAt:null,restoredAt:new Date().toISOString()});await loadAdminOrders();}catch(e){alert('Could not restore order: '+e.message);}});
-          const del=document.createElement('button');del.className='btn btn-danger';del.type='button';del.textContent='Delete permanently';
-          del.addEventListener('click',async()=>{if(!confirm('Permanently delete this order record? This cannot be undone.'))return;try{await deleteDoc(doc(db,'orders',d.id));await loadAdminOrders();}catch(e){alert('Could not delete order: '+e.message);}});
-          actions.append(restore,del);card.append(info,actions);bin?.appendChild(card);
+        bin.innerHTML = "";
+        if (!deleted.length) bin.textContent = "The bin is empty.";
+        deleted.forEach(d => {
+          const data = d.data();
+          const card = document.createElement("article");
+          card.className = "order-list-item";
+          const info = document.createElement("p");
+          info.textContent = "Order #" + (data.orderId || d.id) + " · ₹" + Number(data.amount || 0) + " · Deleted: " + (data.deletedAt || "Unknown") + " · Restorable for 7 days";
+          const restore = document.createElement("button");
+          restore.type = "button"; restore.className = "btn"; restore.textContent = "Restore order";
+          restore.addEventListener("click", async () => {
+            try { await updateDoc(doc(db, "orders", d.id), { deletedAt: null, restoredAt: new Date().toISOString() }); await loadAdminOrders(); }
+            catch (e) { alert("Could not restore order: " + e.message); }
+          });
+          const remove = document.createElement("button");
+          remove.type = "button"; remove.className = "btn btn-danger"; remove.textContent = "Delete permanently";
+          remove.addEventListener("click", async () => {
+            if (!confirm("Permanently delete this order record? This cannot be undone.")) return;
+            try { await deleteDoc(doc(db, "orders", d.id)); await loadAdminOrders(); }
+            catch (e) { alert("Could not delete order: " + e.message); }
+          });
+          card.append(info, restore, remove); bin.appendChild(card);
         });
       }
-      if (!activeOrderDocs.length) adminOrdersList.innerHTML = '<p style="color:#64748b;">No active orders. Deleted orders are in the bin below.</p>';
-      let currentDayKey = '';
-      [...activeOrderDocs].sort((a,b)=>String(b.data().createdAt||'').localeCompare(String(a.data().createdAt||''))).forEach(docSnap => {
-        const o = docSnap.data();
-        const parsedDate = new Date(o.createdAt || 0);
-        const dayKey = Number.isFinite(parsedDate.getTime()) ? parsedDate.toLocaleDateString('en-CA') : 'unknown';
-        if (dayKey !== currentDayKey) {
-          currentDayKey = dayKey;
-          const dayHeading = document.createElement('h3');
-          dayHeading.textContent = dayKey === 'unknown' ? 'Date unavailable' : parsedDate.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-          dayHeading.style.cssText = 'margin:22px 0 12px;padding:10px 12px;background:#eef7f4;border-radius:8px;';
-          adminOrdersList.appendChild(dayHeading);
+      if (!active.length) {
+        adminOrdersList.textContent = snap.empty ? "No orders placed yet." : "No active orders. Deleted orders are in the bin.";
+        return;
+      }
+      active.sort((a, b) => String(b.data().createdAt || "").localeCompare(String(a.data().createdAt || "")));
+      let dayKey = "";
+      active.forEach(orderDoc => {
+        const o = orderDoc.data();
+        const parsed = new Date(o.createdAt || 0);
+        const nextDayKey = Number.isFinite(parsed.getTime()) ? parsed.toLocaleDateString("en-CA") : "unknown";
+        if (nextDayKey !== dayKey) {
+          dayKey = nextDayKey;
+          const heading = document.createElement("h3");
+          heading.textContent = dayKey === "unknown" ? "Date unavailable" : parsed.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+          heading.style.cssText = "margin:22px 0 12px;padding:10px 12px;background:#eef7f4;border-radius:8px;";
+          adminOrdersList.appendChild(heading);
         }
-        let itemsHtml = (o.items || []).map(item => `
-          <div style="border:1px solid #e2e8f0; padding:10px; margin-top:8px; border-radius:6px; background:#f8fafc;">
-            <b>${item.name}</b> (Qty: ${item.quantity}) - ₹${item.totalPrice}<br>
-            ${item.personalMessage ? `<div style="color:#b45309; font-size:12px; margin-top:4px;"><b>Personal Message:</b> "${item.personalMessage}"</div>` : ''}
-            ${item.rawUploadedPhoto ? `<div style="margin-top:5px;"><a href="${item.rawUploadedPhoto}" download="original-customer-photo.png" style="color:#16a34a; font-weight:bold; font-size:12px; text-decoration:underline;">⬇ Download High-Res Original Customer Photo</a></div>` : ''}
-            <div style="display:flex; gap:10px; margin-top:8px;">
-              ${item.frontArtwork ? `<div><small>Front View Design:</small><br><img src="${item.frontArtwork}" class="design-preview-box"></div>` : ''}
-              ${item.backArtwork ? `<div><small>Back View Design:</small><br><img src="${item.backArtwork}" class="design-preview-box"></div>` : ''}
-            </div>
-          </div>
-        `).join('');
-
-        adminOrdersList.insertAdjacentHTML('beforeend', `
-          <div class="order-list-item" style="border:1px solid #cbd5e1; padding:15px; border-radius:8px; margin-bottom:15px; background:#fff;">
-            <b>Order #${String(o.orderId || docSnap.id)}</b> - <span style="color:#16a34a; font-weight:bold;">₹${Number(o.amount||0)}</span><br>
-            Customer: <b>${String(o.customerName || 'N/A')}</b> (${String(o.customerPhone || 'N/A')})<br>
-            Address: <b>${String(o.deliveryAddress || 'N/A')}</b><br>
-            Order Date &amp; Time: <b>${o.createdAt ? new Date(o.createdAt).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"}) : "Date unavailable"}</b><br>
-            Payment: <b>${String(o.paymentStatus || "Pending")}</b> · Order status: <b>${String(o.orderStatus || "Order Placed")}</b><br>
-            <div class="form-grid" style="margin-top:12px"><div class="form-group"><label>Order status</label><select class="admin-order-status" data-id="${docSnap.id}">${["Order Placed","Order Processed","Order Shipped","Delivered","Cancelled"].map(s=>`<option value="${s}" ${String(o.orderStatus||"Order Placed")===s?"selected":""}>${s}</option>`).join("")}</select></div><div class="form-group"><label>Tracking link</label><input class="admin-tracking-url" data-id="${docSnap.id}" type="url" placeholder="https://courier-tracking-link..." value="${String(o.trackingUrl||"")}"></div></div>
-            <button type="button" class="btn admin-save-order-status" data-id="${docSnap.id}">Save status &amp; tracking</button>
-            ${o.cancellationStatus ? '<br>Cancellation: <b>'+String(o.cancellationStatus)+'</b>' : ''}
-            ${o.refundStatus ? '<br>Refund: <b>'+String(o.refundStatus)+'</b>' : ''}
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-              ${o.cancellationStatus === 'Cancellation requested' ? '<button type="button" class="btn admin-cancel-approve" data-id="'+docSnap.id+'">Approve cancellation</button><button type="button" class="btn btn-danger admin-cancel-reject" data-id="'+docSnap.id+'">Reject cancellation</button>' : ''}
-              ${o.cancellationStatus === 'Cancellation approved' && ['paid','captured','authorized'].includes(String(o.paymentStatus||'').toLowerCase()) ? '<button type="button" class="btn admin-refund-mark" data-id="'+docSnap.id+'">Mark refund initiated</button>' : ''}
-              ${o.refundStatus === 'Refund initiated' ? '<button type="button" class="btn admin-refund-complete" data-id="'+docSnap.id+'">Mark refund completed</button>' : ''}
-            </div>
-            <div style="margin-top: 10px;">${itemsHtml}</div>
-            <button type="button" class="btn btn-danger admin-soft-delete-order" data-id="${docSnap.id}" style="margin-top:12px">Delete order (move to bin)</button>
-          </div>
-        `;
+        const card = document.createElement("article");
+        card.className = "order-list-item";
+        card.style.cssText = "border:1px solid #cbd5e1;padding:15px;border-radius:8px;margin-bottom:15px;background:#fff;";
+        const details = document.createElement("div");
+        details.textContent = "Order #" + (o.orderId || orderDoc.id) + " · ₹" + Number(o.amount || 0) + " · Customer: " + (o.customerName || "N/A") + " · Phone: " + (o.customerPhone || "N/A") + " · Address: " + (o.deliveryAddress || "N/A") + " · Date: " + (o.createdAt ? new Date(o.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "Unavailable") + " · Payment: " + (o.paymentStatus || "Pending") + " · Status: " + (o.orderStatus || "Order Placed");
+        card.appendChild(details);
+        (o.items || []).forEach(item => {
+          const itemEl = document.createElement("p");
+          itemEl.textContent = (item.name || "Product") + " (Qty: " + Number(item.quantity || 1) + ") · ₹" + Number(item.totalPrice || 0);
+          card.appendChild(itemEl);
+          ["frontArtwork", "backArtwork"].forEach(key => {
+            if (!item[key]) return;
+            const img = document.createElement("img"); img.src = item[key]; img.alt = key === "frontArtwork" ? "Front design" : "Back design"; img.className = "design-preview-box";
+            card.appendChild(img);
+          });
+          if (item.rawUploadedPhoto) {
+            const link = document.createElement("a"); link.href = item.rawUploadedPhoto; link.download = "original-customer-photo.png"; link.textContent = "Download original customer photo"; card.appendChild(link);
+          }
+          if (item.personalMessage) {
+            const msg = document.createElement("p"); msg.textContent = "Personal message: " + item.personalMessage; card.appendChild(msg);
+          }
+        });
+        const controls = document.createElement("div"); controls.className = "form-grid"; controls.style.marginTop = "12px";
+        const statusWrap = document.createElement("div"); statusWrap.className = "form-group";
+        const statusLabel = document.createElement("label"); statusLabel.textContent = "Order status";
+        const status = document.createElement("select"); status.className = "admin-order-status"; status.dataset.id = orderDoc.id;
+        ["Order Placed", "Order Processed", "Order Shipped", "Delivered", "Cancelled"].forEach(value => {
+          const option = document.createElement("option"); option.value = value; option.textContent = value; option.selected = String(o.orderStatus || "Order Placed") === value; status.appendChild(option);
+        });
+        statusWrap.append(statusLabel, status);
+        const trackingWrap = document.createElement("div"); trackingWrap.className = "form-group";
+        const trackingLabel = document.createElement("label"); trackingLabel.textContent = "Tracking link";
+        const tracking = document.createElement("input"); tracking.type = "url"; tracking.className = "admin-tracking-url"; tracking.dataset.id = orderDoc.id; tracking.placeholder = "https://courier-tracking-link..."; tracking.value = o.trackingUrl || "";
+        trackingWrap.append(trackingLabel, tracking); controls.append(statusWrap, trackingWrap); card.appendChild(controls);
+        const save = document.createElement("button"); save.type = "button"; save.className = "btn admin-save-order-status"; save.dataset.id = orderDoc.id; save.textContent = "Save status & tracking"; card.appendChild(save);
+        const notes = document.createElement("p"); notes.textContent = (o.cancellationStatus ? "Cancellation: " + o.cancellationStatus + " · " : "") + (o.refundStatus ? "Refund: " + o.refundStatus : ""); if (notes.textContent) card.appendChild(notes);
+        if (o.cancellationStatus === "Cancellation requested") {
+          const approve = document.createElement("button"); approve.type = "button"; approve.className = "btn admin-cancel-approve"; approve.dataset.id = orderDoc.id; approve.textContent = "Approve cancellation"; card.appendChild(approve);
+          const reject = document.createElement("button"); reject.type = "button"; reject.className = "btn btn-danger admin-cancel-reject"; reject.dataset.id = orderDoc.id; reject.textContent = "Reject cancellation"; card.appendChild(reject);
+        }
+        if (o.cancellationStatus === "Cancellation approved" && ["paid", "captured", "authorized"].includes(String(o.paymentStatus || "").toLowerCase())) {
+          const refund = document.createElement("button"); refund.type = "button"; refund.className = "btn admin-refund-mark"; refund.dataset.id = orderDoc.id; refund.textContent = "Mark refund initiated"; card.appendChild(refund);
+        }
+        if (o.refundStatus === "Refund initiated") {
+          const complete = document.createElement("button"); complete.type = "button"; complete.className = "btn admin-refund-complete"; complete.dataset.id = orderDoc.id; complete.textContent = "Mark refund completed"; card.appendChild(complete);
+        }
+        const softDelete = document.createElement("button"); softDelete.type = "button"; softDelete.className = "btn btn-danger admin-soft-delete-order"; softDelete.dataset.id = orderDoc.id; softDelete.style.marginTop = "12px"; softDelete.textContent = "Delete order (move to bin)"; card.appendChild(softDelete);
+        adminOrdersList.appendChild(card);
       });
-
-      adminOrdersList.querySelectorAll(".admin-soft-delete-order").forEach(btn=>btn.addEventListener("click",async()=>{if(!confirm('Move this order to the bin? It can be restored for 7 days.'))return;try{await updateDoc(doc(db,'orders',btn.dataset.id),{deletedAt:new Date().toISOString(),deletedBy:'admin'});await loadAdminOrders();}catch(err){alert('Could not move order to bin: '+err.message);}}));
-      adminOrdersList.querySelectorAll(".admin-save-order-status").forEach(btn=>btn.addEventListener("click",async()=>{const id=btn.dataset.id;const status=adminOrdersList.querySelector(`.admin-order-status[data-id="${id}"]`)?.value||"Order Placed";const trackingUrl=adminOrdersList.querySelector(`.admin-tracking-url[data-id="${id}"]`)?.value.trim()||"";if(trackingUrl&&!/^https?:\/\//i.test(trackingUrl)){alert("Enter a valid tracking URL starting with https://");return;}const now=new Date().toISOString();try{const snapshot=await getDocs(collection(db,"orders"));const existing=snapshot.docs.find(d=>d.id===id)?.data()||{};const patch={orderStatus:status,trackingUrl,updatedAt:now,statusHistory:[...(existing.statusHistory||[]),{status,at:now}]};if(status==="Delivered"){const deliveredAt=existing.deliveredAt||now;patch.deliveredAt=deliveredAt;patch.returnEligibleUntil=new Date(new Date(deliveredAt).getTime()+7*24*60*60*1000).toISOString();}await updateDoc(doc(db,"orders",id),patch);await loadAdminOrders();}catch(err){alert("Could not update order status: "+err.message);}}));
-      adminOrdersList.querySelectorAll('.admin-cancel-approve').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Approve cancellation? Process any required refund in Razorpay separately.'))return;try{await updateDoc(doc(db,'orders',btn.dataset.id),{cancellationStatus:'Cancellation approved',orderStatus:'Cancellation approved',cancellationReviewedAt:new Date().toISOString()});await loadAdminOrders();}catch(err){alert('Could not approve cancellation: '+err.message);}}));
-      adminOrdersList.querySelectorAll('.admin-cancel-reject').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Reject this cancellation request?'))return;try{await updateDoc(doc(db,'orders',btn.dataset.id),{cancellationStatus:'Cancellation rejected',orderStatus:'Cancellation rejected',cancellationReviewedAt:new Date().toISOString()});await loadAdminOrders();}catch(err){alert('Could not reject cancellation: '+err.message);}}));
-      adminOrdersList.querySelectorAll('.admin-refund-mark').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Only continue after initiating the refund in Razorpay. Have you done that?'))return;try{await updateDoc(doc(db,'orders',btn.dataset.id),{refundStatus:'Refund initiated',refundInitiatedAt:new Date().toISOString(),orderStatus:'Refund initiated'});await loadAdminOrders();}catch(err){alert('Could not update refund status: '+err.message);}}));
-      adminOrdersList.querySelectorAll('.admin-refund-complete').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Only mark completed after Razorpay confirms the refund is completed. Has it confirmed?'))return;try{await updateDoc(doc(db,'orders',btn.dataset.id),{refundStatus:'Refund completed',refundCompletedAt:new Date().toISOString(),orderStatus:'Refund completed'});await loadAdminOrders();}catch(err){alert('Could not update refund status: '+err.message);}}));
+      adminOrdersList.querySelectorAll(".admin-soft-delete-order").forEach(btn => btn.addEventListener("click", async () => {
+        if (!confirm("Move this order to the bin? It can be restored for 7 days.")) return;
+        try { await updateDoc(doc(db, "orders", btn.dataset.id), { deletedAt: new Date().toISOString(), deletedBy: "admin" }); await loadAdminOrders(); }
+        catch (err) { alert("Could not move order to bin: " + err.message); }
+      }));
+      adminOrdersList.querySelectorAll(".admin-save-order-status").forEach(btn => btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        const status = adminOrdersList.querySelector('.admin-order-status[data-id="' + id + '"]')?.value || "Order Placed";
+        const trackingUrl = adminOrdersList.querySelector('.admin-tracking-url[data-id="' + id + '"]')?.value.trim() || "";
+        if (trackingUrl && !/^https?:\/\//i.test(trackingUrl)) { alert("Enter a valid tracking URL starting with https://"); return; }
+        const now = new Date().toISOString();
+        try {
+          const current = await getDocs(collection(db, "orders"));
+          const existing = current.docs.find(d => d.id === id)?.data() || {};
+          const patch = { orderStatus: status, trackingUrl, updatedAt: now, statusHistory: [...(existing.statusHistory || []), { status, at: now }] };
+          if (status === "Delivered") { const deliveredAt = existing.deliveredAt || now; patch.deliveredAt = deliveredAt; patch.returnEligibleUntil = new Date(new Date(deliveredAt).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(); }
+          await updateDoc(doc(db, "orders", id), patch); await loadAdminOrders();
+        } catch (err) { alert("Could not update order status: " + err.message); }
+      }));
+      adminOrdersList.querySelectorAll(".admin-cancel-approve").forEach(btn => btn.addEventListener("click", async () => {
+        if (!confirm("Approve cancellation? Process any required refund in Razorpay separately.")) return;
+        try { await updateDoc(doc(db, "orders", btn.dataset.id), { cancellationStatus: "Cancellation approved", orderStatus: "Cancellation approved", cancellationReviewedAt: new Date().toISOString() }); await loadAdminOrders(); }
+        catch (err) { alert("Could not approve cancellation: " + err.message); }
+      }));
+      adminOrdersList.querySelectorAll(".admin-cancel-reject").forEach(btn => btn.addEventListener("click", async () => {
+        if (!confirm("Reject this cancellation request?")) return;
+        try { await updateDoc(doc(db, "orders", btn.dataset.id), { cancellationStatus: "Cancellation rejected", orderStatus: "Cancellation rejected", cancellationReviewedAt: new Date().toISOString() }); await loadAdminOrders(); }
+        catch (err) { alert("Could not reject cancellation: " + err.message); }
+      }));
+      adminOrdersList.querySelectorAll(".admin-refund-mark").forEach(btn => btn.addEventListener("click", async () => {
+        if (!confirm("Only continue after initiating the refund in Razorpay. Have you done that?")) return;
+        try { await updateDoc(doc(db, "orders", btn.dataset.id), { refundStatus: "Refund initiated", refundInitiatedAt: new Date().toISOString(), orderStatus: "Refund initiated" }); await loadAdminOrders(); }
+        catch (err) { alert("Could not update refund status: " + err.message); }
+      }));
+      adminOrdersList.querySelectorAll(".admin-refund-complete").forEach(btn => btn.addEventListener("click", async () => {
+        if (!confirm("Only mark completed after Razorpay confirms the refund is completed. Has it confirmed?")) return;
+        try { await updateDoc(doc(db, "orders", btn.dataset.id), { refundStatus: "Refund completed", refundCompletedAt: new Date().toISOString(), orderStatus: "Refund completed" }); await loadAdminOrders(); }
+        catch (err) { alert("Could not update refund status: " + err.message); }
+      }));
     } catch (err) {
       console.error("Firestore Orders Load Error:", err);
-      adminOrdersList.innerHTML = `<p style='color:#ef4444;'><b>Error loading orders:</b> ${err.message}<br><small>Check Firebase Firestore Rules</small></p>`;
+      adminOrdersList.textContent = "Error loading orders: " + err.message + " — Check Firebase Firestore Rules";
     }
   }
 
