@@ -259,6 +259,6 @@
     (()=>{const button=document.getElementById("themeMenuButton"),menu=document.getElementById("themeMenu");const apply=value=>{const mode=value||"system";document.documentElement.dataset.theme=mode==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):mode;localStorage.setItem("saya_theme",mode);menu?.querySelectorAll("[data-theme-choice]").forEach(b=>b.classList.toggle("selected",b.dataset.themeChoice===mode));};apply(localStorage.getItem("saya_theme")||"system");button?.addEventListener("click",()=>{const open=menu.hidden;menu.hidden=!open;button.setAttribute("aria-expanded",String(open));});menu?.querySelectorAll("[data-theme-choice]").forEach(b=>b.addEventListener("click",()=>{apply(b.dataset.themeChoice);menu.hidden=true;button?.setAttribute("aria-expanded","false");}));document.addEventListener("click",e=>{if(!e.target.closest(".theme-picker")){if(menu)menu.hidden=true;button?.setAttribute("aria-expanded","false");}});matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((localStorage.getItem("saya_theme")||"system")==="system")apply("system");});})();
   </script>
   <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
-  <script type="module" src="app.js?v=20261015-10"></script>
+  <script type="module" src="app.js?v=20261015-12"></script>
 </body>
 </html>
