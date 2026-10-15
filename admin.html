@@ -62,6 +62,7 @@
       <button class="tab-btn active" type="button" data-tab="productsTab" role="tab" aria-selected="true">▦ &nbsp; Manage Products</button>
       <button class="tab-btn" type="button" data-tab="ordersTab" role="tab" aria-selected="false">▣ &nbsp; Orders &amp; Artworks</button>
       <button class="tab-btn" type="button" data-tab="returnsTab" role="tab" aria-selected="false">↩ &nbsp; Returns</button>
+      <button class="tab-btn" type="button" data-tab="categoriesTab" role="tab" aria-selected="false">▤ &nbsp; Categories</button>
       <button class="tab-btn" type="button" data-tab="couponsTab" role="tab" aria-selected="false">％ &nbsp; Coupon Codes</button>
     </div>
 
@@ -91,7 +92,7 @@
           <label>Description</label>
           <textarea id="pDesc" rows="2" placeholder="Product details..."></textarea>
         </div>
-        <div class="form-group"><label>Category (Optional)</label><input type="text" id="pCategory" placeholder="e.g. Visiting Cards, T-Shirts, Gifts"><div class="help-text">Your own category name; it shows on the store only when products are assigned.</div></div>
+        <div class="form-group"><label>Product category (Optional)</label><select id="pCategory"><option value="">No category</option></select><div class="help-text">Manage choices in the separate Categories tab. Select “No category” if needed.</div></div>
         <div class="form-group"><label>Home-page collection / section (Optional)</label><input type="text" id="pStorefrontSection" list="storefrontSectionSuggestions" placeholder="e.g. Trending Item, Best Seller"><datalist id="storefrontSectionSuggestions"><option value="Trending Item"><option value="Best Seller"><option value="New Arrivals"><option value="Featured Products"></datalist><div class="help-text">Type any heading you want. Products with the same heading appear together on the home page.</div></div>
         <div class="form-group">
           <label>Canvas front image <span style="color:#64748b;">(Optional)</span></label>
@@ -174,7 +175,8 @@
       </section>
     </div>
     <div id="returnsTab" class="panel"><h3>Return requests</h3><p class="section-intro">Review return order IDs, customer details, evidence photos, and approval status.</p><div id="adminReturnsList">Loading return requests...</div></div>
-    <div id="couponsTab" class="panel">
+<div id="categoriesTab" class="panel"><h3>Product categories</h3><p class="section-intro">Manage categories separately from coupon codes. Select a category when adding a product, or leave it uncategorized.</p><form id="categoryAdminForm" class="form-grid" style="padding:16px;background:#f7faf9;border:1px solid var(--line);border-radius:12px;margin-bottom:20px"><div class="form-group"><label for="categoryAdminName">Category name</label><input id="categoryAdminName" required maxlength="60" placeholder="e.g. T-Shirts, Mugs, Photo Frames"></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button class="btn" type="submit">Add category</button></div></form><div id="adminCategoriesList"><p class="help-text">Loading categories…</p></div></div>
+        <div id="couponsTab" class="panel">
       <h3>Coupon codes</h3>
       <p class="section-intro">Create a coupon code and choose the percentage discount. Only active coupons can be used at checkout.</p>
       <form id="couponAdminForm" class="form-grid" style="padding:16px;background:#f7faf9;border:1px solid var(--line);border-radius:12px;margin-bottom:20px">
