@@ -1407,3 +1407,12 @@ body{padding-left:62px}
 .address-options-menu button:disabled{opacity:.45;cursor:not-allowed}
 html[data-theme="dark"] .address-options-menu{background:#172330;border-color:#3a4a5b}
 html[data-theme="dark"] .address-options-menu button{background:#202d3b;color:#e8edf3;border-color:#46586a}
+
+/* Order tracking and stock labels */
+.return-policy-note{font-size:11px;color:#64748b;margin:6px 0 9px;line-height:1.35}
+.out-of-stock-badge{display:block;width:100%;text-align:center;padding:11px 12px;border-radius:10px;background:#fee2e2;color:#991b1b;font-size:13px;font-weight:800}
+.order-status-timeline{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:12px 0}
+.order-status-timeline span{font-size:11px;text-align:center;padding:8px 4px;border-radius:7px;background:#eef2f6;color:#627381}
+.order-status-timeline span.done{background:#dff5ef;color:#11675d;font-weight:800}
+.tracking-link{display:inline-block;color:#176b63;font-weight:800;margin:7px 0}
+@media(max-width:520px){.order-status-timeline{grid-template-columns:repeat(2,minmax(0,1fr))}}
