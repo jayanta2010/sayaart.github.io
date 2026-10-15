@@ -1195,7 +1195,45 @@ async function initAdminPanel() {
         card.className = "order-list-item";
         card.style.cssText = "border:1px solid #cbd5e1;padding:15px;border-radius:8px;margin-bottom:15px;background:#fff;";
         const details = document.createElement("div");
-        details.textContent = "Order #" + (o.orderId || orderDoc.id) + " · ₹" + Number(o.amount || 0) + " · Customer: " + (o.customerName || "N/A") + " · Phone: " + (o.customerPhone || "N/A") + " · Address: " + (o.deliveryAddress || "N/A") + " · Date: " + (o.createdAt ? new Date(o.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "Unavailable") + " · Payment: " + (o.paymentStatus || "Pending") + " · Status: " + (o.orderStatus || "Order Placed");
+        details.className = "admin-order-details";
+        const createdLabel = o.createdAt ? new Date(o.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "Unavailable";
+        const paymentId = o.razorpayPaymentId || o.paymentId || o.payment_id || "";
+        const razorpayOrderId = o.razorpayOrderId || "";
+        const detailRows = [
+          ["Order ID", o.orderId || orderDoc.id],
+          ["Order total", "₹" + Number(o.amount || 0).toLocaleString("en-IN")],
+          ["Order date & time", createdLabel],
+          ["Customer name", o.customerName || "N/A"],
+          ["Customer phone", o.customerPhone || "N/A"],
+          ["Delivery address", o.deliveryAddress || o.address || "N/A"],
+          ["Payment method", String(o.paymentMethod || "N/A").toUpperCase()],
+          ["Payment status", o.paymentOrderStatus || o.paymentStatus || "Pending"],
+          ["Razorpay Payment ID", paymentId || (String(o.paymentMethod || "").toLowerCase() === "cod" ? "Not applicable — Cash on Delivery" : "Not recorded for this order")],
+          ["Razorpay Order ID", razorpayOrderId || "Not recorded"],
+          ["Order status", o.orderStatus || "Order Placed"],
+          ["Cancellation status", o.cancellationStatus || "None"],
+          ["Refund status", o.refundStatus || "None"],
+          ["Tracking link", o.trackingUrl || "Not added"]
+        ];
+        const summary = document.createElement("div");
+        summary.className = "admin-order-summary";
+        summary.innerHTML = '<div><span>Order</span><strong>#' + escapeStoreText(o.orderId || orderDoc.id) + '</strong></div><div><span>Total</span><strong>₹' + Number(o.amount || 0).toLocaleString("en-IN") + '</strong></div><div><span>Payment</span><strong>' + escapeStoreText(o.paymentOrderStatus || o.paymentStatus || "Pending") + '</strong></div>';
+        const rows = document.createElement("dl");
+        rows.className = "admin-order-fields";
+        detailRows.forEach(([label, value]) => {
+          const wrap = document.createElement("div");
+          wrap.className = "admin-order-field";
+          const dt = document.createElement("dt"); dt.textContent = label;
+          const dd = document.createElement("dd"); dd.textContent = String(value);
+          if (label === "Razorpay Payment ID" && paymentId) {
+            const copy = document.createElement("button"); copy.type = "button"; copy.className = "btn admin-copy-payment-id"; copy.textContent = "Copy ID";
+            copy.addEventListener("click", async () => { try { await navigator.clipboard.writeText(paymentId); copy.textContent = "Copied"; } catch { prompt("Copy Razorpay Payment ID:", paymentId); } });
+            dd.appendChild(document.createTextNode(" "));
+            dd.appendChild(copy);
+          }
+          rows.append(wrap); wrap.append(dt, dd);
+        });
+        details.append(summary, rows);
         card.appendChild(details);
         (o.items || []).forEach(item => {
           const itemEl = document.createElement("p");
