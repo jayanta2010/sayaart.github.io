@@ -918,8 +918,10 @@ async function initAdminPanel() {
       const storefrontSection = document.getElementById('pStorefrontSection')?.value.trim() || '';
       const mainImageUrl = await getImageValue('pImgFile', 'pImg', previous.imageUrl);
       const extraGalleryImages = await Promise.all([2,3,4,5].map(async n => await getImageValue('pGallery'+n+'File', 'pGallery'+n, previous.galleryImages?.[n-1] || '')));
+      const stockStatus = document.getElementById('pStockStatus')?.value || previous.stockStatus || "in_stock";
+      const stockQuantity = Math.max(0, Number(document.getElementById('pStockQuantity')?.value ?? previous.stockQuantity ?? 1));
       const productData = {
-        pType, name, price, description, category, storefrontSection,
+        pType, name, price, description, category, storefrontSection, stockStatus, stockQuantity,
         imageUrl: mainImageUrl,
         galleryImages: [mainImageUrl, ...extraGalleryImages].filter(Boolean).slice(0,5),
         backImageUrl: await getImageValue('pBackImgFile', 'pBackImg', previous.backImageUrl),
@@ -979,6 +981,8 @@ async function initAdminPanel() {
       document.getElementById('pHasBack').checked = !!p.hasBack;
       document.getElementById('pSizes').value = formatOptions(p.sizes);
       document.getElementById('pQualities').value = formatOptions(p.qualities);
+      if(document.getElementById('pStockStatus'))document.getElementById('pStockStatus').value=p.stockStatus||"in_stock";
+      if(document.getElementById('pStockQuantity'))document.getElementById('pStockQuantity').value=p.stockQuantity??1;
       if(document.getElementById('pStockStatus'))document.getElementById('pStockStatus').value=p.stockStatus||"in_stock";
       if(document.getElementById('pStockQuantity'))document.getElementById('pStockQuantity').value=p.stockQuantity??0;
       document.getElementById('pHasBack').checked = !!p.hasBack;
