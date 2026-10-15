@@ -114,8 +114,18 @@ function renderProducts(products,targetId='productGrid'){
  }).join('');
 }
 function renderDynamicCategories(){const target=document.getElementById('dynamicCategories'),nav=document.getElementById('dynamicCategoryNav');const counts=new Map();allProductsList.forEach(p=>{if(p.category)counts.set(p.category,(counts.get(p.category)||0)+1);});const names=[...counts.keys()].filter(name=>counts.get(name)>0);if(target)target.innerHTML=names.map(category=>`<a class="category" href="all-products.html?category=${encodeURIComponent(category)}"><div class="category-visual cat-card">✦</div><b>${escapeStoreText(category)}</b><span>Explore products →</span></a>`).join('')||'<p class="help-text">Categories appear here when products are assigned.</p>';if(nav)nav.innerHTML=names.map(category=>`<a href="all-products.html?category=${encodeURIComponent(category)}">${escapeStoreText(category)}</a>`).join('');}
-function renderCustomProductSections(){const target=document.getElementById('customProductSections');if(!target)return;const names=[...new Set(allProductsList.map(p=>p.storefrontSection).filter(Boolean))];target.innerHTML=names.map(name=>{const products=allProductsList.filter(p=>p.storefrontSection===name);if(!products.length)return '';return `<section class="custom-product-section"><div class="section-top"><div><p class="eyebrow">CURATED COLLECTION</p><h2>${escapeStoreText(name)}</h2></div><a class="text-button" href="all-products.html?section=${encodeURIComponent(name)}">View all →</a></div><div class="product-grid">${products.slice(0,4).map(p=>{const out=p.stockStatus==="out_of_stock"||Number(p.stockQuantity)===0;return `<article class="product"><div class="product-image-wrap"><img loading="lazy" src="${escapeStoreText(productPreviewImage(p))}" alt="${escapeStoreText(p.name)}"></div><div class="product-details"><h3>${escapeStoreText(p.name)}</h3><p>${escapeStoreText(p.description)}</p><div class="product-price">Starting ₹${Number(p.price)||0}</div><p class="return-policy-note">7-day return policy after delivery</p>${out?'<span class="out-of-stock-badge">Out of stock</span>':`<button class="primary-button full" type="button" onclick="openProductCustomizer('${String(p.id).replace(/'/g,"\\'")}')">View product →</button>`}</div></article>`}).join('')}</div></section>`}).join('');}
-function runStoreSearch(raw){const query=String(raw||'').trim().toLowerCase();const filtered=!query?allProductsList:allProductsList.filter(p=>[p.name,p.description,p.pType,p.category,p.storefrontSection].some(v=>String(v||'').toLowerCase().includes(query)));if(document.getElementById('productGrid'))renderProducts(filtered);if(document.getElementById('allProductsGrid'))renderProducts(filtered,'allProductsGrid');const section=document.getElementById('products')||document.getElementById('all-products');if(query&&section&&document.getElementById('storeSearchInput'))section.scrollIntoView({behavior:'smooth',block:'start'});}
+function renderCustomProductSections(){
+ const target=document.getElementById('customProductSections');if(!target)return;
+ const names=[...new Set(allProductsList.map(p=>p.storefrontSection).filter(Boolean))];
+ target.innerHTML=names.map(name=>{
+  const products=allProductsList.filter(p=>p.storefrontSection===name);if(!products.length)return '';
+  return `<section class="custom-product-section"><div class="section-top"><div><p class="eyebrow">CURATED COLLECTION</p><h2>${escapeStoreText(name)}</h2></div><a class="text-button" href="all-products.html?section=${encodeURIComponent(name)}">View all →</a></div><div class="product-grid">${products.slice(0,4).map(p=>{
+   const out=p.stockStatus==="out_of_stock"||Number(p.stockQuantity)===0;
+   const main=p.imageUrl||((p.galleryImages||[]).filter(Boolean)[0])||productPreviewImage(p);
+   return `<article class="product" data-product-id="${escapeStoreText(p.id)}"><button type="button" class="product-open-detail" onclick="openProductCustomizer('${String(p.id).replace(/'/g,"\\'")}')" aria-label="View ${escapeStoreText(p.name)}"><div class="product-image-wrap"><img loading="lazy" src="${escapeStoreText(main)}" alt="${escapeStoreText(p.name)}"></div><div class="product-details"><h3>${escapeStoreText(p.name)}</h3><p>${escapeStoreText(p.description)}</p><div class="product-price">₹${Number(p.price)||0}</div>${p.pType==="stock"?'<p class="return-policy-note">7-day return policy after delivery</p>':""}</div></button><div class="product-card-actions">${out?'<span class="out-of-stock-badge">Out of stock</span>':`<button class="primary-button full" type="button" onclick="openProductCustomizer('${String(p.id).replace(/'/g,"\\'")}')">${p.pType==='stock'?'View & Buy →':'Customize & Design →'}</button>`}</div></article>`;
+  }).join('')}</div></section>`;
+ }).join('');
+}function runStoreSearch(raw){const query=String(raw||'').trim().toLowerCase();const filtered=!query?allProductsList:allProductsList.filter(p=>[p.name,p.description,p.pType,p.category,p.storefrontSection].some(v=>String(v||'').toLowerCase().includes(query)));if(document.getElementById('productGrid'))renderProducts(filtered);if(document.getElementById('allProductsGrid'))renderProducts(filtered,'allProductsGrid');const section=document.getElementById('products')||document.getElementById('all-products');if(query&&section&&document.getElementById('storeSearchInput'))section.scrollIntoView({behavior:'smooth',block:'start'});}
 
 // Open Product Customizer Modal
 window.openProductCustomizer = function(productId) {
@@ -202,13 +212,15 @@ function applyCanvasProductBackground(done = () => {}) {
   fabricCanvas.setBackgroundImage(null, () => {
     fabricCanvas.setBackgroundColor('#ffffff', () => {
       if (!src) { fabricCanvas.renderAll(); done(); return; }
-      fabric.Image.fromURL(src, img => {
-        if (!img) { fabricCanvas.renderAll(); done(); return; }
+      const onLoaded = img => {
+        if (!img) { console.warn('Canvas product image could not load:', src); fabricCanvas.renderAll(); done(); return; }
         const cw = fabricCanvas.getWidth(), ch = fabricCanvas.getHeight();
         const scale = Math.min(cw / img.width, ch / img.height);
         img.set({ originX: 'center', originY: 'center', left: cw / 2, top: ch / 2, scaleX: scale, scaleY: scale });
         fabricCanvas.setBackgroundImage(img, () => { fabricCanvas.renderAll(); done(); });
-      }, { crossOrigin: 'anonymous' });
+      };
+      if (String(src).startsWith('data:')) fabric.Image.fromURL(src, onLoaded);
+      else fabric.Image.fromURL(src, onLoaded, { crossOrigin: 'anonymous' });
     });
   });
 }
@@ -760,7 +772,7 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
         const clean = {};
         for (const [key, child] of Object.entries(value)) {
           if (typeof child === 'function' || child === undefined) continue;
-          clean[key] = sanitizeFirestoreValue(child, false);
+          clean[key] = sanitizeFirestoreValue(child, insideArray);
         }
         return clean;
       }
