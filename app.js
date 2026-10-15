@@ -129,20 +129,32 @@ function renderCustomProductSections(){
 
 // Open Product Customizer Modal
 window.openProductCustomizer = function(productId) {
-  selectedProduct = allProductsList.find(p => p.id === productId);
+  if (window.productGalleryTimer) { clearInterval(window.productGalleryTimer); window.productGalleryTimer = null; }
+  selectedProduct = allProductsList.find(p => String(p.id) === String(productId));
   if (!selectedProduct) return;
-  if (selectedProduct.stockStatus === "out_of_stock" || Number(selectedProduct.stockQuantity) === 0) { alert("This product is out of stock and cannot be ordered."); return; }
-
+  if (selectedProduct.stockStatus === 'out_of_stock' || Number(selectedProduct.stockQuantity) === 0) { alert('This product is out of stock and cannot be ordered.'); return; }
   document.getElementById('customTitle').innerText = selectedProduct.name;
-  const modalCard=document.querySelector('#productModal .modal-card');
-  if(modalCard)modalCard.classList.toggle('stock-product-detail',selectedProduct.pType==='stock');
-  const gallery=(Array.isArray(selectedProduct.galleryImages)?selectedProduct.galleryImages:[]).filter(Boolean);
-  const mainImage=selectedProduct.imageUrl||gallery[0]||productPreviewImage(selectedProduct);
-  let galleryHost=document.getElementById('productDetailGallery');
-  if(!galleryHost){galleryHost=document.createElement('div');galleryHost.id='productDetailGallery';document.getElementById('customTitle')?.parentNode?.insertBefore(galleryHost,document.getElementById('customTitle'));}
-  const urls=[...new Set([mainImage,...gallery].filter(Boolean))];
-  galleryHost.innerHTML='<div class="detail-gallery"><div class="detail-main-image"><img id="detailMainImage" src="'+escapeStoreText(mainImage)+'" alt="'+escapeStoreText(selectedProduct.name)+'"></div><div class="detail-thumbnails">'+urls.map((url,i)=>'<button type="button" class="detail-thumb '+(!i?'active':'')+'" data-detail-image="'+escapeStoreText(url)+'"><img src="'+escapeStoreText(url)+'" alt="Product view '+(i+1)+'"></button>').join('')+'</div></div>';
-  galleryHost.querySelectorAll('[data-detail-image]').forEach(btn=>btn.addEventListener('click',()=>{const image=document.getElementById('detailMainImage');if(image)image.src=btn.dataset.detailImage;galleryHost.querySelectorAll('.detail-thumb').forEach(x=>x.classList.toggle('active',x===btn));}));
+  const modalCardGallery = document.querySelector('#productModal .modal-card');
+  const isCustomGallery = selectedProduct.pType === 'customizable';
+  if (modalCardGallery) modalCardGallery.classList.toggle('stock-product-detail', !isCustomGallery);
+  const gallery = (Array.isArray(selectedProduct.galleryImages) ? selectedProduct.galleryImages : []).filter(Boolean);
+  const mainImage = selectedProduct.imageUrl || gallery[0] || productPreviewImage(selectedProduct);
+  const urls = [...new Set([mainImage, ...gallery].filter(Boolean))];
+  let galleryHost = document.getElementById('productDetailGallery');
+  if (!galleryHost) { galleryHost = document.createElement('div'); galleryHost.id = 'productDetailGallery'; }
+  const canvasContainerGallery = document.getElementById('canvasContainer');
+  const canvasFrameGallery = document.getElementById('designCanvas')?.parentElement;
+  const canvasHeadingGallery = canvasContainerGallery?.querySelector('.canvas-heading');
+  const viewToggleGallery = document.getElementById('viewToggleGroup');
+  const titleGallery = document.getElementById('customTitle');
+  if (isCustomGallery) { if (titleGallery?.parentNode && galleryHost.parentNode !== titleGallery.parentNode) titleGallery.parentNode.insertBefore(galleryHost, titleGallery); if (canvasFrameGallery) canvasFrameGallery.style.display = 'inline-block'; if (canvasHeadingGallery) canvasHeadingGallery.style.display = ''; if (viewToggleGallery) viewToggleGallery.style.display = ''; }
+  else { if (canvasContainerGallery && galleryHost.parentNode !== canvasContainerGallery) canvasContainerGallery.insertBefore(galleryHost, canvasHeadingGallery || canvasContainerGallery.firstChild); if (canvasFrameGallery) canvasFrameGallery.style.display = 'none'; if (canvasHeadingGallery) canvasHeadingGallery.style.display = 'none'; if (viewToggleGallery) viewToggleGallery.style.display = 'none'; }
+  galleryHost.style.display = 'block';
+  galleryHost.innerHTML = '<div class="detail-gallery"><div class="detail-main-image"><img id="detailMainImage" src="' + escapeStoreText(mainImage) + '" alt="' + escapeStoreText(selectedProduct.name) + '"></div><div class="detail-thumbnails">' + urls.map((url,i) => '<button type="button" class="detail-thumb ' + (!i?'active':'') + '" data-detail-image="' + escapeStoreText(url) + '"><img src="' + escapeStoreText(url) + '" alt="Product view ' + (i+1) + '"></button>').join('') + '</div></div>';
+  let activeGalleryIndex = 0;
+  const showGalleryImage = index => { activeGalleryIndex = (index + urls.length) % urls.length; const image = galleryHost.querySelector('#detailMainImage'); if (image) image.src = urls[activeGalleryIndex]; galleryHost.querySelectorAll('[data-detail-image]').forEach((btn,i) => btn.classList.toggle('active', i === activeGalleryIndex)); };
+  galleryHost.querySelectorAll('[data-detail-image]').forEach((btn,i) => btn.addEventListener('click', () => showGalleryImage(i)));
+  if (urls.length > 1) window.productGalleryTimer = setInterval(() => showGalleryImage(activeGalleryIndex + 1), 5000);
   const formatHint = document.getElementById('canvasFormatHint');
   if (formatHint) formatHint.textContent = 'A4 Portrait · Product photo preview · add your text/photo';
   const deliveryHint = document.getElementById('customizerDeliveryDate');
@@ -176,7 +188,7 @@ window.openProductCustomizer = function(productId) {
     if (photoSec) photoSec.style.display = selectedProduct.hasPhoto ? 'block' : 'none';
     if (textSec) textSec.style.display = selectedProduct.hasText ? 'block' : 'none';
   } else {
-    if (canvasContainer) canvasContainer.style.display = 'none';
+    if (canvasContainer) canvasContainer.style.display = 'block';
     if (canvasControls) canvasControls.style.display = 'none';
     const photoSec = document.getElementById('photoSection');
     const textSec = document.getElementById('textSection');
