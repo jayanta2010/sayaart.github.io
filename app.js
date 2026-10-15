@@ -1043,7 +1043,7 @@ async function initAdminPanel() {
       }
 
       adminOrdersList.innerHTML = "";
-      snap.forEach(docSnap => {
+      [...snap.docs].sort((a,b)=>String(b.data().createdAt||'').localeCompare(String(a.data().createdAt||''))).forEach(docSnap => {
         const o = docSnap.data();
         let itemsHtml = (o.items || []).map(item => `
           <div style="border:1px solid #e2e8f0; padding:10px; margin-top:8px; border-radius:6px; background:#f8fafc;">
@@ -1059,13 +1059,27 @@ async function initAdminPanel() {
 
         adminOrdersList.innerHTML += `
           <div class="order-list-item" style="border:1px solid #cbd5e1; padding:15px; border-radius:8px; margin-bottom:15px; background:#fff;">
-            <b>Order #${o.orderId || docSnap.id}</b> - <span style="color:#16a34a; font-weight:bold;">₹${o.amount}</span><br>
-            Customer: <b>${o.customerName || 'N/A'}</b> (${o.customerPhone || 'N/A'})<br>
-            Address: <b>${o.deliveryAddress || 'N/A'}</b>
+            <b>Order #${String(o.orderId || docSnap.id)}</b> - <span style="color:#16a34a; font-weight:bold;">₹${Number(o.amount||0)}</span><br>
+            Customer: <b>${String(o.customerName || 'N/A')}</b> (${String(o.customerPhone || 'N/A')})<br>
+            Address: <b>${String(o.deliveryAddress || 'N/A')}</b><br>
+            Created: <b>${String(o.createdAt || 'Date unavailable')}</b><br>
+            Payment: <b>${String(o.paymentStatus || 'Pending')}</b> · Order status: <b>${String(o.orderStatus || 'Processing')}</b>
+            ${o.cancellationStatus ? '<br>Cancellation: <b>'+String(o.cancellationStatus)+'</b>' : ''}
+            ${o.refundStatus ? '<br>Refund: <b>'+String(o.refundStatus)+'</b>' : ''}
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+              ${o.cancellationStatus === 'Cancellation requested' ? '<button type="button" class="btn admin-cancel-approve" data-id="'+docSnap.id+'">Approve cancellation</button><button type="button" class="btn btn-danger admin-cancel-reject" data-id="'+docSnap.id+'">Reject cancellation</button>' : ''}
+              ${o.cancellationStatus === 'Cancellation approved' && ['paid','captured','authorized'].includes(String(o.paymentStatus||'').toLowerCase()) ? '<button type="button" class="btn admin-refund-mark" data-id="'+docSnap.id+'">Mark refund initiated</button>' : ''}
+              ${o.refundStatus === 'Refund initiated' ? '<button type="button" class="btn admin-refund-complete" data-id="'+docSnap.id+'">Mark refund completed</button>' : ''}
+            </div>
             <div style="margin-top: 10px;">${itemsHtml}</div>
           </div>
         `;
       });
+
+      adminOrdersList.querySelectorAll('.admin-cancel-approve').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Approve cancellation? Process any required refund in Razorpay separately.'))return;try{await updateDoc(doc(db,'orders',btn.dataset.id),{cancellationStatus:'Cancellation approved',orderStatus:'Cancellation approved',cancellationReviewedAt:new Date().toISOString()});await loadAdminOrders();}catch(err){alert('Could not approve cancellation: '+err.message);}}));
+      adminOrdersList.querySelectorAll('.admin-cancel-reject').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Reject this cancellation request?'))return;try{await updateDoc(doc(db,'orders',btn.dataset.id),{cancellationStatus:'Cancellation rejected',orderStatus:'Cancellation rejected',cancellationReviewedAt:new Date().toISOString()});await loadAdminOrders();}catch(err){alert('Could not reject cancellation: '+err.message);}}));
+      adminOrdersList.querySelectorAll('.admin-refund-mark').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Only continue after initiating the refund in Razorpay. Have you done that?'))return;try{await updateDoc(doc(db,'orders',btn.dataset.id),{refundStatus:'Refund initiated',refundInitiatedAt:new Date().toISOString(),orderStatus:'Refund initiated'});await loadAdminOrders();}catch(err){alert('Could not update refund status: '+err.message);}}));
+      adminOrdersList.querySelectorAll('.admin-refund-complete').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Only mark completed after Razorpay confirms the refund is completed. Has it confirmed?'))return;try{await updateDoc(doc(db,'orders',btn.dataset.id),{refundStatus:'Refund completed',refundCompletedAt:new Date().toISOString(),orderStatus:'Refund completed'});await loadAdminOrders();}catch(err){alert('Could not update refund status: '+err.message);}}));
     } catch (err) {
       console.error("Firestore Orders Load Error:", err);
       adminOrdersList.innerHTML = `<p style='color:#ef4444;'><b>Error loading orders:</b> ${err.message}<br><small>Check Firebase Firestore Rules</small></p>`;
