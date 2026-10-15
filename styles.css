@@ -1431,3 +1431,18 @@ html[data-theme="dark"] .address-options-menu button{background:#202d3b;color:#e
 .product-open-detail .product-details{display:block}
 .custom-product-section .product-open-detail{color:inherit;text-align:left}
 .custom-product-section .product-card-actions{display:flex;gap:8px}
+
+/* Admin order details: readable line-by-line layout */
+.admin-order-details{display:block;width:100%;margin-bottom:14px;color:#20312f}
+.admin-order-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.admin-order-summary>div{padding:12px;border:1px solid #dbe7e3;border-radius:10px;background:#f2f8f6;min-width:0}
+.admin-order-summary span{display:block;font-size:12px;color:#5d716d;margin-bottom:5px}
+.admin-order-summary strong{display:block;font-size:16px;overflow-wrap:anywhere}
+.admin-order-fields{margin:0;border:1px solid #e0e7e5;border-radius:10px;overflow:hidden}
+.admin-order-field{display:grid;grid-template-columns:minmax(145px,.34fr) minmax(0,1fr);border-bottom:1px solid #e8eeec}
+.admin-order-field:last-child{border-bottom:0}
+.admin-order-field dt,.admin-order-field dd{padding:10px 12px;margin:0;overflow-wrap:anywhere;white-space:pre-wrap}
+.admin-order-field dt{font-size:13px;font-weight:700;background:#f7faf9;color:#3c5550}
+.admin-order-field dd{font-size:13px;color:#172b28}
+.admin-order-field dd .btn{margin-left:6px;padding:5px 9px;font-size:11px}
+@media(max-width:650px){.admin-order-summary{grid-template-columns:1fr 1fr}.admin-order-field{grid-template-columns:1fr}.admin-order-field dt{padding-bottom:3px;border-bottom:0}.admin-order-field dd{padding-top:4px}.admin-order-summary strong{font-size:14px}}
