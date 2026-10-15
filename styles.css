@@ -1371,6 +1371,7 @@ body{padding-left:62px}
 @media(max-width:700px){
   body{padding-left:42px!important}
   .store-sidebar{width:38px!important;min-width:38px!important;transform:translateX(0)!important;position:fixed!important;left:0!important;top:0!important;bottom:0!important;z-index:120!important;padding:8px 3px!important;gap:8px!important}
+  .store-sidebar .sidebar-expand-toggle{width:30px!important;min-width:30px!important;height:30px!important;padding:0!important;font-size:16px!important}
   .store-sidebar .sidebar-nav a{min-height:36px!important;padding:4px 2px!important;gap:0!important}
   .store-sidebar .sidebar-icon{min-width:28px!important;width:28px!important;height:28px!important;font-size:18px!important;flex-basis:28px!important}
   .store-sidebar.expanded{width:min(78vw,240px)!important;min-width:0!important;padding:10px!important}
