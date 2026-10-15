@@ -1534,3 +1534,6 @@ html[data-theme="dark"] .contact-line a{color:#83c9ff;text-decoration:none}
 html[data-theme="dark"] .contact-line a:hover{text-decoration:underline}
 html[data-theme="dark"] .footer-bottom{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-top:18px;border-top:1px solid #26384e;font-size:12px}
 @media(max-width:700px){html[data-theme="dark"] .brand-logo{width:46px;height:46px}html[data-theme="dark"] .contact-footer{grid-template-columns:1fr;gap:16px}html[data-theme="dark"] .hero{padding-top:40px;padding-bottom:40px}}
+
+/* Always use a round brand mark; cache-busted premium theme */
+.brand-logo{border-radius:50%!important;object-fit:contain;background:#fff;padding:4px;border:2px solid #d7e7f0;box-shadow:0 4px 14px #0002}
