@@ -1058,8 +1058,49 @@ async function initAdminPanel() {
       }
 
       adminOrdersList.innerHTML = "";
-      [...snap.docs].sort((a,b)=>String(b.data().createdAt||'').localeCompare(String(a.data().createdAt||''))).forEach(docSnap => {
+      const activeOrderDocs = snap.docs.filter(d => !d.data().deletedAt);
+      const deletedOrderDocs = snap.docs.filter(d => !!d.data().deletedAt);
+      const bin = document.getElementById('adminOrdersBin');
+      const binCount = document.getElementById('ordersBinCount');
+      if (binCount) binCount.textContent = String(deletedOrderDocs.length);
+      const nowMs = Date.now();
+      for (const deletedDoc of deletedOrderDocs) {
+        const deletedAt = Date.parse(deletedDoc.data().deletedAt || '');
+        if (Number.isFinite(deletedAt) && nowMs - deletedAt >= 7*24*60*60*1000) {
+          try { await deleteDoc(doc(db,'orders',deletedDoc.id)); } catch (purgeError) { console.error('Could not permanently purge expired order:',purgeError); }
+        }
+      }
+      const remainingBinDocs = deletedOrderDocs.filter(d => {
+        const t=Date.parse(d.data().deletedAt||''); return !Number.isFinite(t)||nowMs-t<7*24*60*60*1000;
+      });
+      if (bin) {
+        bin.innerHTML = remainingBinDocs.length ? '' : '<p class="help-text">The bin is empty.</p>';
+        remainingBinDocs.sort((a,b)=>String(b.data().deletedAt||'').localeCompare(String(a.data().deletedAt||''))).forEach(d=>{
+          const o=d.data(), deletedAt=Date.parse(o.deletedAt||''), purgeAt=Number.isFinite(deletedAt)?new Date(deletedAt+7*24*60*60*1000):null;
+          const card=document.createElement('article');card.className='order-list-item';
+          const info=document.createElement('div');
+          info.innerHTML='<b>Order #'+String(o.orderId||d.id)+'</b> · ₹'+Number(o.amount||0)+'<br>Deleted: '+(Number.isFinite(deletedAt)?new Date(deletedAt).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'}):'Date unavailable')+'<br>Permanent deletion: '+(purgeAt?purgeAt.toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'}):'After 7 days');
+          const actions=document.createElement('div');actions.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-top:10px';
+          const restore=document.createElement('button');restore.className='btn';restore.type='button';restore.textContent='Restore order';
+          restore.addEventListener('click',async()=>{try{await updateDoc(doc(db,'orders',d.id),{deletedAt:null,restoredAt:new Date().toISOString()});await loadAdminOrders();}catch(e){alert('Could not restore order: '+e.message);}});
+          const del=document.createElement('button');del.className='btn btn-danger';del.type='button';del.textContent='Delete permanently';
+          del.addEventListener('click',async()=>{if(!confirm('Permanently delete this order record? This cannot be undone.'))return;try{await deleteDoc(doc(db,'orders',d.id));await loadAdminOrders();}catch(e){alert('Could not delete order: '+e.message);}});
+          actions.append(restore,del);card.append(info,actions);bin?.appendChild(card);
+        });
+      }
+      if (!activeOrderDocs.length) adminOrdersList.innerHTML = '<p style="color:#64748b;">No active orders. Deleted orders are in the bin below.</p>';
+      let currentDayKey = '';
+      [...activeOrderDocs].sort((a,b)=>String(b.data().createdAt||'').localeCompare(String(a.data().createdAt||''))).forEach(docSnap => {
         const o = docSnap.data();
+        const parsedDate = new Date(o.createdAt || 0);
+        const dayKey = Number.isFinite(parsedDate.getTime()) ? parsedDate.toLocaleDateString('en-CA') : 'unknown';
+        if (dayKey !== currentDayKey) {
+          currentDayKey = dayKey;
+          const dayHeading = document.createElement('h3');
+          dayHeading.textContent = dayKey === 'unknown' ? 'Date unavailable' : parsedDate.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+          dayHeading.style.cssText = 'margin:22px 0 12px;padding:10px 12px;background:#eef7f4;border-radius:8px;';
+          adminOrdersList.appendChild(dayHeading);
+        }
         let itemsHtml = (o.items || []).map(item => `
           <div style="border:1px solid #e2e8f0; padding:10px; margin-top:8px; border-radius:6px; background:#f8fafc;">
             <b>${item.name}</b> (Qty: ${item.quantity}) - ₹${item.totalPrice}<br>
@@ -1089,10 +1130,12 @@ async function initAdminPanel() {
               ${o.refundStatus === 'Refund initiated' ? '<button type="button" class="btn admin-refund-complete" data-id="'+docSnap.id+'">Mark refund completed</button>' : ''}
             </div>
             <div style="margin-top: 10px;">${itemsHtml}</div>
+            <button type="button" class="btn btn-danger admin-soft-delete-order" data-id="${docSnap.id}" style="margin-top:12px">Delete order (move to bin)</button>
           </div>
         `;
       });
 
+      adminOrdersList.querySelectorAll(".admin-soft-delete-order").forEach(btn=>btn.addEventListener("click",async()=>{if(!confirm('Move this order to the bin? It can be restored for 7 days.'))return;try{await updateDoc(doc(db,'orders',btn.dataset.id),{deletedAt:new Date().toISOString(),deletedBy:'admin'});await loadAdminOrders();}catch(err){alert('Could not move order to bin: '+err.message);}}));
       adminOrdersList.querySelectorAll(".admin-save-order-status").forEach(btn=>btn.addEventListener("click",async()=>{const id=btn.dataset.id;const status=adminOrdersList.querySelector(`.admin-order-status[data-id="${id}"]`)?.value||"Order Placed";const trackingUrl=adminOrdersList.querySelector(`.admin-tracking-url[data-id="${id}"]`)?.value.trim()||"";if(trackingUrl&&!/^https?:\/\//i.test(trackingUrl)){alert("Enter a valid tracking URL starting with https://");return;}const now=new Date().toISOString();try{const snapshot=await getDocs(collection(db,"orders"));const existing=snapshot.docs.find(d=>d.id===id)?.data()||{};const patch={orderStatus:status,trackingUrl,updatedAt:now,statusHistory:[...(existing.statusHistory||[]),{status,at:now}]};if(status==="Delivered"){const deliveredAt=existing.deliveredAt||now;patch.deliveredAt=deliveredAt;patch.returnEligibleUntil=new Date(new Date(deliveredAt).getTime()+7*24*60*60*1000).toISOString();}await updateDoc(doc(db,"orders",id),patch);await loadAdminOrders();}catch(err){alert("Could not update order status: "+err.message);}}));
       adminOrdersList.querySelectorAll('.admin-cancel-approve').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Approve cancellation? Process any required refund in Razorpay separately.'))return;try{await updateDoc(doc(db,'orders',btn.dataset.id),{cancellationStatus:'Cancellation approved',orderStatus:'Cancellation approved',cancellationReviewedAt:new Date().toISOString()});await loadAdminOrders();}catch(err){alert('Could not approve cancellation: '+err.message);}}));
       adminOrdersList.querySelectorAll('.admin-cancel-reject').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Reject this cancellation request?'))return;try{await updateDoc(doc(db,'orders',btn.dataset.id),{cancellationStatus:'Cancellation rejected',orderStatus:'Cancellation rejected',cancellationReviewedAt:new Date().toISOString()});await loadAdminOrders();}catch(err){alert('Could not reject cancellation: '+err.message);}}));
