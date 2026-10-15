@@ -709,7 +709,29 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
       orderStatus:"Order Placed", statusHistory:[{status:"Order Placed",at:new Date().toISOString()}],
       createdAt:new Date().toISOString(), createdAtMs:Date.now(), trackingUrl:"", deliveredAt:null, returnEligibleUntil:null
     };
-    const savedOrder = await addDoc(collection(db,'orders'), orderData);
+    // Firestore rejects arrays nested directly inside other arrays. Normalize the full
+    // order payload, including any older cart data still stored in this browser.
+    const sanitizeFirestoreValue = (value, insideArray = false) => {
+      if (value === undefined) return null;
+      if (value === null || typeof value === 'string' || typeof value === 'boolean') return value;
+      if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+      if (value instanceof Date) return value.toISOString();
+      if (Array.isArray(value)) {
+        if (insideArray) return JSON.stringify(value);
+        return value.map(item => sanitizeFirestoreValue(item, true));
+      }
+      if (typeof value === 'object') {
+        const clean = {};
+        for (const [key, child] of Object.entries(value)) {
+          if (typeof child === 'function' || child === undefined) continue;
+          clean[key] = sanitizeFirestoreValue(child, false);
+        }
+        return clean;
+      }
+      return String(value);
+    };
+    const safeOrderData = sanitizeFirestoreValue(orderData);
+    const savedOrder = await addDoc(collection(db,'orders'), safeOrderData);
     if (paymentMethod === 'cod') {
       status.textContent='COD order placed. Order ID: '+orderId+'. Total including ₹1,000 COD/delivery charge: ₹'+orderAmount;
       cart = [];
