@@ -59,7 +59,8 @@ async function loadProducts() {
         category: String(item.category || '').trim(),
         storefrontSection: String(item.storefrontSection || '').trim(),
         price: Number(item.price) || 0,
-        imageUrl: item.imageUrl || "",
+        imageUrl: item.imageUrl || (Array.isArray(item.galleryImages) ? item.galleryImages[0] : "") || "",
+        galleryImages: Array.isArray(item.galleryImages) ? item.galleryImages.filter(Boolean).slice(0,5) : (item.imageUrl ? [item.imageUrl] : []),
         pType: item.pType || "customizable",
         hasBack: item.hasBack === true,
         backImageUrl: item.backImageUrl || "",
@@ -765,6 +766,21 @@ async function initAdminPanel() {
   };
   frontImageFile?.addEventListener('change', updateFrontImagePreview);
   frontImageUrl?.addEventListener('input', updateFrontImagePreview);
+  [2,3,4,5].forEach((n) => {
+    const fileInput = document.getElementById('pGallery'+n+'File');
+    const urlInput = document.getElementById('pGallery'+n);
+    const preview = document.getElementById('pGallery'+n+'Preview');
+    const updatePreview = () => {
+      if (!preview) return;
+      const file = fileInput?.files?.[0];
+      const url = urlInput?.value.trim() || '';
+      if (file) { preview.src = URL.createObjectURL(file); preview.style.display = 'block'; }
+      else if (url) { preview.src = url; preview.style.display = 'block'; }
+      else { preview.removeAttribute('src'); preview.style.display = 'none'; }
+    };
+    fileInput?.addEventListener('change', updatePreview);
+    urlInput?.addEventListener('input', updatePreview);
+  });
   const updateBackFieldsVisibility = () => { if (backImageFields) backImageFields.style.opacity = hasBackCheckbox?.checked ? '1' : '.65'; };
   hasBackCheckbox?.addEventListener('change', updateBackFieldsVisibility);
   updateBackFieldsVisibility();
@@ -845,9 +861,12 @@ async function initAdminPanel() {
       const description = document.getElementById('pDesc').value.trim();
       const category = document.getElementById('pCategory')?.value.trim() || '';
       const storefrontSection = document.getElementById('pStorefrontSection')?.value.trim() || '';
+      const mainImageUrl = await getImageValue('pImgFile', 'pImg', previous.imageUrl);
+      const extraGalleryImages = await Promise.all([2,3,4,5].map(async n => await getImageValue('pGallery'+n+'File', 'pGallery'+n, previous.galleryImages?.[n-1] || '')));
       const productData = {
         pType, name, price, description, category, storefrontSection,
-        imageUrl: await getImageValue('pImgFile', 'pImg', previous.imageUrl),
+        imageUrl: mainImageUrl,
+        galleryImages: [mainImageUrl, ...extraGalleryImages].filter(Boolean).slice(0,5),
         backImageUrl: await getImageValue('pBackImgFile', 'pBackImg', previous.backImageUrl),
         hasBack: document.getElementById('pHasBack')?.checked ?? (previous.hasBack ?? false),
         hasPhoto: document.getElementById('chkPhoto')?.checked ?? true,
@@ -887,6 +906,14 @@ async function initAdminPanel() {
       if(document.getElementById('pCategory'))document.getElementById('pCategory').value=p.category||'';
       if(document.getElementById('pStorefrontSection'))document.getElementById('pStorefrontSection').value=p.storefrontSection||'';
       document.getElementById('pImg').value = p.imageUrl && !p.imageUrl.startsWith('data:') ? p.imageUrl : '';
+      const galleryImages = Array.isArray(p.galleryImages) ? p.galleryImages : [p.imageUrl || ''];
+      [2,3,4,5].forEach((n) => {
+        const imageUrl = galleryImages[n-1] || '';
+        const urlField = document.getElementById('pGallery'+n);
+        const preview = document.getElementById('pGallery'+n+'Preview');
+        if (urlField) urlField.value = imageUrl && !imageUrl.startsWith('data:') ? imageUrl : '';
+        if (preview) { preview.src = imageUrl || ''; preview.style.display = imageUrl ? 'block' : 'none'; }
+      });
       const backImageUrlField = document.getElementById('pBackImg');
       if (backImageUrlField) backImageUrlField.value = p.backImageUrl && !p.backImageUrl.startsWith('data:') ? p.backImageUrl : '';
       const backPreview = document.getElementById('pBackImgPreview');
@@ -898,7 +925,7 @@ async function initAdminPanel() {
       document.getElementById('pHasBack').checked = !!p.hasBack;
       document.getElementById('chkPhoto').checked = p.hasPhoto !== false;
       document.getElementById('chkText').checked = p.hasText !== false;
-      ['pImgFile','pBackImgFile','pFrontOutlineFile','pBackOutlineFile','pFinishedLinkFile'].forEach(id => { const input=document.getElementById(id); if(input) input.value=''; });
+      ['pImgFile','pGallery2File','pGallery3File','pGallery4File','pGallery5File','pBackImgFile','pFrontOutlineFile','pBackOutlineFile','pFinishedLinkFile'].forEach(id => { const input=document.getElementById(id); if(input) input.value=''; });
       if (customOnlyFields) customOnlyFields.style.display = p.pType === 'stock' ? 'none' : 'block';
       document.getElementById('saveProductBtn').textContent = 'Save Product Changes';
       document.getElementById('cancelEditProductBtn').style.display = 'inline-block';
