@@ -670,15 +670,10 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
   const paymentMethod=checkoutForm.querySelector('input[name="paymentMethod"]:checked')?.value;
   if(!['upi','card','cod'].includes(paymentMethod))return alert('Choose UPI, card or Cash on Delivery.');
   const status=document.getElementById('paymentStatus'),button=document.getElementById('placeOrderBtn');
-  button.disabled=true;button.textContent=paymentMethod==='cod'?'Placing COD order…':'Connecting securely…';status.textContent=paymentMethod==='cod'?'Placing Cash on Delivery order…':'Preparing secure payment…';
+  button.disabled=true;
+  button.textContent=paymentMethod==='cod'?'Placing COD order…':'Connecting securely…';
+  status.textContent=paymentMethod==='cod'?'Placing Cash on Delivery order…':'Preparing secure payment…';
   try {
-    let payment = {};
-    if (paymentMethod !== 'cod') {
-      const settingsSnap=await getDocs(collection(db,'settings'));
-      const paymentDoc=settingsSnap.docs.find(d=>d.id==='payment');
-      payment=paymentDoc?.data()||{};
-      if(!payment.checkoutEndpoint)throw new Error('Online payment is not configured yet. Admin must set the secure checkout API URL in Payment Settings before taking prepaid orders.');
-    }
     const makeUniqueOrderId = async () => {
       const snap = await getDocs(collection(db, 'orders'));
       const existing = new Set(snap.docs.map(d => String(d.data().orderId || '')));
@@ -695,12 +690,14 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
     const orderAmount = Math.max(0, subtotal - discount) + deliveryCharge;
     const orderData = {
       orderId, customerName:a.name, customerPhone:'+91'+a.phone,
-      deliveryAddress:formatAddress(a), address:a, items:cart, subtotal, discount, couponCode:appliedCoupon?.code||'', couponPercent:appliedCoupon?.percent||0, deliveryCharge, amount:orderAmount,
-      paymentMethod, paymentStatus:paymentMethod==='cod'?'cash on delivery':'pending',
+      deliveryAddress:formatAddress(a), address:a, items:cart, subtotal, discount,
+      couponCode:appliedCoupon?.code||'', couponPercent:appliedCoupon?.percent||0,
+      deliveryCharge, amount:orderAmount, paymentMethod,
+      paymentStatus:paymentMethod==='cod'?'cash on delivery':'pending',
       orderStatus:paymentMethod==='cod'?'COD order placed':'Payment pending',
       createdAt:new Date().toISOString()
     };
-    await addDoc(collection(db,'orders'), orderData);
+    const savedOrder = await addDoc(collection(db,'orders'), orderData);
     if (paymentMethod === 'cod') {
       status.textContent='COD order placed. Order ID: '+orderId+'. Total including ₹1,000 COD/delivery charge: ₹'+orderAmount;
       cart = [];
@@ -709,22 +706,74 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
       alert('Cash on Delivery order placed. Order ID: '+orderId+' | Total: ₹'+orderAmount);
       return;
     }
-    const payload={
-      orderId,
-      amount:orderAmount,
-      currency:'INR',paymentMethod,discount,couponCode:appliedCoupon?.code||'',
-      customer:{name:a.name,phone:'+91'+a.phone},
-      address:a,items:cart,deliveryCharge,
-      returnUrl:window.location.origin+window.location.pathname+'?payment=return'
-    };
-    const response=await fetch(payment.checkoutEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    if(!response.ok)throw new Error('Payment service returned HTTP '+response.status);
-    const result=await response.json();
-    if(!result.checkoutUrl)throw new Error('Payment service did not return checkoutUrl. Configure the backend to create a UPI/card checkout session.');
-    status.textContent='Order ID: '+orderId+'. Redirecting to secure payment…';
-    window.location.href=result.checkoutUrl;
-  } catch(err) { console.error('Checkout payment error:',err);status.textContent=err.message;alert(err.message); }
-  finally {button.disabled=false;updateCheckoutSummary();}
+    const apiBase = 'https://sayaart-payment-api.vercel.app';
+    const orderResponse = await fetch(apiBase+'/api/create-order', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({amount:Math.round(orderAmount*100),currency:'INR',receipt:orderId})
+    });
+    const orderResult = await orderResponse.json().catch(()=>({}));
+    if(!orderResponse.ok) throw new Error(orderResult.error || 'Could not create Razorpay order (HTTP '+orderResponse.status+').');
+    if(!orderResult.id || !orderResult.key_id) throw new Error('Payment service did not return a Razorpay order and public Key ID.');
+    if(typeof window.Razorpay !== 'function') {
+      await new Promise((resolve,reject)=>{
+        const script=document.createElement('script');
+        script.src='https://checkout.razorpay.com/v1/checkout.js';
+        script.onload=resolve;
+        script.onerror=()=>reject(new Error('Could not load Razorpay Checkout. Check your internet connection and try again.'));
+        document.head.appendChild(script);
+      });
+    }
+    if(typeof window.Razorpay !== 'function') throw new Error('Razorpay Checkout could not be initialized.');
+    status.textContent='Order ID: '+orderId+'. Opening secure Razorpay Checkout…';
+    const checkout = new window.Razorpay({
+      key:orderResult.key_id, amount:orderResult.amount, currency:orderResult.currency || 'INR',
+      name:'Saya Art & Advertising', description:'Order '+orderId, order_id:orderResult.id,
+      prefill:{name:a.name,contact:'+91'+a.phone}, notes:{store_order_id:orderId},
+      theme:{color:'#147d70'},
+      handler:async function(paymentResponse) {
+        status.textContent='Verifying payment securely…';
+        button.disabled=true; button.textContent='Verifying payment…';
+        try {
+          const verifyResponse=await fetch(apiBase+'/api/verify-payment',{
+            method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(paymentResponse)
+          });
+          const verification=await verifyResponse.json().catch(()=>({}));
+          if(!verifyResponse.ok || verification.verified!==true) {
+            throw new Error(verification.error || 'Payment verification failed. Contact the store with your payment ID before trying again.');
+          }
+          await updateDoc(savedOrder,{
+            paymentStatus:verification.payment_status==='captured'?'paid':'authorized',
+            orderStatus:verification.payment_status==='captured'?'Payment received':'Payment authorized - capture pending',
+            razorpayOrderId:verification.order_id, razorpayPaymentId:verification.payment_id,
+            paidAt:new Date().toISOString()
+          });
+          cart=[]; saveCart(); updateCartUI(); closeModal('checkoutModal');
+          alert('Payment verified successfully! Order ID: '+orderId+' | Payment ID: '+verification.payment_id);
+        } catch(verifyError) {
+          console.error('Payment verification error:',verifyError);
+          status.textContent=verifyError.message; alert(verifyError.message);
+        } finally {
+          button.disabled=false; button.textContent='Pay securely →'; updateCheckoutSummary();
+        }
+      },
+      modal:{ondismiss:function(){
+        status.textContent='Payment window closed. Your order is still pending; you can try again.';
+        button.disabled=false; button.textContent='Pay securely →'; updateCheckoutSummary();
+      }}
+    });
+    checkout.on('payment.failed',function(response){
+      const reason=response.error?.description || 'Payment failed. Please try again.';
+      status.textContent=reason; alert(reason);
+    });
+    checkout.open();
+  } catch(err) {
+    console.error('Checkout payment error:',err);
+    status.textContent=err.message; alert(err.message);
+  } finally {
+    button.disabled=false;
+    if(!button.textContent.includes('Pay securely')) button.textContent='Pay securely →';
+    updateCheckoutSummary();
+  }
 };
 
 // ADMIN PANEL ENGINE WITH ROBUST ERROR HANDLING
