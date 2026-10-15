@@ -11,28 +11,25 @@
   <style>
     .checkout-steps{display:flex;align-items:center;gap:8px;margin:12px 0 24px}.checkout-steps i{height:2px;flex:1;background:#dbe4ed}.checkout-step{display:flex;align-items:center;gap:7px;color:#64748b;font-size:12px;font-weight:700;white-space:nowrap}.checkout-step b{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#e2e8f0;color:#334155}.checkout-step.active,.checkout-step.done{color:#0f766e}.checkout-step.active b,.checkout-step.done b{background:#0f766e;color:white}.checkout-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.checkout-field{min-width:0}.checkout-field.full{grid-column:1/-1}.checkout-field label,.checkout>form>section>label{display:block;font-size:12px;font-weight:800;margin-bottom:5px;color:#334155}.checkout-field input,.checkout-field select,.checkout select{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;background:#fff}.checkout-summary{border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin:12px 0;line-height:1.7;overflow-wrap:anywhere}.checkout-stage-actions{display:flex;gap:9px;justify-content:space-between;flex-wrap:wrap;margin-top:18px}.secondary-button{border:1px solid #cbd5e1;background:#fff;color:#1e293b;border-radius:9px;padding:11px 14px;font-weight:700;cursor:pointer}.payment-choice{display:flex;gap:12px;align-items:center;padding:15px;border:1px solid #dbe4ed;border-radius:12px;margin:10px 0;cursor:pointer}.payment-choice:has(input:checked){border-color:#0f766e;background:#f0fdfa}.payment-choice span{display:grid;gap:3px}.payment-choice small{color:#64748b}.payment-choice input{accent-color:#0f766e}.checkout-stage[hidden]{display:none!important}@media(max-width:520px){.checkout-grid{grid-template-columns:1fr}.checkout-field.full{grid-column:auto}.checkout-steps{gap:4px}.checkout-step{font-size:10px;gap:4px}.checkout-step b{width:24px;height:24px}}
 
-/* Mini games popover */
-.mini-game-wrap{position:relative;flex:0 0 auto;z-index:120}
-.mini-game-toggle{width:46px;height:46px;border:1px solid #d7e6f5;border-radius:13px;background:#eef7ff;color:#0879d1;font-size:20px;font-weight:900;letter-spacing:2px;cursor:pointer;box-shadow:0 5px 15px #167ac21c;transition:.2s}
-.mini-game-toggle:hover,.mini-game-toggle[aria-expanded="true"]{background:#0879d1;color:white;transform:translateY(-1px)}
-.mini-game-popover{position:absolute;top:calc(100% + 12px);left:50%;transform:translateX(-35%);width:min(360px,calc(100vw - 28px));padding:14px;border:1px solid #d7e5f5;border-radius:18px;background:#fff;color:#172b43;box-shadow:0 20px 60px #102b4a30;z-index:9999}
+/* Minimal floating Snake dot, without disturbing header alignment */
+.mini-game-wrap{position:absolute;left:clamp(250px,28vw,430px);top:50%;transform:translateY(-50%);z-index:120}
+.mini-game-toggle{width:18px;height:18px;display:grid;place-items:center;border:0;border-radius:50%;padding:0;background:transparent;box-shadow:none;cursor:pointer}
+.mini-game-toggle span{display:block;width:7px;height:7px;border-radius:50%;background:#3b82f6;box-shadow:0 0 0 3px #3b82f618;transition:transform .2s,box-shadow .2s}
+.mini-game-toggle:hover span,.mini-game-toggle[aria-expanded="true"] span{transform:scale(1.35);box-shadow:0 0 0 5px #3b82f622}
+.mini-game-popover{position:absolute;top:calc(100% + 12px);left:0;width:min(350px,calc(100vw - 24px));padding:12px;border:1px solid #e0e7ef;border-radius:14px;background:#fff;color:#172b43;box-shadow:0 12px 35px #152b451c;z-index:9999}
 .mini-game-popover[hidden]{display:none!important}
-.mini-game-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.mini-game-head strong{display:block;font-size:17px}.mini-game-head small{display:block;color:#74869c;margin-top:3px}
-.mini-game-head>button{border:0;background:transparent;font-size:25px;color:#536981;cursor:pointer}
-.mini-game-tabs{display:flex;gap:8px;margin-bottom:10px}.mini-game-tabs button,.mini-game-controls button{border:1px solid #d5e5f5;background:#f1f7fd;color:#244563;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
-.mini-game-tabs button.active,.mini-game-controls button{background:#0879d1;color:#fff;border-color:#0879d1}
-.mini-game-board{background:#f8fbff;border:1px solid #dce8f5;border-radius:12px;overflow:hidden;line-height:0}
+.mini-game-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.mini-game-head strong{display:block;font-size:15px}.mini-game-head small{display:block;color:#7b8796;margin-top:3px;font-size:12px}
+.mini-game-head>button{border:0;background:transparent;font-size:23px;color:#536981;cursor:pointer;padding:3px 8px}
+.mini-game-board{background:#fff;border:1px solid #edf1f6;border-radius:8px;overflow:hidden;line-height:0}
 #miniGameCanvas{display:block;width:100%;height:auto;touch-action:none}
-.mini-game-help{font-size:12px;color:#71839a;padding:10px 2px 6px}
-.mini-game-controls{display:flex;align-items:center;justify-content:space-between;gap:10px}.mini-game-controls span{font-size:12px;font-weight:700;color:#244563}
+.mini-game-help{font-size:12px;color:#71839a;padding:9px 2px 6px}
+.mini-game-controls{display:flex;align-items:center;justify-content:space-between;gap:8px}.mini-game-controls button{border:1px solid #d5e5f5;background:#f1f7fd;color:#244563;border-radius:8px;padding:8px 11px;font-size:12px;font-weight:700;cursor:pointer}.mini-game-controls span{font-size:12px;font-weight:700;color:#244563}
 html[data-theme="dark"] .mini-game-popover{background:#111f32;color:#edf5ff;border-color:#2c4562}
 html[data-theme="dark"] .mini-game-head small,html[data-theme="dark"] .mini-game-help{color:#a9bdd5}
-html[data-theme="dark"] .mini-game-tabs button{background:#1a2d44;color:#dceaff;border-color:#304762}
-html[data-theme="dark"] .mini-game-tabs button.active,html[data-theme="dark"] .mini-game-controls button{background:#0879d1;color:white}
-@media(max-width:760px){.mini-game-toggle{width:38px;height:38px}.mini-game-popover{left:auto;right:-80px;transform:none;top:calc(100% + 10px)}}
-
-  </style>
+html[data-theme="dark"] .mini-game-board{background:#fff}
+@media(max-width:760px){.mini-game-wrap{left:auto;right:calc(100% - 58px);top:50%;}.mini-game-popover{position:fixed;left:12px;right:12px;top:calc(var(--header-height,80px) + 12px);width:auto;max-height:calc(100dvh - 110px);overflow:auto}.mini-game-toggle{width:24px;height:24px}}
+</style>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 </head>
@@ -54,12 +51,11 @@ html[data-theme="dark"] .mini-game-tabs button.active,html[data-theme="dark"] .m
       <span><b data-shop-name>Saya Art &amp; Advertising</b><small>PRINT · PERSONALISE · PROMOTE</small></span>
     </a>
     <div class="mini-game-wrap">
-      <button type="button" id="miniGameToggle" class="mini-game-toggle" aria-label="Open mini games" aria-expanded="false" title="Mini games">•••</button>
-      <section class="mini-game-popover" id="miniGamePopover" hidden aria-label="Mini games">
-        <div class="mini-game-head"><div><strong>Quick Games</strong><small>A little break?</small></div><button type="button" id="miniGameClose" aria-label="Close games">×</button></div>
-        <div class="mini-game-tabs"><button type="button" class="active" data-game="snake">Snake</button><button type="button" data-game="dino">Dino Run</button></div>
-        <div class="mini-game-board"><canvas id="miniGameCanvas" width="320" height="190" aria-label="Mini game play area"></canvas></div>
-        <div class="mini-game-help" id="miniGameHelp">Use arrow keys or swipe. Eat the dot!</div>
+      <button type="button" id="miniGameToggle" class="mini-game-toggle" aria-label="Play Snake game" aria-expanded="false" title="Play Snake game"><span></span></button>
+      <section class="mini-game-popover" id="miniGamePopover" hidden aria-label="Snake game">
+        <div class="mini-game-head"><div><strong>Snake</strong><small>Eat the blue dot and grow</small></div><button type="button" id="miniGameClose" aria-label="Close game">×</button></div>
+        <div class="mini-game-board"><canvas id="miniGameCanvas" width="320" height="190" aria-label="Snake game play area"></canvas></div>
+        <div class="mini-game-help" id="miniGameHelp">Use arrow keys or swipe to move.</div>
         <div class="mini-game-controls"><button type="button" id="miniGameStart">Start / Restart</button><span id="miniGameScore">Score: 0</span></div>
       </section>
     </div>
@@ -301,32 +297,26 @@ html[data-theme="dark"] .mini-game-tabs button.active,html[data-theme="dark"] .m
 (()=> {
  const toggle=document.getElementById('miniGameToggle'),panel=document.getElementById('miniGamePopover'),close=document.getElementById('miniGameClose'),canvas=document.getElementById('miniGameCanvas'),ctx=canvas?.getContext('2d'),help=document.getElementById('miniGameHelp'),scoreEl=document.getElementById('miniGameScore'),startBtn=document.getElementById('miniGameStart');
  if(!toggle||!panel||!canvas||!ctx)return;
- let mode='snake',timer=null,score=0,best={snake:0,dino:0},snake=[],dir={x:1,y:0},food={x:12,y:7},running=false,over=false,dinoY=0,vel=0,obstacles=[],frame=0,lastTime=0;
- const W=320,H=190,cell=10;
+ const W=320,H=190,cell=12,cols=Math.floor(W/cell),rows=Math.floor(H/cell);
+ let timer=null,score=0,best=0,snake=[],dir={x:1,y:0},food={x:12,y:7},running=false,over=false;
  function stop(){if(timer){clearInterval(timer);timer=null}running=false}
- function open(){panel.hidden=false;toggle.setAttribute('aria-expanded','true');if(!running&&!over)draw()}
+ function open(){panel.hidden=false;toggle.setAttribute('aria-expanded','true');draw()}
  function shut(){panel.hidden=true;toggle.setAttribute('aria-expanded','false');stop()}
- function label(){scoreEl.textContent='Score: '+score+' · Best: '+(best[mode]||0);help.textContent=mode==='snake'?'Use arrow keys or swipe. Eat the red dot!':'Press Space / ↑ or tap to jump over obstacles.'}
- function background(){ctx.fillStyle=mode==='snake'?'#0d1a2a':'#fff';ctx.fillRect(0,0,W,H);if(mode==='snake'){ctx.strokeStyle='#17283a';for(let x=0;x<W;x+=cell){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=cell){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}}}
- function draw(){background();if(mode==='snake'){ctx.fillStyle='#ff4d5e';ctx.beginPath();ctx.arc(food.x*cell+5,food.y*cell+5,4,0,Math.PI*2);ctx.fill();snake.forEach((p,i)=>{ctx.fillStyle=i?'#14cfa2':'#35f2bd';ctx.beginPath();ctx.rect(p.x*cell+1,p.y*cell+1,8,8);ctx.fill()});if(over)overlay('Game over','Press Start / Restart')}else{ctx.strokeStyle='#9aaabe';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,158);ctx.lineTo(W,158);ctx.stroke();ctx.fillStyle='#24364b';ctx.fillRect(42,125-dinoY,19,33);ctx.fillRect(55,117-dinoY,15,13);ctx.fillStyle='#fff';ctx.fillRect(62,120-dinoY,3,3);obstacles.forEach(o=>{ctx.fillStyle='#4d657c';ctx.fillRect(o.x,158-o.h,o.w,o.h);ctx.fillRect(o.x+5,158-o.h-6,5,8)});ctx.fillStyle='#a3b3c4';for(let i=0;i<9;i++){let x=(i*43-frame*1.4)%W;ctx.fillRect(x,25+(i%3)*12,2,2)}if(over)overlay('Run ended','Press Start / Restart')}label()}
- function overlay(a,b){ctx.fillStyle='#0009';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='bold 18px Arial';ctx.fillText(a,W/2,82);ctx.font='12px Arial';ctx.fillText(b,W/2,105);ctx.textAlign='left'}
- function reset(){stop();score=0;over=false;frame=0;snake=[{x:8,y:9},{x:7,y:9},{x:6,y:9},{x:5,y:9}];dir={x:1,y:0};food={x:22,y:8};dinoY=0;vel=0;obstacles=[];label();draw()}
- function end(){stop();over=true;best[mode]=Math.max(best[mode],score);draw()}
- function stepSnake(){if(!running)return;const h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};if(h.x<0||h.y<0||h.x>=W/cell||h.y>=H/cell||snake.some(p=>p.x===h.x&&p.y===h.y)){end();return}snake.unshift(h);if(h.x===food.x&&h.y===food.y){score+=10;do{food={x:Math.floor(Math.random()*31),y:Math.floor(Math.random()*18)}}while(snake.some(p=>p.x===food.x&&p.y===food.y));}else snake.pop();draw()}
- function stepDino(){if(!running)return;frame++;score=Math.floor(frame/5);if(frame%48===0)obstacles.push({x:W,w:10+Math.random()*9|0,h:17+Math.random()*22|0});obstacles.forEach(o=>o.x-=3.1);obstacles=obstacles.filter(o=>o.x+o.w>0);if(dinoY>0||vel>0){dinoY+=vel;vel-=.65;if(dinoY<=0){dinoY=0;vel=0}}if(obstacles.some(o=>o.x<62&&o.x+o.w>42&&dinoY<o.h+3)){end();return}draw()}
- function begin(){reset();running=true;timer=setInterval(()=>mode==='snake'?stepSnake():stepDino(),mode==='snake'?105:45)}
- function setMode(m){mode=m;document.querySelectorAll('[data-game]').forEach(b=>b.classList.toggle('active',b.dataset.game===mode));reset();help.textContent=mode==='snake'?'Use arrow keys or swipe. Eat the red dot!':'Press Space / ↑ or tap to jump over obstacles.'}
+ function label(){scoreEl.textContent='Score: '+score+' · Best: '+best}
+ function draw(){ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.fillStyle='#dfe5ec';for(let x=4;x<W;x+=18)for(let y=4;y<H;y+=18){ctx.beginPath();ctx.arc(x,y,1,0,Math.PI*2);ctx.fill()}ctx.fillStyle='#3b82f6';ctx.beginPath();ctx.arc(food.x*cell+cell/2,food.y*cell+cell/2,5,0,Math.PI*2);ctx.fill();snake.forEach((p,i)=>{ctx.fillStyle=i===0?'#2878f0':'#5b9bff';ctx.beginPath();ctx.arc(p.x*cell+cell/2,p.y*cell+cell/2,i===0?cell*.43:cell*.36,0,Math.PI*2);ctx.fill()});if(snake.length){const h=snake[0];ctx.fillStyle='#102b53';ctx.beginPath();ctx.arc(h.x*cell+cell/2+2,h.y*cell+cell/2-1,1.3,0,Math.PI*2);ctx.fill()}if(over){ctx.fillStyle='#fff';ctx.fillRect(70,72,180,48);ctx.strokeStyle='#e0e7ef';ctx.strokeRect(70,72,180,48);ctx.fillStyle='#20344c';ctx.textAlign='center';ctx.font='bold 15px Arial';ctx.fillText('Game over',160,92);ctx.font='11px Arial';ctx.fillText('Press Start / Restart',160,108)}label()}
+ function reset(){stop();score=0;over=false;snake=[{x:8,y:8},{x:7,y:8},{x:6,y:8},{x:5,y:8}];dir={x:1,y:0};food={x:22,y:7};help.textContent='Use arrow keys or swipe to move. Eat the blue dot.';draw()}
+ function end(){stop();over=true;best=Math.max(best,score);draw()}
+ function step(){if(!running)return;const h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};if(h.x<0||h.y<0||h.x>=cols||h.y>=rows||snake.some(p=>p.x===h.x&&p.y===h.y)){end();return}snake.unshift(h);if(h.x===food.x&&h.y===food.y){score+=1;do{food={x:Math.floor(Math.random()*cols),y:Math.floor(Math.random()*rows)}}while(snake.some(p=>p.x===food.x&&p.y===food.y))}else snake.pop();draw()}
+ function begin(){reset();running=true;timer=setInterval(step,125)}
  toggle.addEventListener('click',()=>panel.hidden?open():shut());close.addEventListener('click',shut);startBtn.addEventListener('click',begin);
- document.querySelectorAll('[data-game]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.game)));
  document.addEventListener('click',e=>{if(!panel.hidden&&!panel.contains(e.target)&&!toggle.contains(e.target))shut()});
- document.addEventListener('keydown',e=>{if(panel.hidden)return;const k=e.key.toLowerCase();if(mode==='snake'){const map={arrowup:{x:0,y:-1},w:{x:0,y:-1},arrowdown:{x:0,y:1},s:{x:0,y:1},arrowleft:{x:-1,y:0},a:{x:-1,y:0},arrowright:{x:1,y:0},d:{x:1,y:0}};const nd=map[k];if(nd&&!(nd.x===-dir.x&&nd.y===-dir.y)){dir=nd;e.preventDefault()}}else if((k===' '||k==='arrowup'||k==='w')&&running&&dinoY===0){vel=9;e.preventDefault()}});
- let touchX=0,touchY=0;canvas.addEventListener('touchstart',e=>{touchX=e.changedTouches[0].clientX;touchY=e.changedTouches[0].clientY},{passive:true});canvas.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-touchX,dy=e.changedTouches[0].clientY-touchY;if(mode==='snake'){if(Math.abs(dx)>Math.abs(dy))dir={x:dx>0?1:-1,y:0};else dir={x:0,y:dy>0?1:-1}}else if(dinoY===0&&running)vel=9},{passive:true});
- canvas.addEventListener('click',()=>{if(mode==='dino'&&running&&dinoY===0)vel=9});
- setMode('snake');
+ document.addEventListener('keydown',e=>{if(panel.hidden)return;const k=e.key.toLowerCase(),map={arrowup:{x:0,y:-1},w:{x:0,y:-1},arrowdown:{x:0,y:1},s:{x:0,y:1},arrowleft:{x:-1,y:0},a:{x:-1,y:0},arrowright:{x:1,y:0},d:{x:1,y:0}},nd=map[k];if(nd&&!(nd.x===-dir.x&&nd.y===-dir.y)){dir=nd;e.preventDefault()}});
+ let tx=0,ty=0;canvas.addEventListener('touchstart',e=>{tx=e.changedTouches[0].clientX;ty=e.changedTouches[0].clientY},{passive:true});canvas.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;if(Math.abs(dx)+Math.abs(dy)<8)return;if(Math.abs(dx)>Math.abs(dy)){if(dx>0&&dir.x!==-1)dir={x:1,y:0};else if(dx<0&&dir.x!==1)dir={x:-1,y:0}}else{if(dy>0&&dir.y!==-1)dir={x:0,y:1};else if(dy<0&&dir.y!==1)dir={x:0,y:-1}}},{passive:true});
+ reset();
 })();
 </script>
 
     <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
-  <script type="module" src="app.js?v=20261015-15"></script>
+  <script type="module" src="app.js?v=20261015-16"></script>
 </body>
 </html>
