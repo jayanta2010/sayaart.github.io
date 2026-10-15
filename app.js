@@ -67,7 +67,9 @@ async function loadProducts() {
         hasPhoto: item.hasPhoto !== false,
         hasText: item.hasText !== false,
         sizes: item.sizes || [],
-        qualities: item.qualities || []
+        qualities: item.qualities || [],
+        stockStatus: item.stockStatus || "in_stock",
+        stockQuantity: Number(item.stockQuantity ?? 0)
       });
     });
   } catch (err) {
@@ -114,6 +116,7 @@ function runStoreSearch(raw){const query=String(raw||'').trim().toLowerCase();co
 window.openProductCustomizer = function(productId) {
   selectedProduct = allProductsList.find(p => p.id === productId);
   if (!selectedProduct) return;
+  if (selectedProduct.stockStatus === "out_of_stock" || Number(selectedProduct.stockQuantity) === 0) { alert("This product is out of stock and cannot be ordered."); return; }
 
   document.getElementById('customTitle').innerText = selectedProduct.name;
   const formatHint = document.getElementById('canvasFormatHint');
@@ -694,8 +697,8 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
       couponCode:appliedCoupon?.code||'', couponPercent:appliedCoupon?.percent||0,
       deliveryCharge, amount:orderAmount, paymentMethod,
       paymentStatus:paymentMethod==='cod'?'cash on delivery':'pending',
-      orderStatus:paymentMethod==='cod'?'COD order placed':'Payment pending',
-      createdAt:new Date().toISOString()
+      orderStatus:"Order Placed", statusHistory:[{status:"Order Placed",at:new Date().toISOString()}],
+      createdAt:new Date().toISOString(), createdAtMs:Date.now(), trackingUrl:"", deliveredAt:null, returnEligibleUntil:null
     };
     const savedOrder = await addDoc(collection(db,'orders'), orderData);
     if (paymentMethod === 'cod') {
@@ -743,7 +746,7 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
           }
           await updateDoc(savedOrder,{
             paymentStatus:verification.payment_status==='captured'?'paid':'authorized',
-            orderStatus:verification.payment_status==='captured'?'Payment received':'Payment authorized - capture pending',
+            paymentOrderStatus:verification.payment_status==='captured'?'Payment received':'Payment authorized - capture pending',
             razorpayOrderId:verification.order_id, razorpayPaymentId:verification.payment_id,
             paidAt:new Date().toISOString()
           });
@@ -921,7 +924,9 @@ async function initAdminPanel() {
         hasPhoto: document.getElementById('chkPhoto')?.checked ?? true,
         hasText: document.getElementById('chkText')?.checked ?? true,
         sizes: parseOptions(document.getElementById('pSizes').value),
-        qualities: parseOptions(document.getElementById('pQualities').value)
+        qualities: parseOptions(document.getElementById('pQualities').value),
+        stockStatus: document.getElementById('pStockStatus')?.value || previous.stockStatus || "in_stock",
+        stockQuantity: Math.max(0, Number(document.getElementById('pStockQuantity')?.value ?? previous.stockQuantity ?? 0))
       };
       if (editingProductId) {
         await updateDoc(doc(db, "products", editingProductId), productData);
@@ -971,6 +976,8 @@ async function initAdminPanel() {
       document.getElementById('pHasBack').checked = !!p.hasBack;
       document.getElementById('pSizes').value = formatOptions(p.sizes);
       document.getElementById('pQualities').value = formatOptions(p.qualities);
+      if(document.getElementById('pStockStatus'))document.getElementById('pStockStatus').value=p.stockStatus||"in_stock";
+      if(document.getElementById('pStockQuantity'))document.getElementById('pStockQuantity').value=p.stockQuantity??0;
       document.getElementById('pHasBack').checked = !!p.hasBack;
       document.getElementById('chkPhoto').checked = p.hasPhoto !== false;
       document.getElementById('chkText').checked = p.hasText !== false;
@@ -1016,7 +1023,8 @@ async function initAdminPanel() {
         title.textContent = (p.name || 'Product') + ' (' + (p.pType === 'stock' ? 'Stock Item' : 'Customizable') + ') — ₹' + (p.price ?? 0);
         const desc = document.createElement('div'); desc.textContent = p.description || '';
         desc.style.cssText = 'color:#64748b;font-size:12px;margin-top:5px;';
-        textBox.append(title, desc); details.appendChild(textBox);
+        const stock = document.createElement("div"); stock.className="help-text"; stock.textContent = (p.stockStatus==="out_of_stock"||Number(p.stockQuantity)===0) ? "OUT OF STOCK — ordering disabled" : "In stock · Quantity: "+Number(p.stockQuantity||0);
+        textBox.append(title, desc, stock); details.appendChild(textBox);
         const actions = document.createElement('div'); actions.style.cssText='display:flex;gap:8px;flex-wrap:wrap;';
         const edit = document.createElement('button'); edit.className='btn'; edit.type='button'; edit.textContent='✎ Edit';
         edit.addEventListener('click', () => window.editProduct(docSnap.id));
@@ -1062,8 +1070,10 @@ async function initAdminPanel() {
             <b>Order #${String(o.orderId || docSnap.id)}</b> - <span style="color:#16a34a; font-weight:bold;">₹${Number(o.amount||0)}</span><br>
             Customer: <b>${String(o.customerName || 'N/A')}</b> (${String(o.customerPhone || 'N/A')})<br>
             Address: <b>${String(o.deliveryAddress || 'N/A')}</b><br>
-            Created: <b>${String(o.createdAt || 'Date unavailable')}</b><br>
-            Payment: <b>${String(o.paymentStatus || 'Pending')}</b> · Order status: <b>${String(o.orderStatus || 'Processing')}</b>
+            Order Date &amp; Time: <b>${o.createdAt ? new Date(o.createdAt).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"}) : "Date unavailable"}</b><br>
+            Payment: <b>${String(o.paymentStatus || "Pending")}</b> · Order status: <b>${String(o.orderStatus || "Order Placed")}</b><br>
+            <div class="form-grid" style="margin-top:12px"><div class="form-group"><label>Order status</label><select class="admin-order-status" data-id="${docSnap.id}">${["Order Placed","Order Processed","Order Shipped","Delivered","Cancelled"].map(s=>`<option value="${s}" ${String(o.orderStatus||"Order Placed")===s?"selected":""}>${s}</option>`).join("")}</select></div><div class="form-group"><label>Tracking link</label><input class="admin-tracking-url" data-id="${docSnap.id}" type="url" placeholder="https://courier-tracking-link..." value="${String(o.trackingUrl||"")}"></div></div>
+            <button type="button" class="btn admin-save-order-status" data-id="${docSnap.id}">Save status &amp; tracking</button>
             ${o.cancellationStatus ? '<br>Cancellation: <b>'+String(o.cancellationStatus)+'</b>' : ''}
             ${o.refundStatus ? '<br>Refund: <b>'+String(o.refundStatus)+'</b>' : ''}
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
@@ -1076,6 +1086,7 @@ async function initAdminPanel() {
         `;
       });
 
+      adminOrdersList.querySelectorAll(".admin-save-order-status").forEach(btn=>btn.addEventListener("click",async()=>{const id=btn.dataset.id;const status=adminOrdersList.querySelector(`.admin-order-status[data-id="${id}"]`)?.value||"Order Placed";const trackingUrl=adminOrdersList.querySelector(`.admin-tracking-url[data-id="${id}"]`)?.value.trim()||"";if(trackingUrl&&!/^https?:\/\//i.test(trackingUrl)){alert("Enter a valid tracking URL starting with https://");return;}const now=new Date().toISOString();try{const snapshot=await getDocs(collection(db,"orders"));const existing=snapshot.docs.find(d=>d.id===id)?.data()||{};const patch={orderStatus:status,trackingUrl,updatedAt:now,statusHistory:[...(existing.statusHistory||[]),{status,at:now}]};if(status==="Delivered"){const deliveredAt=existing.deliveredAt||now;patch.deliveredAt=deliveredAt;patch.returnEligibleUntil=new Date(new Date(deliveredAt).getTime()+7*24*60*60*1000).toISOString();}await updateDoc(doc(db,"orders",id),patch);await loadAdminOrders();}catch(err){alert("Could not update order status: "+err.message);}}));
       adminOrdersList.querySelectorAll('.admin-cancel-approve').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Approve cancellation? Process any required refund in Razorpay separately.'))return;try{await updateDoc(doc(db,'orders',btn.dataset.id),{cancellationStatus:'Cancellation approved',orderStatus:'Cancellation approved',cancellationReviewedAt:new Date().toISOString()});await loadAdminOrders();}catch(err){alert('Could not approve cancellation: '+err.message);}}));
       adminOrdersList.querySelectorAll('.admin-cancel-reject').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Reject this cancellation request?'))return;try{await updateDoc(doc(db,'orders',btn.dataset.id),{cancellationStatus:'Cancellation rejected',orderStatus:'Cancellation rejected',cancellationReviewedAt:new Date().toISOString()});await loadAdminOrders();}catch(err){alert('Could not reject cancellation: '+err.message);}}));
       adminOrdersList.querySelectorAll('.admin-refund-mark').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Only continue after initiating the refund in Razorpay. Have you done that?'))return;try{await updateDoc(doc(db,'orders',btn.dataset.id),{refundStatus:'Refund initiated',refundInitiatedAt:new Date().toISOString(),orderStatus:'Refund initiated'});await loadAdminOrders();}catch(err){alert('Could not update refund status: '+err.message);}}));
