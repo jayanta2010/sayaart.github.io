@@ -131,6 +131,16 @@
           </div>
         </div>
 
+        <div class="form-group" style="border:1px solid #dce8e5;padding:14px;border-radius:12px;background:#fff8f7">
+          <label for="pStockStatus">Stock availability</label>
+          <select id="pStockStatus">
+            <option value="in_stock">In Stock — customers can order</option>
+            <option value="out_of_stock">Out of Stock — disable ordering</option>
+          </select>
+          <label for="pStockQuantity" style="margin-top:10px">Available quantity</label>
+          <input type="number" id="pStockQuantity" min="0" step="1" value="0" placeholder="0">
+          <div class="help-text">Set Out of Stock or quantity to 0 to prevent new orders. Keep quantity above 0 and select In Stock to allow ordering.</div>
+        </div>
         <div class="form-group">
           <label>Available Sizes & Extra Price</label>
           <input type="text" id="pSizes" placeholder="e.g. S:0, M:0, L:50, XL:100">
