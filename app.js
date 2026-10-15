@@ -1541,6 +1541,16 @@ document.addEventListener('DOMContentLoaded', () => {
   menuToggle?.addEventListener('click',()=>{const opened=sidebar?.classList.toggle('mobile-open');menuToggle.setAttribute('aria-expanded',opened?'true':'false');scrim?.classList.toggle('visible',!!opened);});
   scrim?.addEventListener('click',closeMobileMenu);sidebar?.querySelectorAll('a').forEach(link=>link.addEventListener('click',closeMobileMenu));
   document.getElementById('sidebarExpandToggle')?.addEventListener('click',()=>sidebar?.classList.toggle('expanded'));
+  document.addEventListener('click',event=>{
+    if(event.target.closest('[data-close="productModal"]') && window.productGalleryTimer){clearInterval(window.productGalleryTimer);window.productGalleryTimer=null;}
+    const card=event.target.closest('.custom-product-section .product[data-product-id]');
+    if(!card)return;
+    if(event.target.closest('a'))return;
+    const button=event.target.closest('button');
+    if(!button)return;
+    event.preventDefault();
+    window.openProductCustomizer(card.dataset.productId);
+  });
   const searchForm = document.getElementById('storeSearchForm');
   const searchInput = document.getElementById('storeSearchInput');
   if (searchForm && searchInput) {
