@@ -376,11 +376,12 @@ function recalculatePrice() {
 
   const qtyInput = document.getElementById('quantity');
   const qty = Number(qtyInput?.value || 1);
-  currentCalculatedPrice = unitPrice * (qty > 0 ? qty : 1);
+  const safeQty = Number.isFinite(qty) && qty > 0 ? Math.floor(qty) : 1;
+  currentCalculatedPrice = Math.round((unitPrice * safeQty) * 100) / 100;
 
   const priceDisp = document.getElementById('customPriceDisplay');
   if (priceDisp) {
-    priceDisp.innerText = `₹${currentCalculatedPrice} (₹${unitPrice} / item)`;
+    priceDisp.innerText = `₹${currentCalculatedPrice.toLocaleString('en-IN')} total (${safeQty} × ₹${unitPrice.toLocaleString('en-IN')} per item)`;
   }
 }
 
@@ -423,7 +424,12 @@ if (addCustomBtn) {
     const sizeChoice=document.getElementById('sizeSelect'),qualityChoice=document.getElementById('qualitySelect');
     const chosenSize=selectedProduct.sizes?.length&&sizeChoice?.value!==''?selectedProduct.sizes[Number(sizeChoice.value)]?.name||'':'';
     const chosenQuality=selectedProduct.qualities?.length&&qualityChoice?.value!==''?selectedProduct.qualities[Number(qualityChoice.value)]?.name||'':'';
-    cart.push({productId:selectedProduct.id,name:selectedProduct.name,imageUrl:selectedProduct.imageUrl||'',pType:selectedProduct.pType||'customizable',size:chosenSize,quality:chosenQuality,quantity:qty,totalPrice:currentCalculatedPrice,
+    const safeQty = Math.max(1, Math.floor(Number(qty) || 1));
+    const unitPrice = Number(selectedProduct.price || 0)
+      + Number(selectedProduct.sizes?.length && sizeChoice?.value !== '' ? selectedProduct.sizes[Number(sizeChoice.value)]?.extra || 0 : 0)
+      + Number(selectedProduct.qualities?.length && qualityChoice?.value !== '' ? selectedProduct.qualities[Number(qualityChoice.value)]?.extra || 0 : 0);
+    const lineTotal = Math.round(unitPrice * safeQty * 100) / 100;
+    cart.push({productId:selectedProduct.id,name:selectedProduct.name,imageUrl:selectedProduct.imageUrl||'',pType:selectedProduct.pType||'customizable',size:chosenSize,quality:chosenQuality,quantity:safeQty,unitPrice,totalPrice:lineTotal,
       personalMessage: personalMessage,
       frontArtwork: frontSnapshot,
       backArtwork: selectedProduct.hasBack ? backSnapshot : null,
@@ -1459,12 +1465,18 @@ window.updateCartUI = function() {
   if (cartItemsContainer) {
     let grandTotal = 0;
     cartItemsContainer.innerHTML = cart.map((item, index) => {
-      grandTotal += item.totalPrice;
+      const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
+      const unit = Number(item.unitPrice ?? (Number(item.totalPrice || 0) / qty));
+      const lineTotal = Math.round(unit * qty * 100) / 100;
+      item.quantity = qty;
+      item.unitPrice = unit;
+      item.totalPrice = lineTotal;
+      grandTotal += lineTotal;
       return `
-        <div style="border-bottom: 1px solid #eee; padding: 10px 0; display:flex; justify-content:space-between; align-items:center;">
+        <div style="border-bottom: 1px solid #eee; padding: 10px 0; display:flex; justify-content:space-between; align-items:center;gap:12px;">
           <div>
-            <b>${item.name}</b> (Qty: ${item.quantity})<br>
-            <span style="color:#16a34a; font-weight:bold;">₹${item.totalPrice}</span>
+            <b>${item.name}</b><br><small>Qty: ${qty} × ₹${unit.toLocaleString('en-IN')} each</small><br>
+            <span style="color:#16a34a; font-weight:bold;">Line total: ₹${lineTotal.toLocaleString('en-IN')}</span>
           </div>
           <button onclick="removeFromCart(${index})" style="background:#fee2e2; border:none; color:#ef4444; border-radius:4px; padding:4px 8px; cursor:pointer; font-size:12px;">Remove</button>
         </div>
