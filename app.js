@@ -570,8 +570,9 @@ function updateCheckoutSummary() {
   const payButton=document.getElementById('placeOrderBtn');
   if(payButton)payButton.textContent=method==='card'?'Pay by card · ₹'+total+' →':method==='cod'?'Place COD order · ₹'+total+' →':'Pay with UPI · ₹'+total+' →';
 }
-if (checkoutButton) checkoutButton.addEventListener('click', () => {
+if (checkoutButton) checkoutButton.addEventListener('click', async () => {
   if (!cart.length) { alert('Your bag is empty.'); return; }
+  if (typeof auth.authStateReady === 'function') await auth.authStateReady();
   if (!auth.currentUser) {
     const returnTo = encodeURIComponent('index.html?checkout=1');
     location.href = 'customer-login.html?next=' + returnTo;
@@ -1363,6 +1364,22 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   loadProducts();
   window.updateCartUI();
+  if (new URLSearchParams(location.search).get('checkout') === '1') {
+    (async () => {
+      try {
+        if (typeof auth.authStateReady === 'function') await auth.authStateReady();
+        if (auth.currentUser && cart.length) {
+          refreshSavedAddresses();
+          updateCheckoutSummary();
+          setCheckoutStage(1);
+          openModal('checkoutModal');
+        } else if (!cart.length) {
+          alert('Your bag is empty. Please add your products again.');
+        }
+        history.replaceState(null, '', location.pathname + location.hash);
+      } catch (err) { console.error('Could not resume checkout after login:', err); }
+    })();
+  }
   const storeSidebar=document.getElementById('storeSidebar'),expandSidebar=document.getElementById('sidebarExpandToggle');
   const setSidebarExpanded=expanded=>{storeSidebar?.classList.toggle('expanded',!!expanded);expandSidebar?.setAttribute('aria-expanded',String(!!expanded));};
   storeSidebar?.addEventListener('mouseenter',()=>setSidebarExpanded(true));
