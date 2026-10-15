@@ -69,7 +69,8 @@ async function loadProducts() {
         sizes: item.sizes || [],
         qualities: item.qualities || [],
         stockStatus: item.stockStatus || "in_stock",
-        stockQuantity: Number(item.stockQuantity ?? 1)
+        stockQuantity: Number(item.stockQuantity ?? 1),
+        allowCod: item.allowCod === true
       });
     });
   } catch (err) {
@@ -630,6 +631,16 @@ function updateCheckoutSummary() {
     const name=String(item.name||'Product').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
     return '<article class="checkout-item-row"><img src="'+image+'" alt=""><div class="checkout-item-info"><b>'+name+'</b><small>'+options+'</small><small>Qty: '+Number(item.quantity||1)+'</small></div><strong>₹'+Number(item.totalPrice||0)+'</strong></article>';
   }).join('')||'<p class="help-text">Your cart is empty.</p>';
+  const codAvailable = cart.length > 0 && cart.every(item => { const product=allProductsList.find(p=>String(p.id)===String(item.productId)); return product?.allowCod === true; });
+  const codChoice = checkoutForm?.querySelector('input[name="paymentMethod"][value="cod"]');
+  const codLabel = codChoice?.closest('.payment-choice');
+  if (codChoice) {
+    codChoice.disabled = !codAvailable;
+    if (!codAvailable && codChoice.checked) { const online=checkoutForm.querySelector('input[name="paymentMethod"][value="upi"]'); if(online) online.checked=true; }
+  }
+  if (codLabel) { codLabel.style.display = codAvailable ? '' : 'none'; codLabel.setAttribute('aria-hidden',String(!codAvailable)); }
+  const codNote=document.getElementById('codAvailabilityNote');
+  if(codNote)codNote.textContent=codAvailable?'Cash on Delivery is enabled for every product in your bag.':'Cash on Delivery is shown only for products enabled by the store.';
   const subtotal=cart.reduce((s,x)=>s+Number(x.totalPrice||0),0),method=document.querySelector('input[name="paymentMethod"]:checked')?.value||'upi',charge=method==='cod'?1000:0,discount=couponDiscount(subtotal),total=Math.max(0,subtotal-discount)+charge;
   document.getElementById('checkoutPayTotal').textContent='₹'+total;
   const cs=document.getElementById('deliveryChargeSummary');if(cs)cs.innerHTML='Product subtotal: ₹'+subtotal+'<br>Coupon discount'+(appliedCoupon?' ('+appliedCoupon.code+' · '+appliedCoupon.percent+'%)':'')+': −₹'+discount+'<br>COD/delivery charge: ₹'+charge+'<br><b>Total payable: ₹'+total+'</b>';
@@ -749,6 +760,7 @@ if(checkoutForm) checkoutForm.onsubmit=async e=>{
   const a=addressFields();
   const paymentMethod=checkoutForm.querySelector('input[name="paymentMethod"]:checked')?.value;
   if(!['upi','card','cod'].includes(paymentMethod))return alert('Choose UPI, card or Cash on Delivery.');
+  if(paymentMethod==='cod' && !cart.length || paymentMethod==='cod' && !cart.every(item => { const product=allProductsList.find(p=>String(p.id)===String(item.productId)); return product?.allowCod===true; })) return alert('Cash on Delivery is not enabled for every product in your bag. Please choose UPI or card.');
   const status=document.getElementById('paymentStatus'),button=document.getElementById('placeOrderBtn');
   button.disabled=true;
   button.textContent=paymentMethod==='cod'?'Placing COD order…':'Connecting securely…';
@@ -1010,6 +1022,7 @@ async function initAdminPanel() {
     document.querySelector('#productsTab h3').textContent = 'Add a product';
     if (pTypeSelect && customOnlyFields) customOnlyFields.style.display = 'block';
     const backChoice = document.getElementById('pHasBack'); if (backChoice) backChoice.checked = false;
+    const codToggle = document.getElementById('pAllowCod'); if (codToggle) codToggle.checked = false;
   }
 
   document.getElementById('cancelEditProductBtn')?.addEventListener('click', resetProductEditor);
@@ -1032,8 +1045,9 @@ async function initAdminPanel() {
       const extraGalleryImages = await Promise.all([2,3,4,5].map(async n => await getImageValue('pGallery'+n+'File', 'pGallery'+n, previous.galleryImages?.[n-1] || '')));
       const stockStatus = document.getElementById('pStockStatus')?.value || previous.stockStatus || "in_stock";
       const stockQuantity = Math.max(0, Number(document.getElementById('pStockQuantity')?.value ?? previous.stockQuantity ?? 1));
+      const allowCod = document.getElementById('pAllowCod')?.checked === true;
       const productData = {
-        pType, name, price, description, category, storefrontSection, stockStatus, stockQuantity,
+        pType, name, price, description, category, storefrontSection, stockStatus, stockQuantity, allowCod,
         imageUrl: mainImageUrl,
         galleryImages: [mainImageUrl, ...extraGalleryImages].filter(Boolean).slice(0,5),
         backImageUrl: await getImageValue('pBackImgFile', 'pBackImg', previous.backImageUrl),
@@ -1091,6 +1105,7 @@ async function initAdminPanel() {
       if (backPreview && p.backImageUrl) { backPreview.src=p.backImageUrl; backPreview.style.display='block'; }
       else if (backPreview) { backPreview.src=''; backPreview.style.display='none'; }
       document.getElementById('pHasBack').checked = !!p.hasBack;
+      const codToggle = document.getElementById('pAllowCod'); if (codToggle) codToggle.checked = p.allowCod === true;
       document.getElementById('pSizes').value = formatOptions(p.sizes);
       document.getElementById('pQualities').value = formatOptions(p.qualities);
       if(document.getElementById('pStockStatus'))document.getElementById('pStockStatus').value=p.stockStatus||"in_stock";
