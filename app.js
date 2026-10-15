@@ -108,7 +108,9 @@ function renderProducts(products,targetId='productGrid'){
  if(!products.length){container.innerHTML=dogNoResultsMarkup();return;}
  container.innerHTML=products.map(p=>{
   const out=p.stockStatus==="out_of_stock"||Number(p.stockQuantity)===0;
-  return `<article class="product" data-product-id="${escapeStoreText(p.id)}"><div class="product-image-wrap"><img loading="lazy" src="${escapeStoreText(productPreviewImage(p))}" alt="${escapeStoreText(p.name)}"></div><div class="product-details"><h3>${escapeStoreText(p.name)}</h3><p>${escapeStoreText(p.description)}</p><div class="product-price">Starting ₹${Number(p.price)||0}</div><p class="return-policy-note">7-day return policy after delivery</p><div class="product-delivery-date">Estimated delivery: <b>${getEstimatedDeliveryDate()}</b></div>${out?'<span class="out-of-stock-badge">Out of stock</span>':`<button class="primary-button full" type="button" onclick="openProductCustomizer('${String(p.id).replace(/'/g,"\\'")}')">${p.pType==='stock'?'Select & Buy →':'Customize & Design →'}</button>`}</div></article>`;
+  const gallery=(Array.isArray(p.galleryImages)?p.galleryImages:[]).filter(Boolean);
+  const main=p.imageUrl||gallery[0]||productPreviewImage(p);
+  return `<article class="product" data-product-id="${escapeStoreText(p.id)}"><button type="button" class="product-open-detail" onclick="openProductCustomizer('${String(p.id).replace(/'/g,"\\'")}')" aria-label="View ${escapeStoreText(p.name)}"><div class="product-image-wrap"><img loading="lazy" src="${escapeStoreText(main)}" alt="${escapeStoreText(p.name)}"></div><div class="product-details"><h3>${escapeStoreText(p.name)}</h3><p>${escapeStoreText(p.description)}</p><div class="product-price">₹${Number(p.price)||0}</div>${p.pType==="stock"?'<p class="return-policy-note">7-day return policy after delivery</p>':""}</div></button><div class="product-card-actions">${out?'<span class="out-of-stock-badge">Out of stock</span>':`<button class="primary-button full" type="button" onclick="openProductCustomizer('${String(p.id).replace(/'/g,"\\'")}')">${p.pType==='stock'?'View & Buy →':'View Product →'}</button>`}</div></article>`;
  }).join('');
 }
 function renderDynamicCategories(){const target=document.getElementById('dynamicCategories'),nav=document.getElementById('dynamicCategoryNav');const counts=new Map();allProductsList.forEach(p=>{if(p.category)counts.set(p.category,(counts.get(p.category)||0)+1);});const names=[...counts.keys()].filter(name=>counts.get(name)>0);if(target)target.innerHTML=names.map(category=>`<a class="category" href="all-products.html?category=${encodeURIComponent(category)}"><div class="category-visual cat-card">✦</div><b>${escapeStoreText(category)}</b><span>Explore products →</span></a>`).join('')||'<p class="help-text">Categories appear here when products are assigned.</p>';if(nav)nav.innerHTML=names.map(category=>`<a href="all-products.html?category=${encodeURIComponent(category)}">${escapeStoreText(category)}</a>`).join('');}
@@ -122,6 +124,15 @@ window.openProductCustomizer = function(productId) {
   if (selectedProduct.stockStatus === "out_of_stock" || Number(selectedProduct.stockQuantity) === 0) { alert("This product is out of stock and cannot be ordered."); return; }
 
   document.getElementById('customTitle').innerText = selectedProduct.name;
+  const modalCard=document.querySelector('#productModal .modal-card');
+  if(modalCard)modalCard.classList.toggle('stock-product-detail',selectedProduct.pType==='stock');
+  const gallery=(Array.isArray(selectedProduct.galleryImages)?selectedProduct.galleryImages:[]).filter(Boolean);
+  const mainImage=selectedProduct.imageUrl||gallery[0]||productPreviewImage(selectedProduct);
+  let galleryHost=document.getElementById('productDetailGallery');
+  if(!galleryHost){galleryHost=document.createElement('div');galleryHost.id='productDetailGallery';document.getElementById('customTitle')?.parentNode?.insertBefore(galleryHost,document.getElementById('customTitle'));}
+  const urls=[...new Set([mainImage,...gallery].filter(Boolean))];
+  galleryHost.innerHTML='<div class="detail-gallery"><div class="detail-main-image"><img id="detailMainImage" src="'+escapeStoreText(mainImage)+'" alt="'+escapeStoreText(selectedProduct.name)+'"></div><div class="detail-thumbnails">'+urls.map((url,i)=>'<button type="button" class="detail-thumb '+(!i?'active':'')+'" data-detail-image="'+escapeStoreText(url)+'"><img src="'+escapeStoreText(url)+'" alt="Product view '+(i+1)+'"></button>').join('')+'</div></div>';
+  galleryHost.querySelectorAll('[data-detail-image]').forEach(btn=>btn.addEventListener('click',()=>{const image=document.getElementById('detailMainImage');if(image)image.src=btn.dataset.detailImage;galleryHost.querySelectorAll('.detail-thumb').forEach(x=>x.classList.toggle('active',x===btn));}));
   const formatHint = document.getElementById('canvasFormatHint');
   if (formatHint) formatHint.textContent = 'A4 Portrait · Product photo preview · add your text/photo';
   const deliveryHint = document.getElementById('customizerDeliveryDate');
@@ -859,6 +870,22 @@ async function initAdminPanel() {
   if (!adminAddForm) return;
 
   let editingProductId = null;
+  const categorySelect=document.getElementById('pCategory'),categoryForm=document.getElementById('categoryAdminForm'),categoryList=document.getElementById('adminCategoriesList');
+  async function refreshAdminCategories(selected='') {
+    if(!categorySelect&&!categoryList)return;
+    try {
+      const snap=await getDocs(collection(db,'categories'));
+      const cats=snap.docs.map(d=>({id:d.id,name:String(d.data().name||'').trim()})).filter(c=>c.name).sort((a,b)=>a.name.localeCompare(b.name));
+      const productCats=(await getDocs(collection(db,'products'))).docs.map(d=>String(d.data().category||'').trim()).filter(Boolean);
+      const names=[...new Set([...cats.map(c=>c.name),...productCats])].sort((a,b)=>a.localeCompare(b));
+      if(categorySelect)categorySelect.innerHTML='<option value="">No category</option>'+names.map(n=>'<option value="'+escapeStoreText(n)+'">'+escapeStoreText(n)+'</option>').join('');
+      if(categorySelect&&selected)categorySelect.value=selected;
+      if(categoryList)categoryList.innerHTML=names.length?names.map(name=>{const c=cats.find(x=>x.name===name);return '<div class="order-list-item" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px"><b>'+escapeStoreText(name)+'</b>'+(c?'<button type="button" class="btn btn-danger delete-category" data-id="'+escapeStoreText(c.id)+'" data-name="'+escapeStoreText(name)+'">Delete category</button>':'<small>Existing product category</small>')+'</div>';}).join(''):'<p class="help-text">No categories yet. Add one above.</p>';
+      categoryList?.querySelectorAll('.delete-category').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Delete category "'+btn.dataset.name+'"? Assigned products will remain unchanged.'))return;try{await deleteDoc(doc(db,'categories',btn.dataset.id));await refreshAdminCategories();}catch(err){alert('Could not delete category: '+err.message);}}));
+    }catch(err){if(categoryList)categoryList.textContent='Could not load categories: '+err.message;}
+  }
+  categoryForm?.addEventListener('submit',async e=>{e.preventDefault();const input=document.getElementById('categoryAdminName');const name=input.value.trim();if(!name)return;try{const snap=await getDocs(collection(db,'categories'));if(snap.docs.some(d=>String(d.data().name||'').toLowerCase()===name.toLowerCase())){alert('This category already exists.');return;}await addDoc(collection(db,'categories'),{name,createdAt:new Date().toISOString()});input.value='';await refreshAdminCategories(name);}catch(err){alert('Could not add category: '+err.message);}});
+  refreshAdminCategories();
 
   const frontImageFile = document.getElementById('pImgFile');
   const frontImageUrl = document.getElementById('pImg');
@@ -927,13 +954,13 @@ async function initAdminPanel() {
       image.onerror = () => reject(new Error('Could not open selected image.'));
       image.src = dataUrl;
     });
-    const maxSide = 1000;
+    const maxSide = 2400;
     const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
     const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(img.width * scale));
     canvas.height = Math.max(1, Math.round(img.height * scale));
     canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL('image/jpeg', 0.72);
+    return canvas.toDataURL('image/jpeg', 0.9);
   }
 
   async function getImageValue(fileId, urlId, previousValue = '') {
@@ -1447,6 +1474,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (event.target.classList?.contains('modal')) window.closeModal(event.target.id);
   });
+  const menuToggle=document.getElementById('storeMenuToggle'),sidebar=document.getElementById('storeSidebar'),scrim=document.getElementById('sidebarScrim');
+  const closeMobileMenu=()=>{sidebar?.classList.remove('mobile-open');menuToggle?.setAttribute('aria-expanded','false');scrim?.classList.remove('visible');};
+  menuToggle?.addEventListener('click',()=>{const opened=sidebar?.classList.toggle('mobile-open');menuToggle.setAttribute('aria-expanded',opened?'true':'false');scrim?.classList.toggle('visible',!!opened);});
+  scrim?.addEventListener('click',closeMobileMenu);sidebar?.querySelectorAll('a').forEach(link=>link.addEventListener('click',closeMobileMenu));
+  document.getElementById('sidebarExpandToggle')?.addEventListener('click',()=>sidebar?.classList.toggle('expanded'));
   const searchForm = document.getElementById('storeSearchForm');
   const searchInput = document.getElementById('storeSearchInput');
   if (searchForm && searchInput) {
