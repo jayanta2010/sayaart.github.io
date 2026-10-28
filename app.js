@@ -906,6 +906,20 @@ async function initAdminPanel() {
   const couponAdminForm = document.getElementById('couponAdminForm');
   const pTypeSelect = document.getElementById('pType');
   const customOnlyFields = document.getElementById('customOnlyFields');
+  const gameEnabledInput=document.getElementById('adminGameEnabled');
+  const saveGameSettingsBtn=document.getElementById('saveGameSettings');
+  const gameSettingsMessage=document.getElementById('gameSettingsMessage');
+  if(gameEnabledInput&&saveGameSettingsBtn){
+    try{const gameSetting=await getDoc(doc(db,'siteSettings','miniGames'));gameEnabledInput.checked=gameSetting.exists()?gameSetting.data().snakeEnabled!==false:true}
+    catch(err){if(gameSettingsMessage)gameSettingsMessage.textContent='Could not load setting: '+err.message}
+    saveGameSettingsBtn.addEventListener('click',async()=>{
+      saveGameSettingsBtn.disabled=true;if(gameSettingsMessage)gameSettingsMessage.textContent='Saving…';
+      try{await setDoc(doc(db,'siteSettings','miniGames'),{snakeEnabled:gameEnabledInput.checked,updatedAt:new Date().toISOString()},{merge:true});if(gameSettingsMessage)gameSettingsMessage.textContent=gameEnabledInput.checked?'Snake Game is ON for the website.':'Snake Game is OFF for the website.'}
+      catch(err){if(gameSettingsMessage)gameSettingsMessage.textContent='Could not save setting: '+err.message}
+      finally{saveGameSettingsBtn.disabled=false}
+    });
+  }
+
 
   if (pTypeSelect && customOnlyFields) {
     pTypeSelect.addEventListener('change', (e) => {
@@ -1518,6 +1532,11 @@ window.closeDrawer = function(id) {
 
 // Application Initialization
 document.addEventListener('DOMContentLoaded', () => {
+  getDoc(doc(db,'siteSettings','miniGames')).then(setting=>{
+    const wrap=document.querySelector('.mini-game-wrap');
+    if(wrap)wrap.hidden=setting.exists()&&setting.data().snakeEnabled===false;
+  }).catch(err=>console.warn('Could not load mini-game setting:',err));
+
   // Bind the cart trigger explicitly so the header button always opens the drawer.
   const cartTrigger = document.getElementById('openCart');
   cartTrigger?.addEventListener('click', event => {
