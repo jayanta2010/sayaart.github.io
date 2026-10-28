@@ -64,6 +64,7 @@
       <button class="tab-btn" type="button" data-tab="returnsTab" role="tab" aria-selected="false">↩ &nbsp; Returns</button>
       <button class="tab-btn" type="button" data-tab="categoriesTab" role="tab" aria-selected="false">▤ &nbsp; Categories</button>
       <button class="tab-btn" type="button" data-tab="couponsTab" role="tab" aria-selected="false">％ &nbsp; Coupon Codes</button>
+      <button class="tab-btn" type="button" data-tab="gameSettingsTab" role="tab" aria-selected="false">● &nbsp; Website Games</button>
     </div>
 
     <!-- Products Panel -->
@@ -193,7 +194,12 @@
     </div>
   </div>
 
-  <script type="module" src="app.js?v=20261015-10"></script>
+    <div id="gameSettingsTab" class="panel">
+      <h3>Website mini-game</h3><p class="section-intro">Turn the Snake-game dot on or off for all website visitors.</p>
+      <div class="order-list-item" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap"><div><strong>Snake Game</strong><p class="section-intro" style="margin:5px 0 0">When disabled, the game dot and panel are hidden on the main website.</p></div><label style="display:flex;align-items:center;gap:10px;font-weight:700"><input id="adminGameEnabled" type="checkbox" checked> Game enabled</label></div>
+      <button type="button" class="btn" id="saveGameSettings" style="margin-top:14px">Save game setting</button><p id="gameSettingsMessage" class="help-text" role="status"></p>
+    </div>
+  <script type="module" src="app.js?v=20261028-1"></script>
   <script>
     document.querySelectorAll('[data-tab]').forEach(button => {
       button.addEventListener('click', () => {
