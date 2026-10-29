@@ -8,7 +8,10 @@ body{margin:0;min-height:100vh;font-family:Inter,Arial,sans-serif;color:var(--in
 .brand-panel{position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;min-height:calc(100vh - 48px);padding:clamp(30px,5vw,72px);border-radius:28px;color:white;background:radial-gradient(circle at 85% 18%,#55b5e9 0,transparent 26%),linear-gradient(145deg,#0c354c,#126b9d 65%,#1a8dc5)}
 .brand-panel:after{content:"";position:absolute;width:420px;height:420px;border:1px solid #ffffff2b;border-radius:50%;right:-130px;bottom:-100px;box-shadow:0 0 0 50px #ffffff08,0 0 0 100px #ffffff06}
 .logo-row{display:flex;align-items:center;gap:16px;position:relative;z-index:1}.logo{width:82px;height:82px;object-fit:contain;background:#fff;border-radius:18px;padding:7px;box-shadow:0 10px 28px #002a463b}.brand-name{font-weight:850;font-size:clamp(19px,2vw,27px);line-height:1.18;letter-spacing:.2px}.brand-tag{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:#ccecff;margin-top:7px}
-.brand-copy{position:relative;z-index:1;max-width:560px;margin:70px 0}.eyebrow{font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#b8e5ff}.brand-copy h1{font-size:clamp(36px,4.4vw,65px);line-height:1.04;letter-spacing:-2px;margin:18px 0}.brand-copy p{font-size:17px;line-height:1.75;color:#e1f3ff;max-width:440px}.perks{display:grid;gap:15px;position:relative;z-index:1}.perk{display:flex;align-items:center;gap:12px;color:#e9f7ff;font-size:14px}.check{display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;border-radius:50%;background:#ffffff1c;border:1px solid #ffffff45}
+.brand-copy{position:relative;z-index:1;max-width:560px;margin:70px 0}.eyebrow{font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#b8e5ff}.brand-copy h1{font-size:clamp(36px,4.4vw,65px);line-height:1.04;letter-spacing:-2px;margin:18px 0}.brand-copy p{font-size:17px;line-height:1.75;color:#e1f3ff;max-width:440px}.perks{display:grid;gap:15px;position:relative;z-index:1}
+.dog-mascot{position:absolute;z-index:2;width:190px;height:205px;right:18px;bottom:18px;pointer-events:none;transform:translate3d(0,0,0);transition:transform .22s ease;filter:drop-shadow(0 12px 12px #062d4833)}
+.dog-mascot svg{width:100%;height:100%;overflow:visible}.dog-pupil{transition:transform .12s ease}.dog-paw{transform-origin:center;transition:transform .25s ease}.dog-mascot.cover-eyes .dog-paw.left{transform:translate(12px,-29px) rotate(15deg)}.dog-mascot.cover-eyes .dog-paw.right{transform:translate(-12px,-29px) rotate(-15deg)}.dog-mascot.cover-eyes .dog-eye{opacity:0}
+@media(max-width:900px){.dog-mascot{display:none}}.perk{display:flex;align-items:center;gap:12px;color:#e9f7ff;font-size:14px}.check{display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;border-radius:50%;background:#ffffff1c;border:1px solid #ffffff45}
 .right{display:grid;place-items:center;padding:22px}.auth-card{width:min(100%,510px);padding:clamp(25px,4vw,46px);background:#fff;border:1px solid #e3ebf1;border-radius:24px;box-shadow:0 20px 65px #1b476b12}.mobile-brand{display:none}.auth-card h2{font-size:32px;letter-spacing:-.8px;margin:0 0 9px}.sub{font-size:14px;line-height:1.65;color:var(--muted);margin:0 0 25px}
 .tabs{display:flex;padding:5px;background:#f0f5f8;border-radius:12px;gap:4px;margin:0 0 25px}.tab{flex:1;border:0;border-radius:9px;padding:12px 8px;background:transparent;color:#526b7c;font-weight:750;cursor:pointer}.tab.active{background:white;color:var(--blue);box-shadow:0 2px 8px #153d5515}
 .field{margin:16px 0}.field label{display:block;font-size:13px;font-weight:750;margin-bottom:8px}.field input{width:100%;padding:14px 15px;border:1px solid #cfdae3;border-radius:11px;background:#fff;font-size:15px;outline:none;transition:.18s}.field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #1677b81c}.input-help{font-size:12px;color:var(--muted);margin:7px 0 0}
@@ -20,6 +23,30 @@ body{margin:0;min-height:100vh;font-family:Inter,Arial,sans-serif;color:var(--in
 <aside class="brand-panel">
 <div class="logo-row"><img class="logo" src="saya-art-advertising-logo.jpg" alt="Saya Art & Advertising logo" onerror="this.style.display='none'"><div><div class="brand-name">SAYA ART<br>&amp; ADVERTISING</div><div class="brand-tag">Print · Create · Inspire</div></div></div>
 <div class="brand-copy"><div class="eyebrow">Welcome to your creative store</div><h1>Your ideas.<br>Beautifully printed.</h1><p>Sign in to manage your designs, track orders, save addresses and enjoy a smoother shopping experience.</p></div>
+<div class="dog-mascot" id="dogMascot" aria-hidden="true">
+<svg viewBox="0 0 220 235" xmlns="http://www.w3.org/2000/svg">
+<ellipse cx="110" cy="220" rx="68" ry="9" fill="#052b42" opacity=".22"/>
+<!-- floppy ears and head -->
+<path d="M61 56C37 27 19 50 28 91c5 26 19 46 40 42l13-48z" fill="#171e24" stroke="#080f14" stroke-width="3"/>
+<path d="M159 56c24-29 42-6 33 35-5 26-19 46-40 42l-13-48z" fill="#171e24" stroke="#080f14" stroke-width="3"/>
+<path d="M54 62C39 48 34 64 41 91c4 14 11 22 20 24" fill="none" stroke="#343c43" stroke-width="5" stroke-linecap="round"/>
+<path d="M166 62c15-14 20 2 13 29-4 14-11 22-20 24" fill="none" stroke="#343c43" stroke-width="5" stroke-linecap="round"/>
+<path d="M61 47Q110 15 159 47c20 17 25 47 16 79-9 34-34 55-65 55s-56-21-65-55c-9-32-4-62 16-79z" fill="#20282e" stroke="#0b1116" stroke-width="4"/>
+<path d="M66 118c4-26 22-37 44-36 22-1 40 10 44 36 3 25-15 43-44 43s-47-18-44-43z" fill="#303941"/>
+<!-- muzzle -->
+<ellipse cx="110" cy="132" rx="43" ry="32" fill="#b9a99a"/>
+<ellipse cx="82" cy="127" rx="20" ry="17" fill="#cbb9a8"/><ellipse cx="138" cy="127" rx="20" ry="17" fill="#cbb9a8"/>
+<path d="M92 119q18-17 36 0-2 15-18 15t-18-15z" fill="#080d11"/>
+<path d="M110 133v10q-11 12-22 2" fill="none" stroke="#453a35" stroke-width="3" stroke-linecap="round"/><path d="M110 143q11 12 22 2" fill="none" stroke="#453a35" stroke-width="3" stroke-linecap="round"/>
+<!-- eyes -->
+<g class="dog-eye"><ellipse cx="82" cy="88" rx="10" ry="12" fill="#f4e8d2"/><ellipse cx="138" cy="88" rx="10" ry="12" fill="#f4e8d2"/><circle class="dog-pupil" id="dogPupilL" cx="84" cy="89" r="6" fill="#080d11"/><circle class="dog-pupil" id="dogPupilR" cx="136" cy="89" r="6" fill="#080d11"/><circle cx="86" cy="86" r="2" fill="#fff"/><circle cx="138" cy="86" r="2" fill="#fff"/></g>
+<!-- body and front paws -->
+<path d="M58 163q-18 18-13 47 3 12 17 12h96q14 0 17-12 5-29-13-47l-20-14H78z" fill="#20282e" stroke="#0b1116" stroke-width="4"/>
+<path d="M79 185q-7 17 2 29M141 185q7 17-2 29" fill="none" stroke="#414a51" stroke-width="5" stroke-linecap="round"/>
+<!-- paws lift to cover eyes when password shown -->
+<g class="dog-paw left"><path d="M55 168q-16-2-21-20-4-15 8-20 11-4 18 10l13 20q-2 13-18 10z" fill="#171e24" stroke="#080f14" stroke-width="3"/><path d="M43 143l9 12M52 139l8 12" stroke="#3e474d" stroke-width="3" stroke-linecap="round"/></g>
+<g class="dog-paw right"><path d="M165 168q16-2 21-20 4-15-8-20-11-4-18 10l-13 20q2 13 18 10z" fill="#171e24" stroke="#080f14" stroke-width="3"/><path d="M177 143l-9 12M168 139l-8 12" stroke="#3e474d" stroke-width="3" stroke-linecap="round"/></g>
+</svg></div>
 <div class="perks"><div class="perk"><span class="check">✓</span> Track orders and delivery updates</div><div class="perk"><span class="check">✓</span> Save your favourite designs and addresses</div><div class="perk"><span class="check">✓</span> Secure account access with mobile verification</div></div>
 </aside>
 <section class="right"><main class="auth-card">
@@ -39,11 +66,16 @@ import {getAuth,RecaptchaVerifier,signInWithPhoneNumber,onAuthStateChanged,signI
 const firebaseConfig={apiKey:"AIzaSyC6CxokC0KwAtP9EMilEQHMJQKWCgLWYJc",authDomain:"sayaart.firebaseapp.com",projectId:"sayaart",storageBucket:"sayaart.firebasestorage.app",messagingSenderId:"805892692460",appId:"1:805892692460:web:417ef9926bbc01d9f288c9"};
 const app=initializeApp(firebaseConfig),auth=getAuth(app);
 const $=id=>document.getElementById(id),status=$("status");let verifier=null,signupConfirmation=null,otpConfirmation=null,forgotConfirmation=null,signupVerifiedUser=null;
+const dog=$("dogMascot"),brandPanel=document.querySelector(".brand-panel");
+function dogLookAt(x,y){if(!dog||!brandPanel)return;const r=brandPanel.getBoundingClientRect();const nx=Math.max(-42,Math.min(42,(x-r.left-r.width*.78)*.16));const ny=Math.max(-28,Math.min(22,(y-r.top-r.height*.76)*.12));dog.style.transform="translate3d("+nx+"px,"+ny+"px,0)";const px=Math.max(-3,Math.min(3,nx*.09)),py=Math.max(-3,Math.min(3,ny*.08));$("dogPupilL").style.transform="translate("+px+"px,"+py+"px)";$("dogPupilR").style.transform="translate("+px+"px,"+py+"px)"}
+if(dog&&brandPanel){brandPanel.addEventListener("mousemove",e=>dogLookAt(e.clientX,e.clientY));document.addEventListener("mousemove",e=>{if(e.target.closest(".field input"))dogLookAt(e.clientX,e.clientY)});document.querySelectorAll('input[type="password"]').forEach(input=>{input.addEventListener("focus",()=>dog.classList.remove("cover-eyes"));input.addEventListener("input",()=>{dog.classList.remove("cover-eyes")})});}
 function say(t,k=""){status.className="status "+k;status.textContent=t}
 function normalizePhone(v){let n=String(v||"").trim().replace(/[\s()-]/g,"");if(/^\d{10}$/.test(n))n="+91"+n;else if(/^91\d{10}$/.test(n))n="+"+n;return /^\+[1-9]\d{7,14}$/.test(n)?n:null}
 function aliasForPhone(p){return "m"+p.replace(/\D/g,"")+"@customers.sayaart.com"}
 function makeVerifier(container){if(verifier){try{verifier.clear()}catch{}verifier=null}verifier=new RecaptchaVerifier(auth,container,{size:"normal"});return verifier}
 function showPanel(id){document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id===id));document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));say("");}
+function setPasswordReveal(input,visible){if(!dog)return;dog.classList.toggle("cover-eyes",visible);if(visible){dog.style.transform="translate3d(0,-8px,0)";} }
+document.querySelectorAll('input[type="password"]').forEach(input=>{const wrap=document.createElement("div");wrap.style.position="relative";input.parentNode.insertBefore(wrap,input);wrap.appendChild(input);input.style.paddingRight="48px";const eye=document.createElement("button");eye.type="button";eye.setAttribute("aria-label","Show password");eye.title="Show password";eye.textContent="◉";eye.style.cssText="position:absolute;right:10px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:#527083;font-size:19px;cursor:pointer;padding:5px 7px";wrap.appendChild(eye);eye.addEventListener("click",()=>{const reveal=input.type==="password";input.type=reveal?"text":"password";eye.textContent=reveal?"◎":"◉";eye.setAttribute("aria-label",reveal?"Hide password":"Show password");eye.title=reveal?"Hide password":"Show password";setPasswordReveal(input,reveal)});});
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>showPanel(b.dataset.tab)));
 document.querySelectorAll("[data-back-login]").forEach(b=>b.addEventListener("click",()=>showPanel("loginPanel")));
 const nextParam=new URLSearchParams(location.search).get("next");
