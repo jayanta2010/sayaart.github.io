@@ -5,11 +5,10 @@
 *{box-sizing:border-box} :root{--navy:#103d55;--blue:#1677b8;--pale:#edf7ff;--ink:#172b3a;--muted:#627687;--line:#d9e5ed}
 body{margin:0;min-height:100vh;font-family:Inter,Arial,sans-serif;color:var(--ink);background:#f5f8fb}
 .page{min-height:100vh;display:grid;grid-template-columns:minmax(340px,1fr) minmax(440px,1fr);padding:24px;gap:24px;max-width:1500px;margin:auto}
-.brand-panel,.right{transition:transform .55s cubic-bezier(.2,.75,.25,1),opacity .35s ease}
-.page.signup-layout .brand-panel{order:2;animation:panelFlipIn .55s ease both}
-.page.signup-layout .right{order:1;animation:panelFlipIn .55s ease both}
-@keyframes panelFlipIn{0%{transform:rotateY(12deg) scale(.985);opacity:.72}100%{transform:rotateY(0) scale(1);opacity:1}}
-.page:not(.signup-layout) .brand-panel,.page:not(.signup-layout) .right{order:initial}
+.brand-panel,.right{will-change:transform}
+.page.signup-layout .brand-panel{order:2}
+.page.signup-layout .right{order:1}
+@media(prefers-reduced-motion:reduce){.brand-panel,.right{will-change:auto}}
 
 .brand-panel{position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;min-height:calc(100vh - 48px);padding:clamp(30px,5vw,72px);border-radius:28px;color:white;background:radial-gradient(circle at 85% 18%,#55b5e9 0,transparent 26%),linear-gradient(145deg,#0c354c,#126b9d 65%,#1a8dc5)}
 .brand-panel:after{content:"";position:absolute;width:420px;height:420px;border:1px solid #ffffff2b;border-radius:50%;right:-130px;bottom:-100px;box-shadow:0 0 0 50px #ffffff08,0 0 0 100px #ffffff06}
@@ -54,7 +53,7 @@ function say(t,k=""){status.className="status "+k;status.textContent=t}
 function normalizePhone(v){let n=String(v||"").trim().replace(/[\s()-]/g,"");if(/^\d{10}$/.test(n))n="+91"+n;else if(/^91\d{10}$/.test(n))n="+"+n;return /^\+[1-9]\d{7,14}$/.test(n)?n:null}
 function aliasForPhone(p){return "m"+p.replace(/\D/g,"")+"@customers.sayaart.com"}
 function makeVerifier(container){if(verifier){try{verifier.clear()}catch{}verifier=null}verifier=new RecaptchaVerifier(auth,container,{size:"normal"});return verifier}
-function showPanel(id){document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id===id));document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));const page=document.querySelector(".page");const signupFlow=id==="signupPanel"||(id==="otpPanel"&&!!$("otpForm").dataset.signupPassword);page.classList.toggle("signup-layout",signupFlow);say("");}
+function showPanel(id){const page=document.querySelector(".page"),brand=page.querySelector(".brand-panel"),right=page.querySelector(".right");const signupFlow=id==="signupPanel"||(id==="otpPanel"&&!!$("otpForm").dataset.signupPassword);const reduceMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;const before=reduceMotion?null:[brand.getBoundingClientRect(),right.getBoundingClientRect()];document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id===id));document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));page.classList.toggle("signup-layout",signupFlow);if(before){[brand,right].forEach((el,i)=>{const after=el.getBoundingClientRect(),dx=before[i].left-after.left,dy=before[i].top-after.top;if(Math.abs(dx)>1||Math.abs(dy)>1){el.animate([{transform:"translate("+dx+"px,"+dy+"px)"},{transform:"translate(0,0)"}],{duration:680,easing:"cubic-bezier(.22,.75,.18,1)",fill:"none"});}})}say("");}
 function setPasswordReveal(input,visible){}
 document.querySelectorAll('input[type="password"]').forEach(input=>{const wrap=document.createElement("div");wrap.style.position="relative";input.parentNode.insertBefore(wrap,input);wrap.appendChild(input);input.style.paddingRight="48px";const eye=document.createElement("button");eye.type="button";eye.setAttribute("aria-label","Show password");eye.title="Show password";eye.textContent="◉";eye.style.cssText="position:absolute;right:10px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:#527083;font-size:19px;cursor:pointer;padding:5px 7px";wrap.appendChild(eye);eye.addEventListener("click",()=>{const reveal=input.type==="password";input.type=reveal?"text":"password";eye.textContent=reveal?"◎":"◉";eye.setAttribute("aria-label",reveal?"Hide password":"Show password");eye.title=reveal?"Hide password":"Show password";setPasswordReveal(input,reveal)});});
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>showPanel(b.dataset.tab)));
