@@ -1,14 +1,14 @@
-# Private HD Design Preview & Client Approval System
+# Private HD Design Preview
 
 ## What this feature adds
 
 - A Private Design Previews tab in the existing admin page.
 - Original JPG/JPEG/PNG/WebP upload (30 MB maximum; no client-side resize or recompression).
-- Per-link expiry, client/reference/message fields, copy and WhatsApp sharing.
+- Simple upload-to-link workflow with configurable expiry, copy link, and WhatsApp sharing. No password or order ID.
 - Private Storage objects, unpredictable 256-bit random tokens, SHA-256 token hashes, and AES-256-GCM-encrypted token recovery for authorized admins.
 - Backend validation on every metadata, image, and response request. Expiry and revocation are checked again before image streaming.
 - Admin-only list, revoke, and permanent delete operations protected by a verified Firebase ID token and the server-side admin: true custom claim.
-- Client zoom, pan, fit/reset, expiry notice, optional WhatsApp contact, approve/request-changes actions, and feedback shown in the admin list.
+- Canva-style client preview with zoom, pan, fit/reset, expiry notice, and optional WhatsApp contact. No approval or feedback workflow.
 - No download button or permanent Firebase download URL. The browser receives the image as a no-store streamed response and displays a temporary browser Blob URL.
 
 ## Important boundaries
@@ -112,7 +112,7 @@ Merge the feature branch into the production branch only after review. GitHub Pa
 3. Choose the original design file, enter client name, optional reference/message, and expiry.
 4. Select Upload design & create private link.
 5. Copy the new link or share it through WhatsApp. The link token is a bearer secret.
-6. Use the generated previews list to copy an active link again, see expiry/approval/feedback, revoke access immediately, or permanently delete the file and record.
+6. Use the generated previews list to copy an active link again, see expiry and access status, revoke access immediately, or permanently delete the file and record.
 
 Links are created from the current site location so the relative GitHub Pages path is preserved. A revoked/expired/invalid link displays a distinct message. A new preview should be created if a client needs a replacement link.
 
@@ -126,7 +126,6 @@ Links are created from the current site location so the relative GitHub Pages pa
 - [ ] An invalid token returns the invalid-link state.
 - [ ] An expired token returns the expired-link state.
 - [ ] Revoking an active link immediately blocks metadata and image requests.
-- [ ] Client approve and request-changes responses appear in the admin list with timestamp/feedback.
 - [ ] Deleting a design removes both its Storage object and Firestore record.
 - [ ] Existing homepage, login, products, cart, checkout, orders, and existing admin tabs still work after merging frontend changes.
 - [ ] Merge the rules snippets into current rules and test all existing collection permissions before publishing rule changes.
