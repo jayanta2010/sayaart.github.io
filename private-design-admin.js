@@ -15,7 +15,6 @@ const API = 'https://us-central1-sayaart.cloudfunctions.net/privateDesignApi';
 const $ = id => document.getElementById(id);
 let activeAdmin = null;
 let lastCreatedLink = '';
-let lastCreatedClientName = '';
 
 function esc(value) {
   return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -54,7 +53,6 @@ function currentExpiry() {
   return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
 }
 function showCreatedLink(data) {
-  lastCreatedClientName = $('pdpClientName').value.trim();
   const link = new URL('private-preview.html', location.href);
   link.hash = data.token;
   lastCreatedLink = link.toString();
@@ -73,11 +71,10 @@ async function loadPreviews() {
     }
     target.innerHTML = data.previews.map(item => {
       const [label, cls] = statusLabel(item);
-      const approval = item.approvalStatus === 'approved' ? 'Approved' : item.approvalStatus === 'changes_requested' ? 'Changes requested' : 'Awaiting client';
       const linkBox = item.previewPath && cls === 'active'
-        ? '<div class="pdp-existing-link"><input readonly value="' + esc(new URL('private-preview.html#' + item.previewToken, location.href).toString()) + '" aria-label="Private preview link"><button class="btn pdp-copy-existing" type="button" data-link="' + esc(new URL('private-preview.html#' + item.previewToken, location.href).toString()) + '">Copy link</button><a class="btn pdp-whatsapp-existing" href="https://wa.me/?text=' + encodeURIComponent('Hello ' + item.clientName + ', here is your private design preview: ' + new URL('private-preview.html#' + item.previewToken, location.href).toString()) + '" target="_blank" rel="noopener noreferrer">WhatsApp</a></div>'
+        ? '<div class="pdp-existing-link"><input readonly value="' + esc(new URL('private-preview.html#' + item.previewToken, location.href).toString()) + '" aria-label="Private preview link"><button class="btn pdp-copy-existing" type="button" data-link="' + esc(new URL('private-preview.html#' + item.previewToken, location.href).toString()) + '">Copy link</button><a class="btn pdp-whatsapp-existing" href="https://wa.me/?text=' + encodeURIComponent('Here is your private HD design preview: ' + new URL('private-preview.html#' + item.previewToken, location.href).toString()) + '" target="_blank" rel="noopener noreferrer">WhatsApp</a></div>'
         : '<p class="help-text">The original token is not recoverable for this record. Create a new preview if the client needs another link.</p>';
-      return '<article class="pdp-item"><div class="pdp-item-head"><div><h4>' + esc(item.clientName) + '</h4><p>' + (item.referenceNumber ? 'Reference: ' + esc(item.referenceNumber) + ' · ' : '') + esc(item.originalName) + ' · ' + (item.size / 1024 / 1024).toFixed(2) + ' MB</p></div><span class="pdp-status ' + cls + '">' + label + '</span></div><div class="pdp-meta"><span>Expires: <b>' + esc(prettyDate(item.expiresAt)) + '</b></span><span>Client response: <b>' + esc(approval) + '</b></span><span>Created: ' + esc(prettyDate(item.createdAt)) + '</span></div>' + (item.message ? '<p class="pdp-message-preview">' + esc(item.message) + '</p>' : '') + (item.feedback ? '<div class="pdp-feedback"><b>Client feedback</b><p>' + esc(item.feedback) + '</p><small>' + esc(prettyDate(item.respondedAt)) + '</small></div>' : '') + linkBox + '<div class="pdp-actions">' + (cls === 'active' ? '<button class="btn pdp-revoke" type="button" data-id="' + esc(item.id) + '">Revoke link</button>' : '') + '<button class="btn btn-danger pdp-delete" type="button" data-id="' + esc(item.id) + '">Delete design</button></div></article>';
+      return '<article class="pdp-item"><div class="pdp-item-head"><div><h4>' + esc(item.originalName) + '</h4><p>' + (item.size / 1024 / 1024).toFixed(2) + ' MB</p></div><span class="pdp-status ' + cls + '">' + label + '</span></div><div class="pdp-meta"><span>Expires: <b>' + esc(prettyDate(item.expiresAt)) + '</b></span><span>Uploaded: ' + esc(prettyDate(item.createdAt)) + '</span></div>' + linkBox + '<div class="pdp-actions">' + (cls === 'active' ? '<button class="btn pdp-revoke" type="button" data-id="' + esc(item.id) + '">Revoke link</button>' : '') + '<button class="btn btn-danger pdp-delete" type="button" data-id="' + esc(item.id) + '">Delete design</button></div></article>';
     }).join('');
     target.querySelectorAll('.pdp-copy-existing').forEach(btn => btn.addEventListener('click', async () => {
       try { await navigator.clipboard.writeText(btn.dataset.link); btn.textContent = 'Copied!'; }
@@ -124,9 +121,6 @@ $('privateDesignPreviewForm').addEventListener('submit', async event => {
   try { expiry = currentExpiry(); } catch (error) { return setMessage(error.message, 'error'); }
   const form = new FormData();
   form.append('design', file, file.name);
-  form.append('clientName', $('pdpClientName').value.trim());
-  form.append('referenceNumber', $('pdpReference').value.trim());
-  form.append('message', $('pdpClientMessage').value.trim());
   form.append('expiresAt', expiry);
   const button = $('pdpCreateBtn');
   button.disabled = true;
@@ -151,7 +145,7 @@ $('pdpCopyLinkBtn').addEventListener('click', async () => {
 });
 $('pdpWhatsappBtn').addEventListener('click', () => {
   if (!lastCreatedLink) return;
-  const message = 'Hello ' + (lastCreatedClientName || 'there') + ', your private design preview from Saya Art & Advertising is ready: ' + lastCreatedLink;
+  const message = 'Here is your private HD design preview from Saya Art & Advertising: ' + lastCreatedLink;
   window.open('https://wa.me/?text=' + encodeURIComponent(message), '_blank', 'noopener,noreferrer');
 });
 $('pdpReloadBtn').addEventListener('click', loadPreviews);
