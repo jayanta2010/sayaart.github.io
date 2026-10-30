@@ -6,16 +6,16 @@
 - Original JPG/JPEG/PNG/WebP upload (1 GB maximum; no client-side resize or recompression), transferred directly to private Storage with Firebase's resumable upload task and progress display.
 - Simple upload-to-link workflow with configurable expiry, copy link, and WhatsApp sharing. No password or order ID.
 - Private Storage objects, unpredictable 256-bit random tokens, SHA-256 token hashes, and AES-256-GCM-encrypted token recovery for authorized admins.
-- Backend validation on every metadata, image, and response request. Expiry and revocation are checked again before image streaming.
+- Backend validation on every metadata and image-URL request. Expiry and revocation are checked before issuing the short-lived image URL.
 - Admin-only list, revoke, and permanent delete operations protected by a verified Firebase ID token and the server-side admin: true custom claim.
 - Canva-style client preview with zoom, pan, fit/reset, expiry notice, and optional WhatsApp contact. No approval or feedback workflow.
-- No download button or permanent Firebase download URL. The browser receives the image as a no-store streamed response and displays a temporary browser Blob URL.
+- No download button or permanent Firebase download URL. After validating the private link, the server issues a short-lived (5-minute) signed read URL so large images bypass Cloud Functions' HTTP response-size limit. No permanent Firebase download URL is stored or displayed.
 
 ## Important boundaries
 
 GitHub Pages serves the static HTML only. The private API is a Firebase Cloud Function in us-central1; original files are stored under private-design-previews/ in the existing sayaart.firebasestorage.app bucket.
 
-A private link is a bearer secret: anyone who receives or forwards it can view the design until it expires or is revoked. Screenshots, screen recordings, browser developer tools, and another camera cannot be reliably prevented. This interface discourages casual copying but does not promise screenshot prevention.
+A private link is a bearer secret: anyone who receives or forwards it can view the design until it expires or is revoked. Each opened preview receives a signed image URL valid for 5 minutes; a URL already issued may continue to work until that short expiry even if the preview link is revoked. Screenshots, screen recordings, browser developer tools, and another camera cannot be reliably prevented. This interface discourages casual copying but does not promise screenshot prevention.
 
 The current repository did not contain Firebase rules or a server-side admin system for the older admin tools. The new private-preview endpoints enforce server-side admin claims. Do not assume this also secures older product/order actions in app.js. The rule snippets are deliberately separate and must be merged into the current Firebase Console rules after reviewing them; replacing unknown live rules blindly could break existing storefront features.
 
@@ -97,7 +97,7 @@ These files contain snippets, not a replacement for the unknown existing product
 - security-rules/firestore.private-design-previews.rules
 - security-rules/storage.private-design-previews.rules
 
-In Firebase Console → Firestore Database → Rules, merge the privateDesignPreviews match block inside the existing /databases/{database}/documents rules. In Firebase Console → Storage → Rules, merge the private-design-previews/{allPaths=**} block inside the existing bucket rules. The Firestore snippet denies direct client access to private preview records. The Storage snippet allows only a signed-in admin (custom claim `admin: true`) to create a new object up to 1 GB in the private prefix; it denies client reads, updates, and deletes. The Cloud Functions Admin SDK accesses records/files server-side and bypasses client rules. Merge the updated Storage snippet before testing uploads.
+In Firebase Console → Firestore Database → Rules, merge the privateDesignPreviews match block inside the existing /databases/{database}/documents rules. In Firebase Console → Storage → Rules, merge the private-design-previews/{previewId}/{fileName} block inside the existing bucket rules. The Firestore snippet denies direct client access to private preview records. The Storage snippet allows only a signed-in admin (custom claim `admin: true`) to create a new object up to 1 GB in the private prefix; it denies client reads, updates, and deletes. The Cloud Functions Admin SDK accesses records/files server-side and bypasses client rules. The runtime service account must be able to sign Cloud Storage URLs (grant `roles/iam.serviceAccountTokenCreator` on that service account to itself if URL signing reports a permission error). Merge the updated Storage snippet before testing uploads.
 
 Do not paste either snippet as the entire ruleset unless you intentionally want to deny access to unrelated data. Review the existing production rules first and test storefront reads, checkout/order flows, and admin workflows after any rules change. This repository snapshot did not include the currently deployed rules, so their existing behavior cannot be verified from source control.
 
@@ -109,7 +109,7 @@ Merge the feature branch into the production branch only after review. GitHub Pa
 
 1. Sign in to the website with the Firebase Authentication account that has the admin custom claim.
 2. Open admin.html → Private Design Previews.
-3. Choose the original design file, enter client name, optional reference/message, and expiry.
+3. Choose the original design file, select the link expiry.
 4. Select Upload design & create private link.
 5. Copy the new link or share it through WhatsApp. The link token is a bearer secret.
 6. Use the generated previews list to copy an active link again, see expiry and access status, revoke access immediately, or permanently delete the file and record.
