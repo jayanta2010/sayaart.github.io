@@ -74,7 +74,7 @@ async function loadPreviews() {
     }
     target.innerHTML = data.previews.map(item => {
       const [label, cls] = statusLabel(item);
-      const linkBox = item.previewPath && cls === 'active'
+      const linkBox = item.previewToken && cls === 'active'
         ? '<div class="pdp-existing-link"><input readonly value="' + esc(new URL('private-preview.html#' + item.previewToken, location.href).toString()) + '" aria-label="Private preview link"><button class="btn pdp-copy-existing" type="button" data-link="' + esc(new URL('private-preview.html#' + item.previewToken, location.href).toString()) + '">Copy link</button><a class="btn pdp-whatsapp-existing" href="https://wa.me/?text=' + encodeURIComponent('Here is your private HD design preview: ' + new URL('private-preview.html#' + item.previewToken, location.href).toString()) + '" target="_blank" rel="noopener noreferrer">WhatsApp</a></div>'
         : '<p class="help-text">The original token is not recoverable for this record. Create a new preview if the client needs another link.</p>';
       return '<article class="pdp-item"><div class="pdp-item-head"><div><h4>' + esc(item.originalName) + '</h4><p>' + (item.size / 1024 / 1024).toFixed(2) + ' MB</p></div><span class="pdp-status ' + cls + '">' + label + '</span></div><div class="pdp-meta"><span>Expires: <b>' + esc(prettyDate(item.expiresAt)) + '</b></span><span>Uploaded: ' + esc(prettyDate(item.createdAt)) + '</span></div>' + linkBox + '<div class="pdp-actions">' + (cls === 'active' ? '<button class="btn pdp-revoke" type="button" data-id="' + esc(item.id) + '">Revoke link</button>' : '') + '<button class="btn btn-danger pdp-delete" type="button" data-id="' + esc(item.id) + '">Delete design</button></div></article>';
