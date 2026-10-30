@@ -119,11 +119,7 @@ async function requireAdmin(req, res, next) {
 }
 function publicRecord(data) {
   return {
-    clientName: data.clientName || '',
-    referenceNumber: data.referenceNumber || '',
-    message: data.message || '',
     expiresAt: data.expiresAt ? data.expiresAt.toMillis() : null,
-    approvalStatus: data.approvalStatus || 'pending',
     whatsappNumber
   };
 }
@@ -137,17 +133,11 @@ function adminRecord(doc) {
   return {
     id: doc.id,
     previewToken,
-    clientName: d.clientName || '',
-    referenceNumber: d.referenceNumber || '',
-    message: d.message || '',
     originalName: d.originalName || 'design',
     size: d.size || 0,
     expiresAt: d.expiresAt ? d.expiresAt.toMillis() : null,
     createdAt: d.createdAt ? d.createdAt.toMillis() : null,
-    status: d.status || 'active',
-    approvalStatus: d.approvalStatus || 'pending',
-    feedback: d.feedback || '',
-    respondedAt: d.respondedAt ? d.respondedAt.toMillis() : null
+    status: d.status || 'active'
   };
 }
 
@@ -186,26 +176,6 @@ app.post('/public/image', publicLimiter, async (req, res) => {
   }
 });
 
-app.post('/public/response', publicLimiter, async (req, res) => {
-  try {
-    const token = req.body && req.body.token;
-    const action = safeText(req.body && req.body.action, 40);
-    const feedback = safeText(req.body && req.body.feedback, 2000);
-    if (!['approve', 'request_changes'].includes(action)) return res.status(400).json({ error: 'Choose approve or request changes.' });
-    if (action === 'request_changes' && !feedback) return res.status(400).json({ error: 'Please describe the changes you need.' });
-    const found = await findActivePreview(token);
-    if (found.state !== 'active') return sendUnavailable(res, found.state);
-    await previews.doc(found.id).update({
-      approvalStatus: action === 'approve' ? 'approved' : 'changes_requested',
-      feedback: action === 'request_changes' ? feedback : '',
-      respondedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-    return res.json({ ok: true, approvalStatus: action === 'approve' ? 'approved' : 'changes_requested' });
-  } catch (_) {
-    return res.status(503).json({ error: 'Your response could not be saved. Please try again later.' });
-  }
-});
-
 app.get('/admin/previews', adminLimiter, requireAdmin, async (_req, res) => {
   try {
     const snap = await previews.orderBy('createdAt', 'desc').limit(200).get();
@@ -231,10 +201,6 @@ app.post('/admin/previews', adminLimiter, requireAdmin, upload.single('design'),
     }
     const expiry = parseExpiry(req.body.expiresAt);
     if (!expiry) return res.status(400).json({ error: 'Choose an expiry date at least 10 minutes from now and within 365 days.' });
-    const clientName = safeText(req.body.clientName, 120);
-    if (!clientName) return res.status(400).json({ error: 'Client name is required.' });
-    const referenceNumber = safeText(req.body.referenceNumber, 100);
-    const message = safeText(req.body.message, 1500);
     const token = crypto.randomBytes(32).toString('base64url');
     const id = previews.doc().id;
     storagePath = 'private-design-previews/' + id + '/' + crypto.randomUUID() + '.' + detected.ext;
@@ -256,15 +222,9 @@ app.post('/admin/previews', adminLimiter, requireAdmin, upload.single('design'),
       contentType: detected.mime,
       originalName,
       size: req.file.size,
-      clientName,
-      referenceNumber,
-      message,
       expiresAt: expiry,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      createdBy: req.adminUser.uid,
-      approvalStatus: 'pending',
-      feedback: '',
-      respondedAt: null
+      createdBy: req.adminUser.uid
     };
     try {
       await previews.doc(id).create(record);
