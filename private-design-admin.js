@@ -1,5 +1,6 @@
 import { getApps, initializeApp } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js';
 import { getAuth, onAuthStateChanged, getIdTokenResult } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
+import { getStorage, ref as storageRef, uploadBytesResumable } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js';
 
 const config = {
   apiKey: 'AIzaSyC6CxokC0KwAtP9EMilEQHMJQKWCgLWYJc',
@@ -11,6 +12,7 @@ const config = {
 };
 const app = getApps().length ? getApps()[0] : initializeApp(config);
 const auth = getAuth(app);
+const storage = getStorage(app);
 const API = 'https://us-central1-sayaart.cloudfunctions.net/privateDesignApi';
 const $ = id => document.getElementById(id);
 let activeAdmin = null;
@@ -24,6 +26,7 @@ function prettyDate(ms) {
 }
 function statusLabel(item) {
   if (item.status === 'revoked') return ['Revoked', 'revoked'];
+  if (item.status === 'uploading') return ['Upload incomplete', 'expired'];
   if (!item.expiresAt || item.expiresAt <= Date.now()) return ['Expired', 'expired'];
   return ['Active', 'active'];
 }
@@ -116,26 +119,56 @@ $('privateDesignPreviewForm').addEventListener('submit', async event => {
   if (!activeAdmin) return setMessage('You are not authorized to upload private previews.', 'error');
   const file = $('pdpDesignFile').files[0];
   if (!file) return setMessage('Choose a JPG, PNG, or WebP design first.', 'error');
-  if (file.size > 30 * 1024 * 1024) return setMessage('The maximum file size is 30 MB.', 'error');
+  const MAX_FILE_BYTES = 1024 * 1024 * 1024;
+  if (file.size > MAX_FILE_BYTES) return setMessage('The maximum file size is 1 GB.', 'error');
   let expiry;
   try { expiry = currentExpiry(); } catch (error) { return setMessage(error.message, 'error'); }
-  const form = new FormData();
-  form.append('design', file, file.name);
-  form.append('expiresAt', expiry);
   const button = $('pdpCreateBtn');
+  const progress = $('pdpUploadProgress');
+  const progressText = $('pdpUploadProgressText');
+  let uploadId = '';
   button.disabled = true;
-  setMessage('Uploading original artwork securely…');
+  progress.hidden = false;
+  progress.value = 0;
+  progressText.textContent = 'Preparing secure upload…';
+  setMessage('Preparing upload…');
   try {
-    const data = await request('/admin/previews', {method:'POST', body:form});
+    const init = await request('/admin/previews/init', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({fileName:file.name, size:file.size, contentType:file.type, expiresAt:expiry})
+    });
+    uploadId = init.id;
+    const task = uploadBytesResumable(storageRef(storage, init.storagePath), file, {
+      contentType: init.contentType,
+      cacheControl: 'private, no-store, max-age=0',
+      customMetadata: {previewId:init.id, uploadedBy:activeAdmin.uid}
+    });
+    await new Promise((resolve, reject) => {
+      task.on('state_changed', snapshot => {
+        const pct = snapshot.totalBytes ? Math.round(snapshot.bytesTransferred / snapshot.totalBytes * 100) : 0;
+        progress.value = pct;
+        progressText.textContent = pct + '% · ' + (snapshot.bytesTransferred / 1024 / 1024).toFixed(1) + ' / ' + (snapshot.totalBytes / 1024 / 1024).toFixed(1) + ' MB uploaded';
+        setMessage('Uploading original design… ' + pct + '%');
+      }, reject, resolve);
+    });
+    progressText.textContent = 'Upload complete. Verifying the original file…';
+    const data = await request('/admin/previews/' + encodeURIComponent(uploadId) + '/complete', {method:'POST'});
     showCreatedLink(data);
     $('privateDesignPreviewForm').reset();
     $('pdpCustomExpiryWrap').hidden = true;
-    setMessage('Private preview created. Copy or share the link below; the raw token is not stored in browser-readable database records.', 'success');
+    setMessage('Private HD preview created. Copy or share the link below.', 'success');
     await loadPreviews();
   } catch (error) {
-    setMessage(error.message, 'error');
+    if (uploadId) {
+      try { await request('/admin/previews/' + encodeURIComponent(uploadId) + '/cancel', {method:'POST'}); } catch (_) {}
+    }
+    setMessage(error.message || 'Upload failed. Please retry; the file has not been published as a preview.', 'error');
   } finally {
     button.disabled = false;
+    progress.hidden = true;
+    progress.value = 0;
+    progressText.textContent = '';
   }
 });
 $('pdpCopyLinkBtn').addEventListener('click', async () => {
