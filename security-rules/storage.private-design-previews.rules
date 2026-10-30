@@ -1,0 +1,15 @@
+// MERGE this match block into the existing Cloud Storage ruleset.
+// Only admins with the server-granted custom claim may CREATE a new preview object.
+// Client-side reads, updates, and deletes remain denied; the Cloud Function streams previews.
+// Existing unrelated Storage rules must be preserved.
+match /private-design-previews/{previewId}/{fileName} {
+  allow create: if request.auth != null
+    && request.auth.token.admin == true
+    && resource == null
+    && request.resource.size > 0
+    && request.resource.size <= 1073741824
+    && request.resource.contentType in ['image/jpeg', 'image/png', 'image/webp']
+    && request.resource.metadata.previewId == previewId
+    && request.resource.metadata.uploadedBy == request.auth.uid;
+  allow read, update, delete: if false;
+}

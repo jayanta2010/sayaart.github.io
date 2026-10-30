@@ -48,6 +48,16 @@
     .product-list-item,.order-list-item{border:1px solid var(--line)!important;padding:16px!important;border-radius:13px!important;margin-bottom:12px!important;background:#fff!important;box-shadow:0 4px 14px #123a3208}
     .design-preview-box{max-width:160px;width:100%;border:1px solid var(--line);border-radius:8px;margin-top:8px;display:block}
     #adminProductList,#adminOrdersList{margin-top:15px}
+    .pdp-auth-state{padding:13px 15px;margin:0 0 18px;border-radius:11px;background:#edf7ff;border:1px solid #cfe4f3;color:#214d67;font-size:13px;line-height:1.5}
+    .pdp-form{padding:clamp(15px,2.5vw,24px);border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#f8fbfa,#f1f8f6)}
+    .pdp-message{font-size:13px;line-height:1.55;margin:12px 0;color:var(--muted);overflow-wrap:anywhere}.pdp-message.error{color:#b42318}.pdp-message.success{color:#087443}
+    .pdp-created{margin:18px 0;padding:18px;border:1px solid #b8e2d4;border-radius:14px;background:#f2fcf8}.pdp-created h4{margin:0 0 7px}.pdp-created p{font-size:13px;line-height:1.55;color:#48635b}.pdp-created input,.pdp-existing-link input{width:100%;min-width:0;padding:11px;border:1px solid #cbdad5;border-radius:9px;background:#fff;font:inherit;font-size:12px}
+    .pdp-buttons,.pdp-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.pdp-list-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:28px}
+    .pdp-item{padding:17px;margin:12px 0;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 4px 14px #123a3208}.pdp-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.pdp-item h4{margin:0 0 5px;font-size:16px}.pdp-item p{margin:5px 0;color:var(--muted);font-size:12px;line-height:1.55;overflow-wrap:anywhere}.pdp-meta{display:flex;gap:9px 18px;flex-wrap:wrap;margin:12px 0;font-size:12px;color:var(--muted)}
+    .pdp-status{font-size:11px;font-weight:800;padding:6px 9px;border-radius:99px;white-space:nowrap}.pdp-status.active{color:#086747;background:#e8f8f0}.pdp-status.expired{color:#865b09;background:#fff4d8}.pdp-status.revoked{color:#a32620;background:#fff0ef}
+    .pdp-existing-link{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;margin-top:13px}.pdp-existing-link .btn{white-space:nowrap;text-decoration:none;text-align:center}.pdp-feedback{padding:12px;margin-top:10px;border-radius:10px;background:#f7fafb;border:1px solid #e2e9ec}.pdp-feedback p{white-space:pre-wrap}.pdp-empty{padding:18px;border:1px dashed #cbd8dc;border-radius:12px;color:var(--muted);font-size:13px;line-height:1.6;background:#fbfdfd}
+    @media(max-width:650px){.pdp-existing-link{grid-template-columns:1fr}.pdp-item-head{flex-direction:column}.pdp-list-head .btn{width:100%}}
+
     @media(max-width:650px){body{padding:14px 10px 28px}.admin-header{padding:20px;border-radius:17px}.form-grid{grid-template-columns:1fr}.panel{padding:16px}.tab-btn{flex:1;padding:11px 9px;font-size:12px}.product-list-item{align-items:flex-start!important;gap:12px}.header-links a{font-size:12px}}
   </style>
 </head>
@@ -61,6 +71,7 @@
     <div class="tabs" role="tablist" aria-label="Admin sections">
       <button class="tab-btn active" type="button" data-tab="productsTab" role="tab" aria-selected="true">▦ &nbsp; Manage Products</button>
       <button class="tab-btn" type="button" data-tab="ordersTab" role="tab" aria-selected="false">▣ &nbsp; Orders &amp; Artworks</button>
+      <button class="tab-btn" type="button" data-tab="privateDesignPreviewsTab" role="tab" aria-selected="false">🔒 &nbsp; Private Design Previews</button>
       <button class="tab-btn" type="button" data-tab="returnsTab" role="tab" aria-selected="false">↩ &nbsp; Returns</button>
       <button class="tab-btn" type="button" data-tab="categoriesTab" role="tab" aria-selected="false">▤ &nbsp; Categories</button>
       <button class="tab-btn" type="button" data-tab="couponsTab" role="tab" aria-selected="false">％ &nbsp; Coupon Codes</button>
@@ -180,6 +191,23 @@
       </section>
     </div>
     <div id="returnsTab" class="panel"><h3>Return requests</h3><p class="section-intro">Review return order IDs, customer details, evidence photos, and approval status.</p><div id="adminReturnsList">Loading return requests...</div></div>
+    <div id="privateDesignPreviewsTab" class="panel">
+      <h3>Private Design Previews</h3>
+      <p class="section-intro">Upload your original design and share one private link. Clients can view it in a Canva-style HD preview with zoom and pan—no password or order ID.</p>
+      <div id="privateDesignAuthState" class="pdp-auth-state">Checking Firebase admin authorization…</div>
+      <form id="privateDesignPreviewForm" class="pdp-form">
+        <div class="form-grid">
+          <div class="form-group"><label for="pdpDesignFile">Design file (JPG, JPEG, PNG, WebP · max 1 GB)</label><input id="pdpDesignFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required disabled><div class="help-text">Original file, no resizing or recompression. Large uploads use resumable direct-to-Storage transfer.</div><progress id="pdpUploadProgress" max="100" value="0" hidden style="width:100%;margin-top:10px"></progress><div id="pdpUploadProgressText" class="help-text" role="status" aria-live="polite"></div></div>
+          <div class="form-group"><label for="pdpExpiryChoice">Link expiry *</label><select id="pdpExpiryChoice" disabled><option value="24">24 hours</option><option value="72" selected>3 days</option><option value="168">7 days</option><option value="custom">Custom date &amp; time</option></select></div>
+          <div id="pdpCustomExpiryWrap" class="form-group" hidden><label for="pdpCustomExpiry">Custom expiry date &amp; time</label><input id="pdpCustomExpiry" type="datetime-local" disabled></div>
+        </div>
+        <button id="pdpCreateBtn" class="btn" type="submit" disabled>Upload design &amp; create private link</button>
+      </form>
+      <p id="privateDesignAdminMessage" class="pdp-message" role="status" aria-live="polite"></p>
+      <section id="pdpCreatedResult" class="pdp-created" hidden><h4>Private HD preview link created</h4><p>Copy this link or send it to your client. Anyone who has the link can view the design until it expires or is revoked.</p><input id="pdpCreatedLink" readonly aria-label="New private preview link"><p id="pdpCreatedExpiry" class="help-text"></p><div class="pdp-buttons"><button id="pdpCopyLinkBtn" class="btn" type="button">Copy link</button><button id="pdpWhatsappBtn" class="btn" type="button">Share via WhatsApp</button></div></section>
+      <div class="pdp-list-head"><div><h3>Uploaded designs</h3><p class="section-intro">Copy a link again, revoke access, or permanently delete a design.</p></div><button id="pdpReloadBtn" class="btn" type="button">Refresh list</button></div>
+      <div id="privateDesignPreviewList"><p class="help-text">Sign in with an authorized admin account to load previews.</p></div>
+    </div>
 <div id="categoriesTab" class="panel"><h3>Product categories</h3><p class="section-intro">Manage categories separately from coupon codes. Select a category when adding a product, or leave it uncategorized.</p><form id="categoryAdminForm" class="form-grid" style="padding:16px;background:#f7faf9;border:1px solid var(--line);border-radius:12px;margin-bottom:20px"><div class="form-group"><label for="categoryAdminName">Category name</label><input id="categoryAdminName" required maxlength="60" placeholder="e.g. T-Shirts, Mugs, Photo Frames"></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button class="btn" type="submit">Add category</button></div></form><div id="adminCategoriesList"><p class="help-text">Loading categories…</p></div></div>
         <div id="couponsTab" class="panel">
       <h3>Coupon codes</h3>
@@ -200,6 +228,7 @@
       <button type="button" class="btn" id="saveGameSettings" style="margin-top:14px">Save game setting</button><p id="gameSettingsMessage" class="help-text" role="status"></p>
     </div>
   <script type="module" src="app.js?v=20261028-1"></script>
+  <script type="module" src="private-design-admin.js?v=1"></script>
   <script>
     document.querySelectorAll('[data-tab]').forEach(button => {
       button.addEventListener('click', () => {

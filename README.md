@@ -18,3 +18,8 @@ Open `index.html` in a modern browser. No build step is required.
 This is a front-end prototype. For production, build a server-side system with secure admin authentication, database, order notifications/invoices, image/design asset storage, server-side payment order creation and webhook verification. Never store payment secrets in browser code or localStorage. Razorpay is a common option for India, but the final choice and merchant account need to be yours.
 
 To personalize it now: select **Admin** in the header and update the Shop profile and Payments sections.
+
+
+## Private HD Design Preview & Client Approval
+
+A secure backend-based design preview feature is being added on the feature branch. See [PRIVATE-DESIGN-PREVIEWS.md](PRIVATE-DESIGN-PREVIEWS.md) for Firebase Functions deployment, admin custom-claim setup, security-rule merge instructions, and a production test checklist. The feature is not live until the backend is deployed, the admin claim and encryption secret are configured, rules are merged, and the branch is published to GitHub Pages.
