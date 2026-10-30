@@ -47,6 +47,27 @@ function safeText(value, max) {
 function tokenHash(token) {
   return crypto.createHash('sha256').update(String(token), 'utf8').digest('hex');
 }
+function encryptionKey() {
+  const key = Buffer.from(String(process.env.PREVIEW_TOKEN_ENCRYPTION_KEY || ''), 'base64');
+  if (key.length !== 32) throw new Error('PREVIEW_TOKEN_ENCRYPTION_KEY must be a base64-encoded 32-byte key.');
+  return key;
+}
+function encryptToken(token) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', encryptionKey(), iv);
+  const encrypted = Buffer.concat([cipher.update(token, 'utf8'), cipher.final()]);
+  return [iv, cipher.getAuthTag(), encrypted].map(part => part.toString('base64url')).join('.');
+}
+function decryptToken(value) {
+  const parts = String(value || '').split('.');
+  if (parts.length !== 3) return '';
+  const iv = Buffer.from(parts[0], 'base64url');
+  const tag = Buffer.from(parts[1], 'base64url');
+  const encrypted = Buffer.from(parts[2], 'base64url');
+  const decipher = crypto.createDecipheriv('aes-256-gcm', encryptionKey(), iv);
+  decipher.setAuthTag(tag);
+  return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8');
+}
 function validTokenShape(token) {
   return typeof token === 'string' && /^[A-Za-z0-9_-]{40,100}$/.test(token);
 }
@@ -108,8 +129,14 @@ function publicRecord(data) {
 }
 function adminRecord(doc) {
   const d = doc.data();
+  const activeAndUnexpired = d.status === 'active' && d.expiresAt && d.expiresAt.toMillis() > Date.now();
+  let previewToken = '';
+  if (activeAndUnexpired && d.tokenCiphertext) {
+    try { previewToken = decryptToken(d.tokenCiphertext); } catch (_) { previewToken = ''; }
+  }
   return {
     id: doc.id,
+    previewToken,
     clientName: d.clientName || '',
     referenceNumber: d.referenceNumber || '',
     message: d.message || '',
@@ -223,6 +250,7 @@ app.post('/admin/previews', adminLimiter, requireAdmin, upload.single('design'),
     });
     const record = {
       tokenHash: tokenHash(token),
+      tokenCiphertext: encryptToken(token),
       status: 'active',
       storagePath,
       contentType: detected.mime,
@@ -285,4 +313,4 @@ app.use((err, _req, res, _next) => {
   return res.status(400).json({ error: 'Invalid request.' });
 });
 
-exports.privateDesignApi = onRequest({ region: 'us-central1', memory: '1GiB', timeoutSeconds: 120, maxInstances: 10 }, app);
+exports.privateDesignApi = onRequest({ region: 'us-central1', memory: '1GiB', timeoutSeconds: 120, maxInstances: 10, secrets: ['PREVIEW_TOKEN_ENCRYPTION_KEY'] }, app);
