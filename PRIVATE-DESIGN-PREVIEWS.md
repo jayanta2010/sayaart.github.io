@@ -3,7 +3,7 @@
 ## What this feature adds
 
 - A Private Design Previews tab in the existing admin page.
-- Original JPG/JPEG/PNG/WebP upload (30 MB maximum; no client-side resize or recompression).
+- Original JPG/JPEG/PNG/WebP upload (1 GB maximum; no client-side resize or recompression), transferred directly to private Storage with Firebase's resumable upload task and progress display.
 - Simple upload-to-link workflow with configurable expiry, copy link, and WhatsApp sharing. No password or order ID.
 - Private Storage objects, unpredictable 256-bit random tokens, SHA-256 token hashes, and AES-256-GCM-encrypted token recovery for authorized admins.
 - Backend validation on every metadata, image, and response request. Expiry and revocation are checked again before image streaming.
@@ -29,7 +29,7 @@ The current repository did not contain Firebase rules or a server-side admin sys
 
 ## Configure and deploy the backend
 
-Run from a local clone of this feature branch:
+Run from a local clone of this feature branch. The browser uploads directly to Storage using a resumable Firebase Storage task, so Functions' 32 MB HTTP request limit does not cap the file upload. The browser SDK retries transient transfer errors while the page remains open; reselect the file to restart if the task is cancelled or the page is closed.
 
     cd functions
     npm install
@@ -97,7 +97,7 @@ These files contain snippets, not a replacement for the unknown existing product
 - security-rules/firestore.private-design-previews.rules
 - security-rules/storage.private-design-previews.rules
 
-In Firebase Console → Firestore Database → Rules, merge the privateDesignPreviews match block inside the existing /databases/{database}/documents rules. In Firebase Console → Storage → Rules, merge the private-design-previews/{allPaths=**} block inside the existing bucket rules. Both deny direct client SDK access to private preview records/files; the Cloud Functions Admin SDK accesses them server-side and bypasses client rules.
+In Firebase Console → Firestore Database → Rules, merge the privateDesignPreviews match block inside the existing /databases/{database}/documents rules. In Firebase Console → Storage → Rules, merge the private-design-previews/{allPaths=**} block inside the existing bucket rules. The Firestore snippet denies direct client access to private preview records. The Storage snippet allows only a signed-in admin (custom claim `admin: true`) to create a new object up to 1 GB in the private prefix; it denies client reads, updates, and deletes. The Cloud Functions Admin SDK accesses records/files server-side and bypasses client rules. Merge the updated Storage snippet before testing uploads.
 
 Do not paste either snippet as the entire ruleset unless you intentionally want to deny access to unrelated data. Review the existing production rules first and test storefront reads, checkout/order flows, and admin workflows after any rules change. This repository snapshot did not include the currently deployed rules, so their existing behavior cannot be verified from source control.
 
@@ -120,7 +120,7 @@ Links are created from the current site location so the relative GitHub Pages pa
 
 - [ ] GET /health returns ok: true.
 - [ ] Non-admin and signed-out requests to GET /admin/previews return 401/403.
-- [ ] Admin can upload valid JPG, PNG, and WebP files up to 30 MB; mismatched MIME/signature and over-limit uploads fail.
+- [ ] Admin can upload valid JPG, PNG, and WebP files up to 1 GB; mismatched MIME/signature and over-limit uploads fail. Test a small file first, then a large file on a stable connection.
 - [ ] Client can open a link and zoom/pan/fit the original image.
 - [ ] The browser network panel shows no Firebase Storage download URL and no permanent public URL.
 - [ ] An invalid token returns the invalid-link state.
