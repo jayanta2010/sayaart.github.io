@@ -153,24 +153,23 @@ app.post('/public/preview', publicLimiter, async (req, res) => {
 });
 
 // Revalidate the token for every image request and stream from private Storage.
+// Issue a short-lived read URL only after validating the private link. This avoids
+// the Cloud Functions HTTP response-size limit for large original design files.
 app.post('/public/image', publicLimiter, async (req, res) => {
   try {
     const found = await findActivePreview(req.body && req.body.token);
     if (found.state !== 'active') return sendUnavailable(res, found.state);
     const object = bucket.file(found.data.storagePath);
-    res.set('Content-Type', found.data.contentType);
-    res.set('Content-Length', String(found.data.size));
-    res.set('Content-Disposition', 'inline; filename="design-preview"');
-    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
-    const stream = object.createReadStream();
-    stream.on('error', () => {
-      if (!res.headersSent) res.status(404).json({ error: 'Preview image is unavailable.' });
-      else res.destroy();
+    const [url] = await object.getSignedUrl({
+      version: 'v4',
+      action: 'read',
+      expires: Date.now() + 5 * 60 * 1000,
+      responseDisposition: 'inline; filename="design-preview"',
+      responseType: found.data.contentType
     });
-    stream.pipe(res);
+    return res.json({url, expiresAt: Date.now() + 5 * 60 * 1000});
   } catch (_) {
-    if (!res.headersSent) res.status(503).json({ error: 'Preview service is temporarily unavailable.' });
-    else res.destroy();
+    return res.status(503).json({ error: 'Preview service is temporarily unavailable. Please try again later.' });
   }
 });
 
