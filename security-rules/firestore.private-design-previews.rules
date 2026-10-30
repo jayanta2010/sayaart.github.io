@@ -1,0 +1,7 @@
+// MERGE this match block into the existing Firestore ruleset.
+// Do not replace the whole production ruleset with this snippet: the storefront
+// already uses other collections. The backend uses the Admin SDK, which bypasses
+// client rules. Client SDK access to preview metadata is intentionally denied.
+match /privateDesignPreviews/{previewId} {
+  allow read, write: if false;
+}
