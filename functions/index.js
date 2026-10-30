@@ -2,7 +2,6 @@ const crypto = require('node:crypto');
 const path = require('node:path');
 const express = require('express');
 const cors = require('cors');
-const multer = require('multer');
 const rateLimit = require('express-rate-limit');
 const admin = require('firebase-admin');
 const { onRequest } = require('firebase-functions/v2/https');
@@ -15,7 +14,7 @@ const app = express();
 const DEFAULT_ORIGINS = ['https://jayanta2010.github.io', 'https://sayaart.github.io'];
 const allowedOrigins = new Set((process.env.ALLOWED_ORIGINS || DEFAULT_ORIGINS.join(',')).split(',').map(x => x.trim()).filter(Boolean));
 const whatsappNumber = String(process.env.WHATSAPP_CONTACT_NUMBER || '').replace(/\D/g, '');
-const MAX_FILE_BYTES = 30 * 1024 * 1024;
+const MAX_FILE_BYTES = 1024 * 1024 * 1024;
 const previews = db.collection('privateDesignPreviews');
 
 app.set('trust proxy', 1);
@@ -39,7 +38,6 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '32kb', strict: true }));
 const publicLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 80, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'Too many requests. Please wait and try again.' } });
 const adminLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 35, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'Too many admin requests. Please wait and try again.' } });
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_FILE_BYTES, files: 1, fields: 8, fieldSize: 5000 } });
 
 function safeText(value, max) {
   return String(value == null ? '' : value).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, max);
@@ -185,59 +183,108 @@ app.get('/admin/previews', adminLimiter, requireAdmin, async (_req, res) => {
   }
 });
 
-app.post('/admin/previews', adminLimiter, requireAdmin, upload.single('design'), async (req, res) => {
-  let storagePath = '';
+app.post('/admin/previews/init', adminLimiter, requireAdmin, async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'Choose a design image to upload.' });
-    const detected = fileType(req.file);
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
-    const originalName = path.basename(String(req.file.originalname || 'design')).replace(/[\u0000-\u001F\u007F]/g, '').slice(0, 180);
-    if (!allowedExtensions.includes(path.extname(originalName).toLowerCase()) || !detected) {
-      return res.status(415).json({ error: 'Upload a valid JPG, JPEG, PNG, or WebP image.' });
+    const originalName = path.basename(String(req.body && req.body.fileName || 'design')).replace(/[\\u0000-\\u001F\\u007F]/g, '').slice(0, 180);
+    const extension = path.extname(originalName).toLowerCase();
+    const types = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.webp': 'image/webp'
+    };
+    const size = Number(req.body && req.body.size);
+    const contentType = String(req.body && req.body.contentType || '').toLowerCase();
+    if (!types[extension] || types[extension] !== contentType) {
+      return res.status(415).json({ error: 'Upload a JPG, JPEG, PNG, or WebP file with a matching file type.' });
     }
-    const declared = String(req.file.mimetype || '').toLowerCase();
-    if (declared && declared !== detected.mime && !(declared === 'image/jpg' && detected.mime === 'image/jpeg')) {
-      return res.status(415).json({ error: 'The file type does not match its image content.' });
+    if (!Number.isSafeInteger(size) || size < 1 || size > MAX_FILE_BYTES) {
+      return res.status(413).json({ error: 'The maximum file size is 1 GB.' });
     }
-    const expiry = parseExpiry(req.body.expiresAt);
+    const expiry = parseExpiry(req.body && req.body.expiresAt);
     if (!expiry) return res.status(400).json({ error: 'Choose an expiry date at least 10 minutes from now and within 365 days.' });
     const token = crypto.randomBytes(32).toString('base64url');
     const id = previews.doc().id;
-    storagePath = 'private-design-previews/' + id + '/' + crypto.randomUUID() + '.' + detected.ext;
-    const object = bucket.file(storagePath);
-    await object.save(req.file.buffer, {
-      resumable: false,
-      metadata: {
-        contentType: detected.mime,
-        cacheControl: 'private, no-store, max-age=0',
-        metadata: { previewId: id, uploadedBy: req.adminUser.uid }
-      },
-      validation: 'crc32c'
-    });
-    const record = {
+    const storagePath = 'private-design-previews/' + id + '/' + crypto.randomUUID() + extension;
+    await previews.doc(id).create({
       tokenHash: tokenHash(token),
       tokenCiphertext: encryptToken(token),
-      status: 'active',
+      status: 'uploading',
       storagePath,
-      contentType: detected.mime,
+      contentType,
       originalName,
-      size: req.file.size,
+      size,
       expiresAt: expiry,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       createdBy: req.adminUser.uid
-    };
-    try {
-      await previews.doc(id).create(record);
-    } catch (writeError) {
-      await object.delete({ ignoreNotFound: true }).catch(() => {});
-      storagePath = '';
-      throw writeError;
+    });
+    return res.status(201).json({ id, token, storagePath, contentType, expiresAt: expiry.toMillis() });
+  } catch (_) {
+    return res.status(500).json({ error: 'Could not prepare a private upload. Check Firebase setup and try again.' });
+  }
+});
+
+async function readStoredHeader(object) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    const stream = object.createReadStream({ start: 0, end: 11 });
+    stream.on('data', chunk => chunks.push(Buffer.from(chunk)));
+    stream.on('error', reject);
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+  });
+}
+
+app.post('/admin/previews/:id/complete', adminLimiter, requireAdmin, async (req, res) => {
+  try {
+    const id = String(req.params.id || '');
+    if (!/^[A-Za-z0-9]{15,30}$/.test(id)) return res.status(400).json({ error: 'Invalid upload reference.' });
+    const docRef = previews.doc(id);
+    const snap = await docRef.get();
+    if (!snap.exists) return res.status(404).json({ error: 'Upload record not found.' });
+    const data = snap.data();
+    if (data.createdBy !== req.adminUser.uid) return res.status(403).json({ error: 'This upload belongs to another admin.' });
+    if (data.status !== 'uploading') return res.status(409).json({ error: 'This upload is not awaiting completion.' });
+    if (!data.expiresAt || data.expiresAt.toMillis() <= Date.now()) return res.status(410).json({ error: 'The preview expiry passed before upload completed. Start a new upload.' });
+    const object = bucket.file(data.storagePath);
+    const [exists] = await object.exists();
+    if (!exists) return res.status(400).json({ error: 'Upload is not complete yet. Retry or upload the file again.' });
+    const [metadata] = await object.getMetadata();
+    const size = Number(metadata.size || 0);
+    if (size !== data.size || size < 1 || size > MAX_FILE_BYTES || metadata.contentType !== data.contentType) {
+      await object.delete({ignoreNotFound:true}).catch(() => {});
+      await docRef.delete().catch(() => {});
+      return res.status(400).json({ error: 'Uploaded file size or type did not match the prepared upload.' });
     }
-    return res.status(201).json({ id, token, expiresAt: expiry.toMillis(), previewPath: 'private-preview.html#' + token });
-  } catch (error) {
-    if (error && error.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'The maximum image size is 30 MB.' });
-    if (storagePath) await bucket.file(storagePath).delete({ ignoreNotFound: true }).catch(() => {});
-    return res.status(500).json({ error: 'The design could not be saved. Check Storage setup and try again.' });
+    const header = await readStoredHeader(object);
+    const detected = fileType({buffer:header});
+    if (!detected || detected.mime !== data.contentType) {
+      await object.delete({ignoreNotFound:true}).catch(() => {});
+      await docRef.delete().catch(() => {});
+      return res.status(415).json({ error: 'The uploaded content is not a valid JPG, PNG, or WebP image.' });
+    }
+    await docRef.update({status:'active', size, completedAt:admin.firestore.FieldValue.serverTimestamp()});
+    return res.status(201).json({id, token:decryptToken(data.tokenCiphertext), expiresAt:data.expiresAt.toMillis(), previewPath:'private-preview.html#' + decryptToken(data.tokenCiphertext)});
+  } catch (_) {
+    return res.status(503).json({ error: 'Could not verify the uploaded design. Please retry or contact the site administrator.' });
+  }
+});
+
+app.post('/admin/previews/:id/cancel', adminLimiter, requireAdmin, async (req, res) => {
+  try {
+    const id = String(req.params.id || '');
+    if (!/^[A-Za-z0-9]{15,30}$/.test(id)) return res.status(400).json({ error: 'Invalid upload reference.' });
+    const docRef = previews.doc(id);
+    const snap = await docRef.get();
+    if (!snap.exists) return res.json({ok:true});
+    const data = snap.data();
+    if (data.createdBy !== req.adminUser.uid) return res.status(403).json({ error: 'This upload belongs to another admin.' });
+    if (data.status === 'uploading') {
+      await bucket.file(data.storagePath).delete({ignoreNotFound:true}).catch(() => {});
+      await docRef.delete();
+    }
+    return res.json({ok:true});
+  } catch (_) {
+    return res.status(503).json({error:'Could not clean up the incomplete upload.'});
   }
 });
 
