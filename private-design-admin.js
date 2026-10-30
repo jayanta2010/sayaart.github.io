@@ -15,6 +15,7 @@ const API = 'https://us-central1-sayaart.cloudfunctions.net/privateDesignApi';
 const $ = id => document.getElementById(id);
 let activeAdmin = null;
 let lastCreatedLink = '';
+let lastCreatedClientName = '';
 
 function esc(value) {
   return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -53,6 +54,7 @@ function currentExpiry() {
   return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
 }
 function showCreatedLink(data) {
+  lastCreatedClientName = $('pdpClientName').value.trim();
   const link = new URL('private-preview.html', location.href);
   link.hash = data.token;
   lastCreatedLink = link.toString();
@@ -149,7 +151,7 @@ $('pdpCopyLinkBtn').addEventListener('click', async () => {
 });
 $('pdpWhatsappBtn').addEventListener('click', () => {
   if (!lastCreatedLink) return;
-  const message = 'Hello ' + $('pdpClientName').value.trim() + ', your private design preview from Saya Art & Advertising is ready: ' + lastCreatedLink;
+  const message = 'Hello ' + (lastCreatedClientName || 'there') + ', your private design preview from Saya Art & Advertising is ready: ' + lastCreatedLink;
   window.open('https://wa.me/?text=' + encodeURIComponent(message), '_blank', 'noopener,noreferrer');
 });
 $('pdpReloadBtn').addEventListener('click', loadPreviews);
