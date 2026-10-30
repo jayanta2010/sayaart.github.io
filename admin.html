@@ -193,22 +193,19 @@
     <div id="returnsTab" class="panel"><h3>Return requests</h3><p class="section-intro">Review return order IDs, customer details, evidence photos, and approval status.</p><div id="adminReturnsList">Loading return requests...</div></div>
     <div id="privateDesignPreviewsTab" class="panel">
       <h3>Private Design Previews</h3>
-      <p class="section-intro">Upload original artwork and share a private, expiring client link. Original files stay in private Cloud Storage and are streamed only after the server validates the link.</p>
+      <p class="section-intro">Upload your original design and share one private link. Clients can view it in a Canva-style HD preview with zoom and pan—no password or order ID.</p>
       <div id="privateDesignAuthState" class="pdp-auth-state">Checking Firebase admin authorization…</div>
       <form id="privateDesignPreviewForm" class="pdp-form">
         <div class="form-grid">
           <div class="form-group"><label for="pdpDesignFile">Design file (JPG, JPEG, PNG, WebP · max 30 MB)</label><input id="pdpDesignFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required disabled><div class="help-text">The original file is stored without resizing or recompression.</div></div>
-          <div class="form-group"><label for="pdpClientName">Client name *</label><input id="pdpClientName" maxlength="120" required placeholder="Client name" disabled></div>
-          <div class="form-group"><label for="pdpReference">Reference / order number (optional)</label><input id="pdpReference" maxlength="100" placeholder="e.g. SAYA-2026-104" disabled></div>
           <div class="form-group"><label for="pdpExpiryChoice">Link expiry *</label><select id="pdpExpiryChoice" disabled><option value="24">24 hours</option><option value="72" selected>3 days</option><option value="168">7 days</option><option value="custom">Custom date &amp; time</option></select></div>
           <div id="pdpCustomExpiryWrap" class="form-group" hidden><label for="pdpCustomExpiry">Custom expiry date &amp; time</label><input id="pdpCustomExpiry" type="datetime-local" disabled></div>
-          <div class="form-group"><label for="pdpClientMessage">Optional message to client</label><textarea id="pdpClientMessage" rows="3" maxlength="1500" placeholder="Add notes or instructions for the client…" disabled></textarea></div>
         </div>
         <button id="pdpCreateBtn" class="btn" type="submit" disabled>Upload design &amp; create private link</button>
       </form>
       <p id="privateDesignAdminMessage" class="pdp-message" role="status" aria-live="polite"></p>
-      <section id="pdpCreatedResult" class="pdp-created" hidden><h4>Private link created</h4><p>Copy this link or send it to your client. Keep it private; anyone who has the link can view and respond until it expires or is revoked.</p><input id="pdpCreatedLink" readonly aria-label="New private preview link"><p id="pdpCreatedExpiry" class="help-text"></p><div class="pdp-buttons"><button id="pdpCopyLinkBtn" class="btn" type="button">Copy link</button><button id="pdpWhatsappBtn" class="btn" type="button">Share via WhatsApp</button></div></section>
-      <div class="pdp-list-head"><div><h3>Generated previews</h3><p class="section-intro">View expiry, access status and client approval. Active links can be copied again by an authorized admin.</p></div><button id="pdpReloadBtn" class="btn" type="button">Refresh list</button></div>
+      <section id="pdpCreatedResult" class="pdp-created" hidden><h4>Private HD preview link created</h4><p>Copy this link or send it to your client. Anyone who has the link can view the design until it expires or is revoked.</p><input id="pdpCreatedLink" readonly aria-label="New private preview link"><p id="pdpCreatedExpiry" class="help-text"></p><div class="pdp-buttons"><button id="pdpCopyLinkBtn" class="btn" type="button">Copy link</button><button id="pdpWhatsappBtn" class="btn" type="button">Share via WhatsApp</button></div></section>
+      <div class="pdp-list-head"><div><h3>Uploaded designs</h3><p class="section-intro">Copy a link again, revoke access, or permanently delete a design.</p></div><button id="pdpReloadBtn" class="btn" type="button">Refresh list</button></div>
       <div id="privateDesignPreviewList"><p class="help-text">Sign in with an authorized admin account to load previews.</p></div>
     </div>
 <div id="categoriesTab" class="panel"><h3>Product categories</h3><p class="section-intro">Manage categories separately from coupon codes. Select a category when adding a product, or leave it uncategorized.</p><form id="categoryAdminForm" class="form-grid" style="padding:16px;background:#f7faf9;border:1px solid var(--line);border-radius:12px;margin-bottom:20px"><div class="form-group"><label for="categoryAdminName">Category name</label><input id="categoryAdminName" required maxlength="60" placeholder="e.g. T-Shirts, Mugs, Photo Frames"></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button class="btn" type="submit">Add category</button></div></form><div id="adminCategoriesList"><p class="help-text">Loading categories…</p></div></div>
