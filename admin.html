@@ -197,7 +197,7 @@
       <div id="privateDesignAuthState" class="pdp-auth-state">Checking Firebase admin authorization…</div>
       <form id="privateDesignPreviewForm" class="pdp-form">
         <div class="form-grid">
-          <div class="form-group"><label for="pdpDesignFile">Design file (JPG, JPEG, PNG, WebP · max 30 MB)</label><input id="pdpDesignFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required disabled><div class="help-text">The original file is stored without resizing or recompression.</div></div>
+          <div class="form-group"><label for="pdpDesignFile">Design file (JPG, JPEG, PNG, WebP · max 1 GB)</label><input id="pdpDesignFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required disabled><div class="help-text">Original file, no resizing or recompression. Large uploads use resumable direct-to-Storage transfer.</div><progress id="pdpUploadProgress" max="100" value="0" hidden style="width:100%;margin-top:10px"></progress><div id="pdpUploadProgressText" class="help-text" role="status" aria-live="polite"></div></div>
           <div class="form-group"><label for="pdpExpiryChoice">Link expiry *</label><select id="pdpExpiryChoice" disabled><option value="24">24 hours</option><option value="72" selected>3 days</option><option value="168">7 days</option><option value="custom">Custom date &amp; time</option></select></div>
           <div id="pdpCustomExpiryWrap" class="form-group" hidden><label for="pdpCustomExpiry">Custom expiry date &amp; time</label><input id="pdpCustomExpiry" type="datetime-local" disabled></div>
         </div>
