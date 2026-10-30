@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#102b2b">
+<title>Private Design Preview | Saya Art & Advertising</title>
+<style>
+:root{color-scheme:light;--ink:#172b3a;--muted:#637786;--green:#0e7468;--line:#dce5e9;--paper:#f5f8fa}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--paper);color:var(--ink)}button,input,textarea{font:inherit}.top{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px clamp(16px,4vw,44px);background:#fff;border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:12px;font-weight:850;letter-spacing:.2px}.brand img{width:48px;height:48px;object-fit:contain;border:1px solid #e6ecef;border-radius:12px;padding:3px}.brand small{display:block;font-size:10px;letter-spacing:1.8px;color:var(--muted);font-weight:700;margin-top:4px}.pill{font-size:12px;color:#42645f;background:#e8f6f2;border:1px solid #ccebe3;border-radius:99px;padding:8px 12px;white-space:nowrap}.wrap{max-width:1400px;margin:0 auto;padding:24px clamp(12px,3vw,32px) 36px}.intro{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:16px}.intro h1{font-size:clamp(22px,3vw,34px);letter-spacing:-.8px;margin:0 0 7px}.intro p{margin:0;color:var(--muted);font-size:14px;line-height:1.6}.validity{font-size:12px;color:#5c6d78;margin-top:8px}.workspace{position:relative;display:grid;place-items:center;height:min(66vh,760px);min-height:320px;overflow:hidden;background:#18232b;border:1px solid #263741;border-radius:18px;box-shadow:0 16px 38px #142d3a1a;touch-action:none}.workspace.loading:after{content:"Loading high-quality preview…";position:absolute;inset:0;display:grid;place-items:center;background:#18232be8;color:#fff;font-size:14px;z-index:3}.design-img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;transform-origin:center center;user-select:none;-webkit-user-drag:none;pointer-events:auto;touch-action:none;will-change:transform}.toolbar{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;padding:12px;margin:12px 0 20px;background:#fff;border:1px solid var(--line);border-radius:14px}.tool-btn,.primary,.secondary{border:1px solid #d6e1e6;border-radius:10px;background:#fff;color:var(--ink);padding:10px 14px;font-size:13px;font-weight:750;cursor:pointer}.tool-btn:hover,.secondary:hover{background:#f2f7f8}.zoom-readout{min-width:56px;text-align:center;font-size:12px;color:var(--muted);font-weight:750}.message-card,.approval-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:clamp(16px,3vw,24px);margin-top:14px}.message-card h2,.approval-card h2{font-size:17px;margin:0 0 10px}.admin-message{font-size:14px;line-height:1.75;color:#435866;white-space:pre-wrap;overflow-wrap:anywhere}.approval-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.approval-card p{color:var(--muted);font-size:13px;line-height:1.6}.feedback{width:100%;min-height:100px;padding:12px;border:1px solid #d0dce2;border-radius:10px;resize:vertical}.primary{background:var(--green);border-color:var(--green);color:#fff}.primary:hover{filter:brightness(1.05)}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.contact{display:inline-flex;margin-top:14px;text-decoration:none}.status-box{display:none;padding:18px;margin:30px auto;max-width:680px;border-radius:14px;border:1px solid #d6e1e6;background:#fff;text-align:center}.status-box.show{display:block}.status-box h1{font-size:24px;margin:0 0 8px}.status-box p{font-size:14px;line-height:1.65;color:var(--muted)}.status-box.error{border-color:#f2d1cc;background:#fff9f8}.status-box.error h1{color:#a83226}.status-box.success{border-color:#cce9de;background:#f8fffb}.foot{text-align:center;color:#81909a;font-size:11px;margin-top:24px;line-height:1.6}.hidden{display:none!important}button:disabled{opacity:.55;cursor:wait}@media(max-width:700px){.top{padding:12px 14px}.brand img{width:40px;height:40px}.pill{font-size:10px;padding:7px 9px}.wrap{padding:18px 10px 28px}.workspace{height:56vh;min-height:280px;border-radius:12px}.toolbar{gap:6px;padding:8px}.tool-btn{padding:9px 10px;font-size:12px}.approval-grid{grid-template-columns:1fr}.intro h1{font-size:24px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand"><img src="saya-art-advertising-logo.jpg" alt="Saya Art & Advertising"><div>SAYA ART &amp; ADVERTISING<small>PRINT · CREATE · INSPIRE</small></div></div><span class="pill">🔒 Private client preview</span></header>
+<main class="wrap">
+<div id="mainContent">
+<section class="intro"><div><h1>Your design preview</h1><p>Review your artwork in high quality. Zoom in to inspect details.</p><div id="expiryInfo" class="validity"></div></div><div id="referenceInfo" class="pill hidden"></div></section>
+<section id="workspace" class="workspace loading" aria-label="Design preview workspace"><img id="designImage" class="design-img hidden" alt="Private design preview" draggable="false"></section>
+<div class="toolbar" aria-label="Preview controls"><button class="tool-btn" id="zoomOut" type="button" disabled>− Zoom out</button><span id="zoomReadout" class="zoom-readout">100%</span><button class="tool-btn" id="zoomIn" type="button" disabled>＋ Zoom in</button><button class="tool-btn" id="fitBtn" type="button" disabled>Fit to screen</button><button class="tool-btn" id="resetBtn" type="button" disabled>Reset view</button></div>
+<section id="adminMessageCard" class="message-card hidden"><h2>Message from Saya Art &amp; Advertising</h2><div id="adminMessage" class="admin-message"></div></section>
+<div class="approval-grid">
+<section class="approval-card"><h2>Approve this design</h2><p>If the artwork looks correct, approve it so the team can continue with your order.</p><button id="approveBtn" class="primary" type="button" disabled>✓ Approve design</button></section>
+<section class="approval-card"><h2>Request changes</h2><p>Tell us what needs to be adjusted. Your feedback will be sent to the design team.</p><textarea id="feedbackInput" class="feedback" maxlength="2000" placeholder="Describe the changes you need…"></textarea><div class="actions"><button id="requestChangesBtn" class="secondary" type="button" disabled>Request changes</button></div></section>
+</div>
+<a id="contactBtn" class="primary contact hidden" href="#" target="_blank" rel="noopener noreferrer">Contact us on WhatsApp</a>
+</div>
+<section id="statusBox" class="status-box" role="status" aria-live="polite"><h1 id="statusTitle"></h1><p id="statusText"></p></section>
+<div class="foot">Private preview · Please review the artwork carefully before approving.<br>Screen capture cannot be completely prevented on all devices.</div>
+</main>
+<script type="module">
+const API = 'https://us-central1-sayaart.cloudfunctions.net/privateDesignApi';
+const $ = id => document.getElementById(id);
+let token = location.hash.slice(1);
+if (token) {
+  try { sessionStorage.setItem('saya_private_preview_token', token); } catch (_) {}
+  history.replaceState(null, '', location.pathname + location.search);
+} else {
+  try { token = sessionStorage.getItem('saya_private_preview_token') || ''; } catch (_) { token = ''; }
+}
+let imageObjectUrl = '';
+let scale = 1, x = 0, y = 0, dragging = false, pointerX = 0, pointerY = 0;
+const image = $('designImage'), workspace = $('workspace');
+function status(title, message, kind = 'error') {
+  $('mainContent').classList.add('hidden');
+  $('statusTitle').textContent = title;
+  $('statusText').textContent = message;
+  $('statusBox').className = 'status-box show ' + kind;
+}
+async function post(path, body) {
+  const response = await fetch(API + path, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer'});
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err = new Error(data.error || 'The preview could not be loaded.');
+    err.code = data.code || '';
+    err.status = response.status;
+    throw err;
+  }
+  return data;
+}
+function applyTransform() {
+  image.style.transform = 'translate(' + x + 'px,' + y + 'px) scale(' + scale + ')';
+  $('zoomReadout').textContent = Math.round(scale * 100) + '%';
+}
+function setScale(next) {
+  scale = Math.min(4, Math.max(1, next));
+  if (scale === 1) { x = 0; y = 0; }
+  applyTransform();
+}
+$('zoomIn').addEventListener('click', () => setScale(scale + (scale < 2 ? .25 : .5)));
+$('zoomOut').addEventListener('click', () => setScale(scale - (scale <= 2 ? .25 : .5)));
+$('fitBtn').addEventListener('click', () => { scale = 1; x = 0; y = 0; applyTransform(); });
+$('resetBtn').addEventListener('click', () => { scale = 1; x = 0; y = 0; applyTransform(); });
+workspace.addEventListener('pointerdown', event => {
+  if (scale <= 1) return;
+  dragging = true; pointerX = event.clientX - x; pointerY = event.clientY - y;
+  workspace.setPointerCapture(event.pointerId); workspace.style.cursor = 'grabbing';
+});
+workspace.addEventListener('pointermove', event => {
+  if (!dragging) return;
+  x = event.clientX - pointerX; y = event.clientY - pointerY; applyTransform();
+});
+function stopDrag() { dragging = false; workspace.style.cursor = scale > 1 ? 'grab' : 'default'; }
+workspace.addEventListener('pointerup', stopDrag);
+workspace.addEventListener('pointercancel', stopDrag);
+workspace.addEventListener('pointerleave', event => { if (event.buttons === 0) stopDrag(); });
+workspace.addEventListener('wheel', event => {
+  if (!event.ctrlKey && !event.metaKey) return;
+  event.preventDefault(); setScale(scale + (event.deltaY < 0 ? .15 : -.15));
+}, {passive:false});
+document.addEventListener('contextmenu', event => event.preventDefault());
+document.addEventListener('dragstart', event => event.preventDefault());
+document.addEventListener('keydown', event => {
+  if ((event.ctrlKey || event.metaKey) && ['s','u','p'].includes(event.key.toLowerCase())) event.preventDefault();
+});
+async function init() {
+  if (!/^[A-Za-z0-9_-]{40,100}$/.test(token)) {
+    status('Invalid private link', 'This preview link is missing or invalid. Please ask Saya Art & Advertising for a new link.');
+    return;
+  }
+  try {
+    const meta = await post('/public/preview', {token});
+    $('expiryInfo').textContent = 'Link valid until ' + new Date(meta.expiresAt).toLocaleString('en-IN', {dateStyle:'medium',timeStyle:'short'});
+    if (meta.referenceNumber) { $('referenceInfo').textContent = 'Reference: ' + meta.referenceNumber; $('referenceInfo').classList.remove('hidden'); }
+    if (meta.message) { $('adminMessage').textContent = meta.message; $('adminMessageCard').classList.remove('hidden'); }
+    if (meta.whatsappNumber) {
+      const msg = 'Hello Saya Art & Advertising, I am viewing my private design preview' + (meta.referenceNumber ? ' (Reference: ' + meta.referenceNumber + ')' : '') + '.';
+      $('contactBtn').href = 'https://wa.me/' + meta.whatsappNumber + '?text=' + encodeURIComponent(msg);
+      $('contactBtn').classList.remove('hidden');
+    }
+    const response = await fetch(API + '/public/image', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token}),cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer'});
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      const err = new Error(data.error || 'The preview image could not be loaded.');
+      err.code = data.code || ''; err.status = response.status; throw err;
+    }
+    const blob = await response.blob();
+    imageObjectUrl = URL.createObjectURL(blob);
+    image.onload = () => {
+      workspace.classList.remove('loading'); image.classList.remove('hidden');
+      ['zoomIn','zoomOut','fitBtn','resetBtn','approveBtn','requestChangesBtn'].forEach(id => $(id).disabled = false);
+      applyTransform();
+    };
+    image.onerror = () => status('Preview unavailable', 'The image could not be displayed. Please ask the business for a new link.');
+    image.src = imageObjectUrl;
+    $('approveBtn').addEventListener('click', () => submitResponse('approve'));
+    $('requestChangesBtn').addEventListener('click', () => submitResponse('request_changes'));
+  } catch (error) {
+    if (error.code === 'expired') status('Link expired', error.message);
+    else if (error.code === 'revoked') status('Access revoked', error.message);
+    else if (error.status === 404) status('Invalid or unavailable link', error.message);
+    else status('Preview unavailable', error.message || 'Please contact Saya Art & Advertising.');
+  }
+}
+async function submitResponse(action) {
+  const approve = $('approveBtn'), changes = $('requestChangesBtn');
+  if (action === 'request_changes' && !$('feedbackInput').value.trim()) {
+    $('feedbackInput').focus(); alert('Please describe the changes you need.'); return;
+  }
+  approve.disabled = true; changes.disabled = true;
+  try {
+    await post('/public/response', {token, action, feedback:$('feedbackInput').value.trim()});
+    status(action === 'approve' ? 'Design approved' : 'Change request sent', action === 'approve' ? 'Thank you. Your approval has been recorded and shared with the design team.' : 'Thank you. Your feedback has been recorded for the design team.', 'success');
+  } catch (error) {
+    alert(error.message || 'Your response could not be saved.');
+    approve.disabled = false; changes.disabled = false;
+  }
+}
+window.addEventListener('beforeunload', () => { if (imageObjectUrl) URL.revokeObjectURL(imageObjectUrl); });
+init();
+</script>
+</body></html>
