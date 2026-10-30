@@ -33,7 +33,7 @@ if (token) {
 } else {
   try { token = sessionStorage.getItem('saya_private_preview_token') || ''; } catch (_) { token = ''; }
 }
-let imageObjectUrl = '';
+
 let scale = 1, x = 0, y = 0, dragging = false, pointerX = 0, pointerY = 0;
 const image = $('designImage'), workspace = $('workspace');
 function status(title, message, kind = 'error') {
@@ -107,15 +107,15 @@ async function init() {
       const err = new Error(data.error || 'The preview image could not be loaded.');
       err.code = data.code || ''; err.status = response.status; throw err;
     }
-    const blob = await response.blob();
-    imageObjectUrl = URL.createObjectURL(blob);
+    const data = await response.json();
+    if (!data.url) throw new Error('The preview image could not be loaded.');
     image.onload = () => {
       workspace.classList.remove('loading'); image.classList.remove('hidden');
       ['zoomIn','zoomOut','fitBtn','resetBtn'].forEach(id => $(id).disabled = false);
       applyTransform();
     };
     image.onerror = () => status('Preview unavailable', 'The image could not be displayed. Please ask the business for a new link.');
-    image.src = imageObjectUrl;
+    image.src = data.url;
   } catch (error) {
     if (error.code === 'expired') status('Link expired', error.message);
     else if (error.code === 'revoked') status('Access revoked', error.message);
@@ -123,7 +123,7 @@ async function init() {
     else status('Preview unavailable', error.message || 'Please contact Saya Art & Advertising.');
   }
 }
-window.addEventListener('beforeunload', () => { if (imageObjectUrl) URL.revokeObjectURL(imageObjectUrl); });
+window.addEventListener('beforeunload', () => {});
 init();
 </script>
 </body></html>
