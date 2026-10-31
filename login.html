@@ -36,7 +36,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, getIdTokenResult, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
     // Aapki exact Firebase Keys
     const firebaseConfig = {
@@ -54,6 +54,9 @@
 
     const loginForm = document.getElementById('login-form');
     const errorMsg = document.getElementById('error-msg');
+    const params = new URLSearchParams(location.search);
+    if (params.get('error') === 'unauthorized') errorMsg.innerText = 'Is account ko Admin permission nahi hai.';
+    if (params.get('error') === 'verification') errorMsg.innerText = 'Admin permission verify nahi ho payi. Dobara login karein.';
 
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -61,10 +64,18 @@
       const password = document.getElementById('password').value;
 
       try {
-        await signInWithEmailAndPassword(auth, email, password);
-        window.location.href = "admin.html";
+        const credential = await signInWithEmailAndPassword(auth, email, password);
+        const token = await getIdTokenResult(credential.user, true);
+        if (token.claims.admin !== true) {
+          await signOut(auth);
+          errorMsg.innerText = 'Access denied: is email ko Admin permission nahi di gayi hai.';
+          return;
+        }
+        const requestedNext = params.get('next');
+        const nextPage = requestedNext === 'admin.html' ? 'admin.html' : 'admin.html';
+        window.location.replace(nextPage);
       } catch (error) {
-        errorMsg.innerText = "Galat Email ya Password!";
+        errorMsg.innerText = error.code === "auth/too-many-requests" ? "Bahut attempts hue. Thodi der baad try karein." : "Galat Email ya Password!";
       }
     });
   </script>
