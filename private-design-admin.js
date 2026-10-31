@@ -214,7 +214,7 @@ if (adminSignOutButton) {
     adminSignOutButton.textContent = 'Signing out…';
     try {
       await signOut(auth);
-      location.replace('index.html');
+      location.replace('login.html?next=admin.html');
     } catch (error) {
       adminSignOutButton.disabled = false;
       adminSignOutButton.textContent = 'Sign out';
