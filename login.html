@@ -11,6 +11,8 @@
     .input-group { margin-bottom: 15px; text-align: left; }
     .input-group label { display: block; font-size: 14px; margin-bottom: 5px; }
     .input-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    .show-password { display: flex; align-items: center; gap: 7px; margin: -5px 0 15px; font-size: 13px; color: #444; cursor: pointer; }
+    .show-password input { width: auto; margin: 0; cursor: pointer; }
     button { width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
     button:hover { background-color: #0056b3; }
     #error-msg { color: red; margin-top: 15px; font-size: 14px; }
@@ -29,6 +31,10 @@
         <label for="password">Password</label>
         <input type="password" id="password" required placeholder="******">
       </div>
+      <label class="show-password" for="show-password">
+        <input type="checkbox" id="show-password">
+        Show Password
+      </label>
       <button type="submit">Login</button>
     </form>
     <p id="error-msg"></p>
@@ -54,14 +60,21 @@
 
     const loginForm = document.getElementById('login-form');
     const errorMsg = document.getElementById('error-msg');
+    const passwordInput = document.getElementById('password');
+    const showPassword = document.getElementById('show-password');
     const params = new URLSearchParams(location.search);
+
+    showPassword.addEventListener('change', () => {
+      passwordInput.type = showPassword.checked ? 'text' : 'password';
+    });
+
     if (params.get('error') === 'unauthorized') errorMsg.innerText = 'Is account ko Admin permission nahi hai.';
     if (params.get('error') === 'verification') errorMsg.innerText = 'Admin permission verify nahi ho payi. Dobara login karein.';
 
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
+      const password = passwordInput.value;
 
       try {
         const credential = await signInWithEmailAndPassword(auth, email, password);
