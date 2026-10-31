@@ -1,5 +1,5 @@
 import { getApps, initializeApp } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js';
-import { getAuth, onAuthStateChanged, getIdTokenResult } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
+import { getAuth, onAuthStateChanged, getIdTokenResult, signOut } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
 import { getStorage, ref as storageRef, uploadBytesResumable } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js';
 
 const config = {
@@ -204,3 +204,21 @@ onAuthStateChanged(auth, async user => {
     $('privateDesignAuthState').textContent = 'Could not verify admin authorization. Sign out, sign in again, and retry.';
   }
 });
+
+
+const adminSignOutButton = $('adminSignOutBtn');
+if (adminSignOutButton) {
+  adminSignOutButton.addEventListener('click', async () => {
+    if (!confirm('Sign out of the Saya Art admin panel?')) return;
+    adminSignOutButton.disabled = true;
+    adminSignOutButton.textContent = 'Signing out…';
+    try {
+      await signOut(auth);
+      location.replace('index.html');
+    } catch (error) {
+      adminSignOutButton.disabled = false;
+      adminSignOutButton.textContent = 'Sign out';
+      alert('Could not sign out: ' + error.message);
+    }
+  });
+}
