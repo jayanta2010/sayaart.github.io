@@ -168,7 +168,13 @@ app.post('/public/image', publicLimiter, async (req, res) => {
       responseType: found.data.contentType
     });
     return res.json({url, expiresAt: Date.now() + 5 * 60 * 1000});
-  } catch (_) {
+  } catch (error) {
+    // Log only diagnostic metadata; never log the private token or signed URL.
+    console.error('private preview image access failed', {
+      name: error && error.name,
+      code: error && error.code,
+      message: error && error.message
+    });
     return res.status(503).json({ error: 'Preview service is temporarily unavailable. Please try again later.' });
   }
 });
