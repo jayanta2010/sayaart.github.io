@@ -1,0 +1,54 @@
+name: Grant SayaArt Super Admin
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  grant-admin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set Firebase admin claim for the approved account
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Grant admin custom claim
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          npm install --no-save firebase-admin
+          node <<'NODE'
+          const admin = require('firebase-admin');
+
+          const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || 'null');
+          if (!serviceAccount || !serviceAccount.project_id) {
+            throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON secret is missing or invalid.');
+          }
+
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+          });
+
+          (async () => {
+            const uid = 'Yn0f9evnRhQHl4aSXwmzPzutaNS2';
+            const expectedEmail = 'saya458458458@gmail.com';
+            const user = await admin.auth().getUser(uid);
+
+            if (user.email !== expectedEmail) {
+              throw new Error('UID/email mismatch. No claims were changed.');
+            }
+
+            await admin.auth().setCustomUserClaims(uid, {
+              ...(user.customClaims || {}),
+              admin: true,
+            });
+
+            console.log('Admin claim granted to the verified target UID.');
+            await admin.app().delete();
+          })().catch((error) => {
+            console.error(error);
+            process.exitCode = 1;
+          });
+          NODE
