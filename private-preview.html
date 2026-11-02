@@ -15,7 +15,7 @@
 <header class="top"><div class="brand"><img src="saya-art-advertising-logo.jpg" alt="Saya Art & Advertising"><div>SAYA ART &amp; ADVERTISING<small>PRINT · CREATE · INSPIRE</small></div></div><span class="pill">Private HD preview</span></header>
 <main class="wrap">
 <div id="mainContent">
-<section class="intro"><div><h1>Design preview</h1><p>High-quality artwork view. Zoom in and drag to inspect details.</p><div id="expiryInfo" class="validity"></div></div></section>
+<section class="intro"><div><h1>Design preview</h1><p>High-quality artwork view. Pinch with two fingers, scroll the mouse wheel, or drag to inspect details. Zoom up to 1000%.</p><div id="expiryInfo" class="validity"></div></div></section>
 <section id="workspace" class="workspace loading" aria-label="Design preview workspace"><img id="designImage" class="design-img hidden" alt="Private design preview" draggable="false"></section>
 <div class="toolbar" aria-label="Preview controls"><button class="tool-btn" id="zoomOut" type="button" disabled>− Zoom out</button><span id="zoomReadout" class="zoom-readout">100%</span><button class="tool-btn" id="zoomIn" type="button" disabled>＋ Zoom in</button><button class="tool-btn" id="fitBtn" type="button" disabled>Fit to screen</button><button class="tool-btn" id="resetBtn" type="button" disabled>Reset view</button></div>
 <a id="contactBtn" class="primary contact hidden" href="#" target="_blank" rel="noopener noreferrer">Contact us on WhatsApp</a>
@@ -35,6 +35,8 @@ if (token) {
 }
 
 let scale = 1, x = 0, y = 0, dragging = false, pointerX = 0, pointerY = 0;
+const activePointers = new Map();
+let pinchStartDistance = 0, pinchStartScale = 1;
 const image = $('designImage'), workspace = $('workspace');
 function status(title, message, kind = 'error') {
   $('mainContent').classList.add('hidden');
@@ -56,32 +58,78 @@ async function post(path, body) {
 function applyTransform() {
   image.style.transform = 'translate(' + x + 'px,' + y + 'px) scale(' + scale + ')';
   $('zoomReadout').textContent = Math.round(scale * 100) + '%';
+  workspace.style.cursor = scale > 1 ? (dragging ? 'grabbing' : 'grab') : 'default';
 }
-function setScale(next) {
-  scale = Math.min(4, Math.max(1, next));
+function zoomAt(next, clientX, clientY) {
+  const rect = workspace.getBoundingClientRect();
+  const px = clientX - (rect.left + rect.width / 2);
+  const py = clientY - (rect.top + rect.height / 2);
+  const old = scale;
+  scale = Math.min(10, Math.max(1, next));
+  const ratio = scale / old;
+  x = px - (px - x) * ratio;
+  y = py - (py - y) * ratio;
   if (scale === 1) { x = 0; y = 0; }
   applyTransform();
 }
-$('zoomIn').addEventListener('click', () => setScale(scale + (scale < 2 ? .25 : .5)));
-$('zoomOut').addEventListener('click', () => setScale(scale - (scale <= 2 ? .25 : .5)));
+function setScale(next) {
+  const rect = workspace.getBoundingClientRect();
+  zoomAt(next, rect.left + rect.width / 2, rect.top + rect.height / 2);
+}
+$('zoomIn').addEventListener('click', () => setScale(scale < 2 ? scale + .25 : scale + .5));
+$('zoomOut').addEventListener('click', () => setScale(scale <= 2 ? scale - .25 : scale - .5));
 $('fitBtn').addEventListener('click', () => { scale = 1; x = 0; y = 0; applyTransform(); });
 $('resetBtn').addEventListener('click', () => { scale = 1; x = 0; y = 0; applyTransform(); });
+function pointerDistance(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+function pointerMidpoint(a, b) { return {x:(a.x+b.x)/2,y:(a.y+b.y)/2}; }
 workspace.addEventListener('pointerdown', event => {
-  if (scale <= 1) return;
-  dragging = true; pointerX = event.clientX - x; pointerY = event.clientY - y;
-  workspace.setPointerCapture(event.pointerId); workspace.style.cursor = 'grabbing';
+  activePointers.set(event.pointerId, {x:event.clientX,y:event.clientY});
+  workspace.setPointerCapture(event.pointerId);
+  if (activePointers.size === 2) {
+    const pts = [...activePointers.values()];
+    pinchStartDistance = Math.max(1, pointerDistance(pts[0], pts[1]));
+    pinchStartScale = scale;
+    dragging = false;
+  } else if (activePointers.size === 1 && scale > 1) {
+    dragging = true;
+    pointerX = event.clientX - x;
+    pointerY = event.clientY - y;
+  }
+  applyTransform();
 });
 workspace.addEventListener('pointermove', event => {
-  if (!dragging) return;
-  x = event.clientX - pointerX; y = event.clientY - pointerY; applyTransform();
+  if (!activePointers.has(event.pointerId)) return;
+  activePointers.set(event.pointerId, {x:event.clientX,y:event.clientY});
+  if (activePointers.size >= 2) {
+    const pts = [...activePointers.values()];
+    const distance = pointerDistance(pts[0], pts[1]);
+    const mid = pointerMidpoint(pts[0], pts[1]);
+    zoomAt(pinchStartScale * distance / pinchStartDistance, mid.x, mid.y);
+    dragging = false;
+  } else if (dragging && scale > 1) {
+    x = event.clientX - pointerX;
+    y = event.clientY - pointerY;
+    applyTransform();
+  }
 });
-function stopDrag() { dragging = false; workspace.style.cursor = scale > 1 ? 'grab' : 'default'; }
-workspace.addEventListener('pointerup', stopDrag);
-workspace.addEventListener('pointercancel', stopDrag);
-workspace.addEventListener('pointerleave', event => { if (event.buttons === 0) stopDrag(); });
+function stopPointer(event) {
+  activePointers.delete(event.pointerId);
+  dragging = false;
+  if (activePointers.size === 1 && scale > 1) {
+    const remaining = [...activePointers.values()][0];
+    pointerX = remaining.x - x;
+    pointerY = remaining.y - y;
+    dragging = true;
+  }
+  applyTransform();
+}
+workspace.addEventListener('pointerup', stopPointer);
+workspace.addEventListener('pointercancel', stopPointer);
+workspace.addEventListener('lostpointercapture', stopPointer);
 workspace.addEventListener('wheel', event => {
-  if (!event.ctrlKey && !event.metaKey) return;
-  event.preventDefault(); setScale(scale + (event.deltaY < 0 ? .15 : -.15));
+  event.preventDefault();
+  const factor = Math.exp(-event.deltaY * (event.deltaMode === 1 ? .025 : .0015));
+  zoomAt(scale * factor, event.clientX, event.clientY);
 }, {passive:false});
 document.addEventListener('contextmenu', event => event.preventDefault());
 document.addEventListener('dragstart', event => event.preventDefault());
